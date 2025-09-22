@@ -11,6 +11,9 @@ import {
   Alert,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import Toast from 'react-native-toast-message';
+import { authService } from '../services/apiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
@@ -21,6 +24,8 @@ const CreatePassword = ({ navigation, route }) => {
   const [confirmPasscode, setConfirmPasscode] = useState('');
   const [isConfirming, setIsConfirming] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [token, setToken] = useState(null);
 
   React.useEffect(() => {
     // Fade in animation
@@ -29,6 +34,19 @@ const CreatePassword = ({ navigation, route }) => {
       duration: 300,
       useNativeDriver: true,
     }).start();
+  }, []);
+
+  React.useEffect(() => {
+    // Load token for authenticated request
+    const loadToken = async () => {
+      try {
+        const stored = await AsyncStorage.getItem('dokoToken');
+        if (stored) setToken(stored);
+      } catch (e) {
+        // ignore
+      }
+    };
+    loadToken();
   }, []);
 
   const handleNumberPress = (number) => {
@@ -61,45 +79,82 @@ const CreatePassword = ({ navigation, route }) => {
   }, [passcode, isConfirming]);
 
   React.useEffect(() => {
-    if (confirmPasscode.length === 4) {
-      if (passcode === confirmPasscode) {
-        // Passwords match - navigate to next screen
-        setTimeout(() => {
-          Alert.alert(
-            'Passcode Created',
-            'Your passcode has been created successfully!',
-            [
-              {
-                text: 'Continue',
-                onPress: () => navigation.navigate('FaceID', {
-                  userData: route.params?.userData,
-                  passcode: passcode
-                })
-              }
-            ]
-          );
-        }, 500);
-      } else {
-        // Passwords don't match - reset and show error
-        setTimeout(() => {
-          Alert.alert(
-            'Passcode Mismatch',
-            'The passcodes do not match. Please try again.',
-            [
-              {
-                text: 'Try Again',
-                onPress: () => {
-                  setPasscode('');
-                  setConfirmPasscode('');
-                  setIsConfirming(false);
-                }
-              }
-            ]
-          );
-        }, 500);
+    const submitIfReady = async () => {
+      if (confirmPasscode.length === 4) {
+        if (passcode !== confirmPasscode) {
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'The passcodes do not match. Please try again.',
+            position: 'top',
+            visibilityTime: 3000,
+          });
+          setPasscode('');
+          setConfirmPasscode('');
+          setIsConfirming(false);
+          return;
+        }
+
+        // Call create passcode API
+        try {
+          if (!token) {
+            Toast.show({
+              type: 'error',
+              text1: 'Error',
+              text2: 'Authentication token not found. Please try again.',
+              position: 'top',
+              visibilityTime: 4000,
+            });
+            setPasscode('');
+            setConfirmPasscode('');
+            setIsConfirming(false);
+            return;
+          }
+          setIsSubmitting(true);
+          const result = await authService.createPasscode(passcode, confirmPasscode, token);
+          if (result.success) {
+            Toast.show({
+              type: 'success',
+              text1: 'Success',
+              text2: 'Your passcode has been created successfully!',
+              position: 'top',
+              visibilityTime: 3000,
+            });
+            navigation.navigate('FaceID', {
+              userData: route.params?.userData,
+              passcode: passcode,
+            });
+          } else {
+            Toast.show({
+              type: 'error',
+              text1: 'Error',
+              text2: result.error || 'Failed to create passcode. Please try again.',
+              position: 'top',
+              visibilityTime: 4000,
+            });
+            setPasscode('');
+            setConfirmPasscode('');
+            setIsConfirming(false);
+          }
+        } catch (err) {
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'An unexpected error occurred. Please try again.',
+            position: 'top',
+            visibilityTime: 4000,
+          });
+          setPasscode('');
+          setConfirmPasscode('');
+          setIsConfirming(false);
+        } finally {
+          setIsSubmitting(false);
+        }
       }
-    }
-  }, [confirmPasscode, passcode, navigation, route.params]);
+    };
+
+    submitIfReady();
+  }, [confirmPasscode, passcode, navigation, route.params, setIsConfirming]);
 
   const renderPasscodeDots = () => {
     const currentPasscode = isConfirming ? confirmPasscode : passcode;
@@ -136,8 +191,9 @@ const CreatePassword = ({ navigation, route }) => {
         {row.map((item, colIndex) => (
           <TouchableOpacity
             key={`${rowIndex}-${colIndex}`}
-            style={[styles.keypadButton,{backgroundColor:isDarkMode ? '#2C2E41' : "lightgray"}]} 
+            style={[styles.keypadButton,{backgroundColor:isDarkMode ? '#2C2E41' : "lightgray", opacity: isSubmitting ? 0.7 : 1}]}
             onPress={() => {
+              if (isSubmitting) return;
               if (item === 'backspace') {
                 handleBackspace();
               } else if (item !== '') {

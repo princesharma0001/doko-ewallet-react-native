@@ -11,16 +11,20 @@ import {
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import Toast from 'react-native-toast-message';
 import CountryPicker from '../components/CountryPicker';
 import { useTheme } from '../context/ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { authService } from '../services/apiService';
 
 const { width, height } = Dimensions.get('window');
 
 const Signup = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { theme,isDarkMode } = useTheme();
   console.log("adgsadgasd",isDarkMode);
   
@@ -33,24 +37,104 @@ const Signup = ({ navigation }) => {
   });
   const [showCountryPicker, setShowCountryPicker] = useState(false);
 
-  const handleCreateAccount = () => {
+  const handleCreateAccount = async () => {
     if (!phoneNumber.trim()) {
-      Alert.alert('Error', 'Please enter your phone number');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please enter your phone number',
+        position: 'top',
+        visibilityTime: 3000,
+      });
       return;
     }
 
     if (phoneNumber.length < 10) {
-      Alert.alert('Error', 'Please enter a valid phone number');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Please enter a valid phone number',
+        position: 'top',
+        visibilityTime: 3000,
+      });
       return;
     }
 
-    // Navigate to PhoneVerify with phone number
-    const fullPhoneNumber = selectedCountry.code + phoneNumber;
-    console.log('Creating account with:', fullPhoneNumber);
-    navigation.navigate('PhoneVerify', {
-      userPhoneNumber: fullPhoneNumber,
-      selectedCountry: selectedCountry
-    });
+    setIsLoading(true);
+
+    try {
+      // Prepare signup data with only country code and phone number
+      const signupData = {
+        countryCode: selectedCountry.code,
+        phone: phoneNumber,
+        // email: `user${Date.now()}@example.com`, // Generate temporary email
+        // username: `user${Date.now()}`, // Generate temporary username
+        // firstName: 'User', // Default first name
+        // lastName: 'Name', // Default last name
+        // passcode: '123456', // Default passcode
+        // deviceToken: 'device_token_here' // Default device token
+      };
+
+      console.log('Calling signup API with:', signupData);
+
+      // Call signup API
+      const signupResult = await authService.signup(signupData);
+
+      if (signupResult.success) {
+        console.log('Signup successful:', signupResult.data);
+        
+        // Call resend OTP API with the email from signup response
+        const resendOTPResult = await authService.resendOTP(signupResult.data.phone);
+        
+        if (resendOTPResult.success) {
+          console.log('OTP sent successfully');
+          Toast.show({
+            type: 'success',
+            text1: 'Success',
+            text2: 'Account created successfully! OTP has been sent to your phone.',
+            position: 'top',
+            visibilityTime: 4000,
+          });
+          
+          // Navigate to PhoneVerify with the created user data
+          navigation.navigate('PhoneVerify', {
+            userPhoneNumber:phoneNumber,
+            selectedCountry: selectedCountry,
+            userData: signupResult.data,
+            phone: signupResult.data.phone
+          });
+        } else {
+          console.error('Resend OTP failed:', resendOTPResult.error);
+          Toast.show({
+            type: 'warning',
+            text1: 'Warning',
+            text2: 'Account created but failed to send OTP. Please try again.',
+            position: 'top',
+            visibilityTime: 4000,
+          });
+        }
+      } else {
+        console.error('Signup failed:', signupResult.error);
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: signupResult.error || 'Failed to create account. Please try again.',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+      }
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'An unexpected error occurred. Please try again.',
+        position: 'top',
+        visibilityTime: 4000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSignIn = () => {
@@ -162,30 +246,53 @@ const Signup = ({ navigation }) => {
           <View style={styles.bottomSection}>
             {/* Create Account Button */}
             <TouchableOpacity
-              style={styles.createAccountButton}
+              style={[
+                styles.createAccountButton,
+                isLoading && styles.disabledButton
+              ]}
               onPress={handleCreateAccount}
               activeOpacity={0.8}
+              disabled={isLoading}
             >
               <LinearGradient
                 // colors={['#007AFF', '#6B22E7']}
-                colors={["#1AA5FF", "#6B22E7", "#6B22E7", "#6B22E7"]}
+                colors={isLoading ? ["#9E9E9E", "#9E9E9E", "#9E9E9E", "#9E9E9E"] : ["#1AA5FF", "#6B22E7", "#6B22E7", "#6B22E7"]}
                 start={{ x: 0, y: 0 }}   // top-left
                 end={{ x: 1.5, y: 0.5 }}  // towards right-middle
 
                 style={styles.gradientButton}
               >
-                <Text
-                  style={[
-                    styles.createAccountText,
-                    {
-                      fontFamily: theme.typography.fontFamily,
-                      fontSize: theme.typography.sizes.lg,
-                      fontWeight: theme.typography.weights.medium,
-                    },
-                  ]}
-                >
-                  Create Account
-                </Text>
+                {isLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <Text
+                      style={[
+                        styles.createAccountText,
+                        {
+                          fontFamily: theme.typography.fontFamily,
+                          fontSize: theme.typography.sizes.lg,
+                          fontWeight: theme.typography.weights.medium,
+                          marginLeft: 8,
+                        },
+                      ]}
+                    >
+                      Creating Account...
+                    </Text>
+                  </View>
+                ) : (
+                  <Text
+                    style={[
+                      styles.createAccountText,
+                      {
+                        fontFamily: theme.typography.fontFamily,
+                        fontSize: theme.typography.sizes.lg,
+                        fontWeight: theme.typography.weights.medium,
+                      },
+                    ]}
+                  >
+                    Create Account
+                  </Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
 
@@ -338,6 +445,14 @@ const styles = StyleSheet.create({
   },
   signInLink: {
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 });
 

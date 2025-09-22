@@ -14,6 +14,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import Toast from 'react-native-toast-message';
+import { authService } from '../services/apiService';
+import { useAppSelector } from '../store';
 
 const { width, height } = Dimensions.get('window');
 
@@ -21,16 +24,52 @@ const Login = ({ navigation }) => {
     const { theme } = useTheme();
     const [phoneNumber, setPhoneNumber] = useState('');
     const [error, setError] = useState('');
+    const [isChecking, setIsChecking] = useState(false);
+    const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
 
 
-    const handleCreateAccount = () => {
-        if (!phoneNumber.trim()) {
+
+    const handleCreateAccount = async () => {
+        const identity = phoneNumber.trim();
+        if (!identity) {
             setError('Please enter your phone number, email, or username');
             return;
         }
         setError('');
-        navigation.navigate('EnterPassword', { userInput: phoneNumber });
-        // navigation.navigate('HomeScreen', { userInput: phoneNumber });
+        setIsChecking(true);
+        try {
+            const result = await authService.checkAccount(identity);
+            console.log("Sdgsadgsad", result);
+
+            if (result.success) {
+                console.log("adfgadsgsad",result);
+                
+                navigation.replace('EnterPassword', {
+                    identity: identity,
+                    userData: result?.data
+                });
+                // navigation.navigate('EnterPassword', { identity });
+
+            } else {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: result.error || 'User not found.',
+                    position: 'top',
+                    visibilityTime: 4000,
+                });
+            }
+        } catch (e) {
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'An unexpected error occurred. Please try again.',
+                position: 'top',
+                visibilityTime: 4000,
+            });
+        } finally {
+            setIsChecking(false);
+        }
     };
 
     const handleSignIn = () => {
@@ -55,14 +94,7 @@ const Login = ({ navigation }) => {
                         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                             <AntDesign name="arrowleft" size={24} color={theme.colors.text} />
                         </TouchableOpacity>
-                        {/* <TouchableOpacity
-                            style={styles.backButton}
-                            onPress={() => navigation.goBack()}
-                            activeOpacity={0.7}
-                        >
-                                  <AntDesign name="arrowleft" size={24} color={theme.colors.text} />
-                          
-                        </TouchableOpacity> */}
+
                     </View>
 
                     {/* Title */}
@@ -131,7 +163,7 @@ const Login = ({ navigation }) => {
                                         },
                                     ]}
                                 >
-                                    Next
+                                    {isChecking ? 'Checking...' : 'Next'}
                                 </Text>
                             </LinearGradient>
                         </TouchableOpacity>

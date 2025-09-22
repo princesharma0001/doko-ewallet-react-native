@@ -7,12 +7,17 @@ import {
   Dimensions,
   Animated,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppDispatch, useAppSelector } from '../store';
+import { getProfile } from '../store/slices/userSlice';
 
 const { width, height } = Dimensions.get('window');
 
 const Splash = ({ navigation }) => {
   const fadeAnim = new Animated.Value(0);
   const scaleAnim = new Animated.Value(0.8);
+  const dispatch = useAppDispatch();
+  const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
 
   useEffect(() => {
     // Start the splash screen animation
@@ -30,13 +35,57 @@ const Splash = ({ navigation }) => {
       }),
     ]).start();
 
-    // Auto navigate to Signup after 3 seconds
-    const timer = setTimeout(() => {
-      navigation.replace('Login');
-    }, 3000);
+    // Check for stored token and navigate accordingly
+    const checkAuthAndNavigate = async () => {
+      try {
+        const token = await AsyncStorage.getItem('dokoToken');
+        
+        // Wait for splash animation to complete (2 seconds)
+        setTimeout(async () => {
+          if (token) {
+            // Token exists - fetch profile using Redux
+            dispatch(getProfile());
+          } else {
+            // No token - navigate to Login
+            navigation.replace('Login');
+          }
+        }, 2000);
+      } catch (error) {
+        console.error('Error checking token:', error);
+        // On error, navigate to Login
+        setTimeout(() => {
+          navigation.replace('Login');
+        }, 2000);
+      }
+    };
 
-    return () => clearTimeout(timer);
-  }, [fadeAnim, scaleAnim, navigation]);
+    checkAuthAndNavigate();
+  }, [fadeAnim, scaleAnim, navigation, dispatch]);
+
+  // Handle profile fetch result and navigate accordingly
+  useEffect(() => {
+    if (currentUser && !isProfileLoading) {
+      // Profile fetched successfully
+      if (currentUser.isProfileCompleted === true) {
+        // Profile completed - navigate to EnterPassword with user data
+        navigation.replace('EnterPassword', { 
+          identity: currentUser.email || currentUser.phone,
+          userData: currentUser
+        });
+      } else {
+        // Profile not completed - navigate to EnterNameSign
+        navigation.replace('EnterNameSign', {
+          userData: currentUser,
+          phoneNumber: currentUser.phone,
+          selectedCountry: currentUser.countryCode
+        });
+      }
+    } else if (profileError && !isProfileLoading) {
+      // Profile fetch failed - navigate to Login
+      console.error('Profile fetch failed:', profileError);
+      navigation.replace('Login');
+    }
+  }, [currentUser, isProfileLoading, profileError, navigation]);
 
   return (
     <View style={[styles.container, { backgroundColor: "#292935" }]}>

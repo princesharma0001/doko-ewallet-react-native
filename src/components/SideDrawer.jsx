@@ -10,18 +10,24 @@ import {
   ScrollView,
   Platform,
   ImageBackground,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { BlurView } from '@react-native-community/blur';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppDispatch } from '../store';
+import { logout } from '../store/slices/userSlice';
+import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 
 const SideDrawer = ({ isOpen, onClose, navigation }) => {
   const { theme } = useTheme();
   const [activeItem, setActiveItem] = useState('Dashboard');
+  const dispatch = useAppDispatch();
 
   const menuItems = [
 
@@ -43,15 +49,58 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
     setActiveItem(itemId);
     navigation.navigate(route);
     onClose();
+  };
 
-    // Navigate to specific screens based on menu item
-    // if (itemId === 'Setting' && navigation) {
-    //   navigation.navigate('Settings');
-    // }
-    // if (itemId === 'Wallet' && navigation) {
-    //   navigation.navigate('Wallet');
-    // }
-    // Add more navigation logic for other menu items as needed
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Clear token from AsyncStorage
+              await AsyncStorage.removeItem('dokoToken');
+              await AsyncStorage.removeItem('dokoDeviceToken');
+              
+              // Clear Redux state
+              dispatch(logout());
+              
+              // Show success message
+              Toast.show({
+                type: 'success',
+                text1: 'Logged out successfully',
+                text2: 'You have been logged out',
+                position: 'top',
+                visibilityTime: 2000,
+              });
+              
+              // Close drawer and navigate to login
+              onClose();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            } catch (error) {
+              console.error('Logout error:', error);
+              Toast.show({
+                type: 'error',
+                text1: 'Logout failed',
+                text2: 'Please try again',
+                position: 'top',
+                visibilityTime: 2000,
+              });
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -158,6 +207,17 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
                 );
               })}
             </View>
+
+            {/* Logout Button */}
+            <View style={[styles.logoutContainer, { backgroundColor: theme.colors.surface }]}>
+              <TouchableOpacity
+                style={[styles.logoutButton, { borderColor: theme.colors.border }]}
+                onPress={handleLogout}
+              >
+                <Ionicons name="log-out-outline" size={20} color="#FF4444" />
+                <Text style={[styles.logoutText, { color: '#FF4444' }]}>Logout</Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -240,6 +300,28 @@ const styles = StyleSheet.create({
   },
   menuLabel: {
     fontSize: 16,
+    marginLeft: 10,
+  },
+  logoutContainer: {
+    marginHorizontal: 15,
+    marginTop: 20,
+    borderRadius: 13,
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    backgroundColor: 'transparent',
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: '600',
     marginLeft: 10,
   },
 });

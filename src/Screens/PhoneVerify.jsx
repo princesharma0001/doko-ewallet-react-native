@@ -10,17 +10,21 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import Toast from 'react-native-toast-message';
 import { useTheme } from '../context/ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import { authService } from '../services/apiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
 const PhoneVerify = ({ navigation, route }) => {
   const { theme } = useTheme();
-  const { phoneNumber, selectedCountry } = route.params || {};
+  const { userPhoneNumber, selectedCountry, userData, phone } = route.params || {};
   const [otp, setOtp] = useState(['', '', '', '']);
   const [activeIndex, setActiveIndex] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
@@ -56,10 +60,8 @@ const PhoneVerify = ({ navigation, route }) => {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Check if all fields are filled
-    if (newOtp.every(digit => digit !== '')) {
-      handleSubmit(newOtp.join(''));
-    }
+    // Auto-focus next input when current is filled
+    // No auto-submit - user must click Submit button
   };
 
   const handleKeyPress = (key, index) => {
@@ -74,52 +76,143 @@ const PhoneVerify = ({ navigation, route }) => {
     setActiveIndex(index);
   };
 
-  const handleSubmit = (otpCode) => {
+  const handleSubmit = async (otpCode) => {
     // Check if OTP is complete
     const completeOtp = otpCode || otp.join('');
 
-    if (!completeOtp || completeOtp.length !== 4 || otp.some(digit => digit === '')) {
-      setErrorMessage('Invalid code entered. Please check the code and try again.');
+    // Only show error if OTP is empty or incomplete
+    if (!completeOtp || completeOtp.length !== 4) {
+      setErrorMessage('Please enter OTP');
       return;
     }
 
     setIsSubmitting(true);
     setErrorMessage('');
 
-    // Here you would typically verify the OTP with your backend
-    console.log('Verifying OTP:', completeOtp);
-    console.log('OTP Array:', otp);
-    console.log('Complete OTP length:', completeOtp.length);
-    console.log('OTP includes empty:', otp.some(digit => digit === ''));
+    try {
+      console.log('Verifying OTP:', completeOtp);
+      console.log('User data:', userData);
+      console.log('Email:', phone);
 
-    // Simulate verification with a delay
-    setTimeout(() => {
-      setIsSubmitting(false);
+      // Use email as identity for OTP verification
+      const identity = phone || userData?.phone;
 
-      // Simulate verification - change this logic as needed
-      // For testing: accept any 4-digit code, or specifically '1234'
-      if (completeOtp === '1234' || /^\d{4}$/.test(completeOtp)) {
-        Alert.alert('Success', 'Phone number verified successfully!', [
-          { text: 'OK', onPress: () => navigation.navigate('EnterNameSign') }
-        ]);
+      if (!identity) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'User identity not found. Please try signing up again.',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Call verifyOTP API
+      const verifyResult = await authService.verifyOTP(identity, completeOtp);
+
+      if (verifyResult.success) {
+        console.log('OTP verification successful:', verifyResult.data);
+
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Phone number verified successfully!',
+          position: 'top',
+          visibilityTime: 3000,
+        });
+        await AsyncStorage.setItem(
+          "dokoToken",
+          verifyResult.data?.token
+        );
+
+        // Navigate to next screen
+        navigation.navigate('EnterNameSign', {
+          userData: userData,
+          phoneNumber: userPhoneNumber,
+          selectedCountry: selectedCountry
+        });
       } else {
-        setErrorMessage('Invalid code entered. Please check the code and try again.');
-        // Clear OTP fields
+        console.error('OTP verification failed:', verifyResult.error);
+
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: verifyResult.error || 'Invalid OTP. Please try again.',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+
+        // Clear OTP fields and refocus first input
         setOtp(['', '', '', '']);
         setActiveIndex(0);
         inputRefs.current[0]?.focus();
       }
-    }, 1000);
+    } catch (error) {
+      console.error('Unexpected error during OTP verification:', error);
+
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'An unexpected error occurred. Please try again.',
+        position: 'top',
+        visibilityTime: 4000,
+      });
+
+      // Clear OTP fields and refocus first input
+      setOtp(['', '', '', '']);
+      setActiveIndex(0);
+      inputRefs.current[0]?.focus();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleResendCode = () => {
-    Alert.alert(
-      'Resend Code',
-      'A new verification code has been sent to your phone number.',
-      [{ text: 'OK' }]
-    );
-    if (onResendCode) {
-      onResendCode();
+  const handleResendCode = async () => {
+    try {
+      const identity = phone || userData?.phone;
+
+      if (!identity) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'User identity not found. Please try signing up again.',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+        return;
+      }
+
+      // Call resendOTP API
+      const resendResult = await authService.resendOTP(identity);
+
+      if (resendResult.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'OTP has been sent Successfully.',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: resendResult.error || 'Failed to resend code. Please try again.',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+      }
+    } catch (error) {
+      console.error('Error resending OTP:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'An unexpected error occurred. Please try again.',
+        position: 'top',
+        visibilityTime: 4000,
+      });
     }
   };
 
@@ -180,7 +273,7 @@ const PhoneVerify = ({ navigation, route }) => {
               style={[
                 styles.title,
                 {
-                  color:theme.colors.text,
+                  color: theme.colors.text,
                   fontFamily: theme.typography.fontFamily,
                   fontSize: theme.typography.sizes.xxl,
                   fontWeight: theme.typography.weights.bold,
@@ -202,7 +295,7 @@ const PhoneVerify = ({ navigation, route }) => {
                 },
               ]}
             >
-              Please enter 4-digit verification code sent to +91XXXXXXXX22
+              Please enter 4-digit verification code sent to {userPhoneNumber || '+91XXXXXXXX22'}
             </Text>
 
             {/* OTP Input Fields */}
@@ -238,7 +331,7 @@ const PhoneVerify = ({ navigation, route }) => {
           <View style={styles.bottomSection}>
             <TouchableOpacity
               style={styles.resendContainer}
-              // onPress={handleResendCode}
+              onPress={handleResendCode}
               activeOpacity={0.7}
             >
               <Text
@@ -267,19 +360,37 @@ const PhoneVerify = ({ navigation, route }) => {
                 end={{ x: 1.5, y: 0.5 }}
                 style={styles.gradientButton}
               >
-                <Text
-                  style={[
-                    styles.createAccountText,
-                    {
-                      fontFamily: theme.typography.fontFamily,
-                      fontSize: theme.typography.sizes.lg,
-                      fontWeight: theme.typography.weights.medium,
-                      opacity: isSubmitting ? 0.7 : 1,
-                    },
-                  ]}
-                >
-                  {isSubmitting ? 'Verifying...' : 'Submit'}
-                </Text>
+                {isSubmitting ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <Text
+                      style={[
+                        styles.createAccountText,
+                        {
+                          fontFamily: theme.typography.fontFamily,
+                          fontSize: theme.typography.sizes.lg,
+                          fontWeight: theme.typography.weights.medium,
+                          marginLeft: 8,
+                        },
+                      ]}
+                    >
+                      Verifying...
+                    </Text>
+                  </View>
+                ) : (
+                  <Text
+                    style={[
+                      styles.createAccountText,
+                      {
+                        fontFamily: theme.typography.fontFamily,
+                        fontSize: theme.typography.sizes.lg,
+                        fontWeight: theme.typography.weights.medium,
+                      },
+                    ]}
+                  >
+                    Submit
+                  </Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -372,7 +483,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   submitButton: {
-    marginBottom: 16,
+    // marginBottom: 16,
     marginTop: 20,
   },
   gradientButton: {
@@ -407,6 +518,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'monospace',
     marginBottom: 4,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

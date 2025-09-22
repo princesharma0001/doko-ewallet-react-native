@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,16 +11,21 @@ import {
   Platform,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import { authService } from '../services/apiService';
 
 const { width, height } = Dimensions.get('window');
 
-const EnterNameSign = ({ navigation }) => {
+const EnterNameSign = ({ navigation, route }) => {
   const { theme } = useTheme();
+  const { userData, phoneNumber, selectedCountry } = route.params || {};
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [day, setDay] = useState('');
@@ -32,6 +37,29 @@ const EnterNameSign = ({ navigation }) => {
   const [buildingName, setBuildingName] = useState('');
   const [location, setLocation] = useState('');
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [token, setToken] = useState(null);
+
+  useEffect(() => {
+    // Get token from AsyncStorage
+    const getToken = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem('dokoToken');
+        if (storedToken) {
+          setToken(storedToken);
+        }
+      } catch (error) {
+        console.error('Error getting token:', error);
+      }
+    };
+
+    getToken();
+
+    // Pre-fill email if available from userData
+    if (userData?.email) {
+      setEmail(userData.email);
+    }
+  }, [userData]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -105,30 +133,146 @@ const EnterNameSign = ({ navigation }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleContinue = () => {
-    if (validateForm()) {
-      const userData = {
+  const handleContinue = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    if (!token) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Authentication token not found. Please try again.',
+        position: 'top',
+        visibilityTime: 4000,
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Prepare profile data according to API structure
+      const profileData = {
+        // username: `${firstName.trim().toLowerCase()}.${lastName.trim().toLowerCase()}`,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        fullName: `${firstName.trim()} ${lastName.trim()}`,
-        dateOfBirth: {
-          day: day.trim(),
-          month: month.trim(),
-          year: year.trim(),
-          formatted: `${day.trim()}/${month.trim()}/${year.trim()}`
-        },
         email: email.trim(),
+        phone: phoneNumber || userData?.phone,
+        countryCode: selectedCountry?.code || userData?.countryCode,
+        // profilePic: '', // Empty for now
+        dateOfBirth: `${year.trim()}-${month.trim().padStart(2, '0')}-${day.trim().padStart(2, '0')}`,
+        // passcode: '123456', // Default passcode
         address: {
-          city: city.trim(),
           street: street.trim(),
-          buildingName: buildingName.trim(),
-          location: location.trim(),
-          fullAddress: `${street.trim()}, ${buildingName.trim()}, ${city.trim()}, ${location.trim()}`
-        }
+          city: city.trim(),
+          state: '', // Empty for now
+          country: selectedCountry?.name || 'Unknown',
+          zipCode: '', // Empty for now
+          formattedAddress: `${street.trim()}, ${buildingName.trim()}, ${city.trim()}, ${location.trim()}`
+        },
+        // location: {
+        //   type: 'Point',
+        //   coordinates: [0, 0] // Default coordinates
+        // },
+        // deviceToken: 'device_token_here' // Default device token
       };
 
-      console.log('User data:', userData);
-      navigation.navigate('EmailVerify', { userData });
+      console.log('Calling update profile API with data:', profileData);
+
+      // Call updateProfile API
+      const updateResult = await authService.updateProfile(profileData, token);
+
+      if (updateResult.success) {
+        console.log('Profile updated successfully:', updateResult.data);
+
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Profile updated successfully!',
+          position: 'top',
+          visibilityTime: 3000,
+        });
+
+
+        // Navigate to next screen with updated data
+        const updatedUserData = {
+          ...userData,
+          ...updateResult.data,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
+          address: {
+            city: city.trim(),
+            street: street.trim(),
+            buildingName: buildingName.trim(),
+            location: location.trim(),
+            fullAddress: `${street.trim()}, ${buildingName.trim()}, ${city.trim()}, ${location.trim()}`
+          }
+        };
+
+        // Attempt to resend OTP before navigating
+        try {
+          const identityForResend = updatedUserData?.email || updatedUserData?.phone || email || phoneNumber || userData?.phone;
+          if (identityForResend) {
+            const resendResult = await authService.resendOTP(identityForResend);
+            if (resendResult.success) {
+              Toast.show({
+                type: 'success',
+                text1: 'Success',
+                text2: 'OTP has been sent Successfully.',
+                position: 'top',
+                visibilityTime: 3000,
+              });
+            } else {
+              Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: resendResult.error || 'Failed to resend OTP. You can try again.',
+                position: 'top',
+                visibilityTime: 4000,
+              });
+            }
+          }
+        } catch (resendErr) {
+          console.error('Error resending OTP after profile update:', resendErr);
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Could not resend OTP. Please try again.',
+            position: 'top',
+            visibilityTime: 4000,
+          });
+        }
+
+        navigation.navigate('EmailVerify', {
+          userData: updatedUserData,
+          phoneNumber,
+          selectedCountry
+        });
+      } else {
+        console.error('Profile update failed:', updateResult.error);
+
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: updateResult.error || 'Failed to update profile. Please try again.',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+      }
+    } catch (error) {
+      console.error('Unexpected error during profile update:', error);
+
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'An unexpected error occurred. Please try again.',
+        position: 'top',
+        visibilityTime: 4000,
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -284,7 +428,7 @@ const EnterNameSign = ({ navigation }) => {
                 </View>
 
                 {/* Date of Birth Section */}
-                <Text style={[styles.sectionTitle,{color:theme.colors.text}]}>Date of Birth</Text>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Date of Birth</Text>
 
                 {/* Date of Birth Inputs */}
                 <View style={styles.dateOfBirthContainer}>
@@ -380,7 +524,7 @@ const EnterNameSign = ({ navigation }) => {
                 </View>
 
                 {/* Address Section */}
-                <Text style={[styles.sectionTitle,{color:theme.colors.text}]}>Address Information</Text>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Address Information</Text>
 
                 {/* City Input */}
                 <View style={styles.inputWrapper}>
@@ -482,28 +626,51 @@ const EnterNameSign = ({ navigation }) => {
           <View style={styles.bottomSection}>
             {/* Continue Button */}
             <TouchableOpacity
-              style={styles.continueButton}
+              style={[
+                styles.continueButton,
+                isLoading && styles.disabledButton
+              ]}
               onPress={handleContinue}
               activeOpacity={0.8}
+              disabled={isLoading}
             >
               <LinearGradient
-                colors={["#1AA5FF", "#6B22E7", "#6B22E7", "#6B22E7"]}
+                colors={isLoading ? ["#9E9E9E", "#9E9E9E", "#9E9E9E", "#9E9E9E"] : ["#1AA5FF", "#6B22E7", "#6B22E7", "#6B22E7"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1.5, y: 0.5 }}
                 style={styles.gradientButton}
               >
-                <Text
-                  style={[
-                    styles.continueText,
-                    {
-                      fontFamily: theme.typography.fontFamily,
-                      fontSize: theme.typography.sizes.lg,
-                      fontWeight: theme.typography.weights.medium,
-                    },
-                  ]}
-                >
-                  Continue
-                </Text>
+                {isLoading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <Text
+                      style={[
+                        styles.continueText,
+                        {
+                          fontFamily: theme.typography.fontFamily,
+                          fontSize: theme.typography.sizes.lg,
+                          fontWeight: theme.typography.weights.medium,
+                          marginLeft: 8,
+                        },
+                      ]}
+                    >
+                      Updating Profile...
+                    </Text>
+                  </View>
+                ) : (
+                  <Text
+                    style={[
+                      styles.continueText,
+                      {
+                        fontFamily: theme.typography.fontFamily,
+                        fontSize: theme.typography.sizes.lg,
+                        fontWeight: theme.typography.weights.medium,
+                      },
+                    ]}
+                  >
+                    Continue
+                  </Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
 
@@ -645,6 +812,14 @@ const styles = StyleSheet.create({
   },
   signInLink: {
     textDecorationLine: 'underline',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 });
 

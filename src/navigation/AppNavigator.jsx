@@ -20,6 +20,7 @@ import TakeSelfie from '../Screens/TakeSelfie';
 import CameraScreen from '../Screens/CameraScreen';
 import CreatePassword from '../Screens/CreatePassword';
 import FaceID from '../Screens/FaceID';
+import ForgotVerify from '../Screens/ForgotVerify';
 import HomeScreen from '../Screens/HomeScreen';
 import MainHomeScreen from '../Screens/MainHomeScreen';
 import Notification from '../Screens/Notification';
@@ -44,12 +45,12 @@ import NewChat from "../components/NewChat"
 import BankTransfer from "../Screens/Deposit/BankTransfer"
 import SendInternational from "../Screens/SendInternational"
 import KYCSection from "../Screens/KYCSection"
-import SelectWay from "../Screens/SelectWay"           
-import PickOriginal from "../Screens/PickOriginal"           
-import WesternUnion from "../Screens/WesternUnion"           
-import WesternUnionPreview from "../Screens/WesternUnionPreview"           
-import WestrenThanku from "../Screens/WestrenThanku"           
-import BankTransferSendInternational from "../Screens/BankTransferSendInternational"           
+import SelectWay from "../Screens/SelectWay"
+import PickOriginal from "../Screens/PickOriginal"
+import WesternUnion from "../Screens/WesternUnion"
+import WesternUnionPreview from "../Screens/WesternUnionPreview"
+import WestrenThanku from "../Screens/WestrenThanku"
+import BankTransferSendInternational from "../Screens/BankTransferSendInternational"
 import ReportUserModalTest from "../components/ReportUserModalTest"
 import CommunitySection from '../components/CommunitySection';
 // Create stack navigator
@@ -58,15 +59,15 @@ const Stack = createStackNavigator();
 // Main App component for authenticated users
 const MainApp = ({ navigation }) => {
   const { theme } = useTheme();
-  
+
   const handleLogout = () => {
     Alert.alert(
       'Logout',
       'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Logout', 
+        {
+          text: 'Logout',
           onPress: () => {
             navigation.reset({
               index: 0,
@@ -90,84 +91,84 @@ const MainApp = ({ navigation }) => {
         }}>
           DOKO
         </Text>
-        
+
         <View style={{ gap: theme.spacing.sm, marginBottom: theme.spacing.lg }}>
-          <Button 
-            title="Show Signup Screen" 
-            variant="primary" 
-            onPress={() => navigation.navigate('Signup')} 
+          <Button
+            title="Show Signup Screen"
+            variant="primary"
+            onPress={() => navigation.navigate('Signup')}
           />
-          <Button 
-            title="Show Phone Verify" 
-            variant="outline" 
-            onPress={() => navigation.navigate('PhoneVerify', { 
-              userPhoneNumber: '+91-9650448097' 
-            })} 
+          <Button
+            title="Show Phone Verify"
+            variant="outline"
+            onPress={() => navigation.navigate('PhoneVerify', {
+              userPhoneNumber: '+91-9650448097'
+            })}
           />
-          <Button 
-            title="Take Selfie" 
-            variant="outline" 
-            onPress={() => navigation.navigate('TakeSelfie')} 
+          <Button
+            title="Take Selfie"
+            variant="outline"
+            onPress={() => navigation.navigate('TakeSelfie')}
           />
-          <Button 
-            title="Email Verify" 
-            variant="outline" 
-            onPress={() => navigation.navigate('EmailVerify')} 
+          <Button
+            title="Email Verify"
+            variant="outline"
+            onPress={() => navigation.navigate('EmailVerify')}
           />
-          <Button 
-            title="Camera Screen" 
-            variant="outline" 
-            onPress={() => navigation.navigate('CameraScreen', { userData: { test: true } })} 
+          <Button
+            title="Camera Screen"
+            variant="outline"
+            onPress={() => navigation.navigate('CameraScreen', { userData: { test: true } })}
           />
-          <Button 
-            title="Create Password" 
-            variant="outline" 
-            onPress={() => navigation.navigate('CreatePassword', { userData: { test: true } })} 
+          <Button
+            title="Create Password"
+            variant="outline"
+            onPress={() => navigation.navigate('CreatePassword', { userData: { test: true } })}
           />
-          <Button 
-            title="Face ID Setup" 
-            variant="outline" 
-            onPress={() => navigation.navigate('FaceID', { userData: { test: true }, passcode: '1234' })} 
+          <Button
+            title="Face ID Setup"
+            variant="outline"
+            onPress={() => navigation.navigate('FaceID', { userData: { test: true }, passcode: '1234' })}
           />
-          <Button 
-            title="Enter Password" 
-            variant="outline" 
-            onPress={() => navigation.navigate('EnterPassword', { userData: { test: true } })} 
+          <Button
+            title="Enter Password"
+            variant="outline"
+            onPress={() => navigation.navigate('EnterPassword', { userData: { test: true } })}
           />
-          <Button 
-            title="Home Screen" 
+          <Button
+            title="Home Screen"
             variant="gradient"
             gradientColors={['#667eea', '#764ba2']}
-            onPress={() => navigation.navigate('HomeScreen')} 
+            onPress={() => navigation.navigate('HomeScreen')}
           />
-          <Button 
-            title="Button Examples" 
+          <Button
+            title="Button Examples"
             variant="gradient"
             gradientColors={['#667eea', '#764ba2']}
-            onPress={() => navigation.navigate('ButtonExamples')} 
+            onPress={() => navigation.navigate('ButtonExamples')}
           />
-          <Button 
-            title="Current History" 
+          <Button
+            title="Current History"
             variant="gradient"
             gradientColors={['#667eea', '#764ba2']}
-            onPress={() => navigation.navigate('CurrentHistory')} 
+            onPress={() => navigation.navigate('CurrentHistory')}
           />
-          <Button 
-            title="Bank Transfer" 
+          <Button
+            title="Bank Transfer"
             variant="gradient"
             gradientColors={['#8B5CF6', '#3B82F6']}
-            onPress={() => navigation.navigate('BankTransfer')} 
+            onPress={() => navigation.navigate('BankTransfer')}
           />
-          <Button 
-            title="Report User Modal Test" 
+          <Button
+            title="Report User Modal Test"
             variant="gradient"
             gradientColors={['#FF6B6B', '#4ECDC4']}
-            onPress={() => navigation.navigate('ReportUserModalTest')} 
+            onPress={() => navigation.navigate('ReportUserModalTest')}
           />
-          <Button 
-            title="Logout" 
-            variant="danger" 
-            onPress={handleLogout} 
+          <Button
+            title="Logout"
+            variant="danger"
+            onPress={handleLogout}
           />
         </View>
       </View>
@@ -179,7 +180,7 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="HomeScreen"
+        initialRouteName="Splash"
         screenOptions={{
           headerShown: false, // Hide default headers
           gestureEnabled: true,
@@ -199,162 +200,166 @@ const AppNavigator = () => {
           },
         }}
       >
-        <Stack.Screen 
-          name="Splash" 
+        <Stack.Screen
+          name="Splash"
           component={Splash}
           options={{
             gestureEnabled: false, // Disable swipe back on splash
           }}
         />
-        <Stack.Screen 
-          name="Signup" 
+        <Stack.Screen
+          name="Signup"
           component={Signup}
         />
-         <Stack.Screen 
-          name="Login" 
+        <Stack.Screen
+          name="Login"
           component={Login}
         />
-        <Stack.Screen 
-          name="EnterPassword" 
+        <Stack.Screen
+          name="EnterPassword"
           component={EnterPassword}
           options={{
-            gestureEnabled: false, // Disable swipe back on passcode
+            gestureEnabled: true, // Disable swipe back on passcode
           }}
         />
-        <Stack.Screen 
-          name="CardPassword" 
+        <Stack.Screen
+          name="CardPassword"
           component={CardPassword}
           options={{
             gestureEnabled: false, // Disable swipe back on passcode
           }}
         />
-        <Stack.Screen 
-          name="AddMoney" 
+        <Stack.Screen
+          name="AddMoney"
           component={AddMoney}
           options={{
             gestureEnabled: false, // Disable swipe back on passcode
           }}
         />
-        <Stack.Screen 
-          name="PhoneVerify" 
+        <Stack.Screen
+          name="PhoneVerify"
           component={PhoneVerify}
         />
-        <Stack.Screen 
-          name="EmailVerify" 
+        <Stack.Screen
+          name="EmailVerify"
           component={EmailVerify}
         />
-        <Stack.Screen 
-          name="EnterNameSign" 
+        <Stack.Screen
+          name="EnterNameSign"
           component={EnterNameSign}
         />
-        <Stack.Screen 
-          name="TakeSelfie" 
+        <Stack.Screen
+          name="TakeSelfie"
           component={TakeSelfie}
         />
-        <Stack.Screen 
-          name="FaceID" 
+        <Stack.Screen
+          name="FaceID"
           component={FaceID}
         />
-        <Stack.Screen 
-          name="Wallet" 
+        <Stack.Screen
+          name="ForgotVerify"
+          component={ForgotVerify}
+        />
+        <Stack.Screen
+          name="Wallet"
           component={Wallet}
         />
-        <Stack.Screen 
-          name="CreditCard" 
+        <Stack.Screen
+          name="CreditCard"
           component={CreditCard}
         />
-        <Stack.Screen 
-          name="ProfileSection" 
+        <Stack.Screen
+          name="ProfileSection"
           component={ProfileSection}
         />
-        <Stack.Screen 
-          name="ProfileDetails" 
+        <Stack.Screen
+          name="ProfileDetails"
           component={ProfileDetails}
         />
-        <Stack.Screen 
-          name="MySubscription" 
+        <Stack.Screen
+          name="MySubscription"
           component={MySubscription}
         />
-        <Stack.Screen 
-          name="MyDocument" 
+        <Stack.Screen
+          name="MyDocument"
           component={MyDocument}
         />
-        <Stack.Screen 
-          name="MyTerms" 
+        <Stack.Screen
+          name="MyTerms"
           component={MyTerms}
         />
-        <Stack.Screen 
-          name="Subscription" 
+        <Stack.Screen
+          name="Subscription"
           component={Subscription}
         />
-        <Stack.Screen 
-          name="CommunitySection" 
+        <Stack.Screen
+          name="CommunitySection"
           component={CommunitySection}
         />
-        <Stack.Screen 
-          name="TransactionManagement" 
+        <Stack.Screen
+          name="TransactionManagement"
           component={TransactionManagement}
         />
-        <Stack.Screen 
-          name="ReferralSection" 
+        <Stack.Screen
+          name="ReferralSection"
           component={ReferralSection}
         />
-        <Stack.Screen 
-          name="ReferralDetails" 
+        <Stack.Screen
+          name="ReferralDetails"
           component={ReferralDetails}
         />
-        <Stack.Screen 
-          name="SendInternational" 
+        <Stack.Screen
+          name="SendInternational"
           component={SendInternational}
         />
-        <Stack.Screen 
-          name="KYCSection" 
+        <Stack.Screen
+          name="KYCSection"
           component={KYCSection}
         />
-        <Stack.Screen 
-          name="SelectWay" 
+        <Stack.Screen
+          name="SelectWay"
           component={SelectWay}
         />
-        <Stack.Screen 
-          name="PickOriginal" 
+        <Stack.Screen
+          name="PickOriginal"
           component={PickOriginal}
         />
-        <Stack.Screen 
-          name="WesternUnion" 
+        <Stack.Screen
+          name="WesternUnion"
           component={WesternUnion}
         />
-        <Stack.Screen 
-          name="WesternUnionPreview" 
+        <Stack.Screen
+          name="WesternUnionPreview"
           component={WesternUnionPreview}
         />
-        <Stack.Screen 
-          name="WestrenThanku" 
+        <Stack.Screen
+          name="WestrenThanku"
           component={WestrenThanku}
         />
-        <Stack.Screen 
-          name="BankTransferSendInternational" 
+        <Stack.Screen
+          name="BankTransferSendInternational"
           component={BankTransferSendInternational}
         />
-          <Stack.Screen 
-          name="SubscriptionDetails" 
+        <Stack.Screen
+          name="SubscriptionDetails"
           component={SubscriptionDetails}
         />
-        <Stack.Screen 
-          name="CameraScreen" 
+        <Stack.Screen
+          name="CameraScreen"
           component={CameraScreen}
           options={{
             gestureEnabled: false, // Disable swipe back on camera
           }}
         />
-        <Stack.Screen 
-          name="CreatePassword" 
+        <Stack.Screen
+          name="CreatePassword"
           component={CreatePassword}
           options={{
             gestureEnabled: false, // Disable swipe back on passcode
           }}
         />
-        <Stack.Screen 
-          name="SearchUserChat" 
+        <Stack.Screen
+          name="SearchUserChat"
           component={SearchUserChat}
           options={{
             gestureEnabled: false, // Disable swipe back on passcode
@@ -367,53 +372,56 @@ const AppNavigator = () => {
             gestureEnabled: false, // Disable swipe back on Face ID
           }}
         /> */}
-        <Stack.Screen 
-          name="MainApp" 
+        <Stack.Screen
+          name="MainApp"
           component={MainApp}
         />
         {/* <Stack.Screen 
           name="HomeScreen" 
           component={HomeScreen}
         /> */}
-        <Stack.Screen 
-          name="HomeScreen" 
+        <Stack.Screen
+          name="HomeScreen"
           component={MainHomeScreen}
+          options={{
+            gestureEnabled: false, // Disable swipe back on passcode
+          }}
         />
-        <Stack.Screen 
-          name="Notification" 
+        <Stack.Screen
+          name="Notification"
           component={Notification}
         />
-     
-        <Stack.Screen 
-          name="ButtonExamples" 
+
+        <Stack.Screen
+          name="ButtonExamples"
           component={ButtonExamples}
         />
-        <Stack.Screen 
-          name="Settings" 
+        <Stack.Screen
+          name="Settings"
           component={Settings}
         />
-        <Stack.Screen 
-          name="CurrentHistory" 
+        <Stack.Screen
+          name="CurrentHistory"
           component={CurrentHistory}
         />
-        <Stack.Screen 
-          name="PhysicalCard" 
+        <Stack.Screen
+          name="PhysicalCard"
           component={PhysicalCard}
         />
-        <Stack.Screen 
-          name="NewChat" 
+        <Stack.Screen
+          name="NewChat"
           component={NewChat}
         />
-        <Stack.Screen 
-          name="BankTransfer" 
+        <Stack.Screen
+          name="BankTransfer"
           component={BankTransfer}
         />
-        <Stack.Screen 
-          name="AddingAmount" 
+        <Stack.Screen
+          name="AddingAmount"
           component={AddingAmount}
         />
-        <Stack.Screen 
-          name="ReportUserModalTest" 
+        <Stack.Screen
+          name="ReportUserModalTest"
           component={ReportUserModalTest}
         />
       </Stack.Navigator>

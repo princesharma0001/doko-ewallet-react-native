@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,21 @@ import {
 import TouchID from 'react-native-touch-id';
 import { useTheme } from '../context/ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { authService } from '../services/apiService';
+import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppSelector } from '../store';
 
 const { width, height } = Dimensions.get('window');
 
 const EnterPassword = ({ navigation, route }) => {
-  const {theme,isDarkMode} = useTheme();
+  const { theme, isDarkMode } = useTheme();
   const [passcode, setPasscode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const { currentUser } = useAppSelector((state) => state.user);
+  console.log("Sdfsdgfsda", currentUser);
+
+  const isLoginInProgress = useRef(false);
 
   const handleNumberPress = (number) => {
     if (passcode.length < 4) {
@@ -34,10 +42,10 @@ const EnterPassword = ({ navigation, route }) => {
   const handleFaceID = async () => {
     try {
       setIsProcessing(true);
-      
+
       // Check if Face ID is supported
       const biometryType = await TouchID.isSupported();
-      
+
       if (biometryType) {
         // Authenticate with Face ID
         const result = await TouchID.authenticate(
@@ -73,16 +81,70 @@ const EnterPassword = ({ navigation, route }) => {
     }
   };
 
-  const handleForgotPasscode = () => {
+  const handleForgotPasscode = async () => {
     Alert.alert(
       'Forgot Passcode?',
-      'You can reset your passcode by signing out and signing back in.',
+      'We will send you a verification code to reset your passcode.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: () => navigation.navigate('Login')
+          text: 'Send Code',
+          style: 'default',
+          onPress: async () => {
+            try {
+              const identity = route.params?.identity || currentUser?.email || currentUser?.phone;
+
+              if (!identity) {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Error',
+                  text2: 'Identity not found. Please try again.',
+                  position: 'top',
+                  visibilityTime: 3000,
+                });
+                return;
+              }
+
+              setIsProcessing(true);
+
+              const result = await authService.forgotPasscode(identity);
+
+              if (result.success) {
+                Toast.show({
+                  type: 'success',
+                  text1: 'Code Sent',
+                  text2: 'Verification code sent successfully',
+                  position: 'top',
+                  visibilityTime: 2000,
+                });
+
+                // Navigate to ForgotVerify screen
+                navigation.navigate('ForgotVerify', {
+                  identity: identity,
+                  // userData: currentUser
+                });
+              } else {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Failed',
+                  text2: result.error || 'Failed to send verification code',
+                  position: 'top',
+                  visibilityTime: 3000,
+                });
+              }
+            } catch (error) {
+              console.error('Forgot passcode error:', error);
+              Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'An unexpected error occurred',
+                position: 'top',
+                visibilityTime: 3000,
+              });
+            } finally {
+              setIsProcessing(false);
+            }
+          }
         }
       ]
     );
@@ -94,17 +156,17 @@ const EnterPassword = ({ navigation, route }) => {
       dots.push(
         <View
           key={i}
-            style={[
+          style={[
             styles.passcodeDot,
             {
               backgroundColor: i < passcode.length ? theme.colors?.text : 'transparent',
               borderColor: theme.colors?.text,
             }
           ]}
-          // style={[
-          //   styles.passcodeDot,
-          //   i < passcode.length && styles.passcodeDotFilled
-          // ]}
+        // style={[
+        //   styles.passcodeDot,
+        //   i < passcode.length && styles.passcodeDotFilled
+        // ]}
         />
       );
     }
@@ -124,7 +186,7 @@ const EnterPassword = ({ navigation, route }) => {
         {row.map((item, colIndex) => (
           <TouchableOpacity
             key={`${rowIndex}-${colIndex}`}
-            style={[styles.keypadButton,{backgroundColor:isDarkMode ? '#2C2E41' : "lightgray"}]} 
+            style={[styles.keypadButton, { backgroundColor: isDarkMode ? '#2C2E41' : "lightgray" }]}
             onPress={() => {
               if (item === 'backspace') {
                 handleBackspace();
@@ -153,28 +215,88 @@ const EnterPassword = ({ navigation, route }) => {
 
   // Auto-submit when passcode is complete
   React.useEffect(() => {
-    if (passcode.length === 4) {
-      // Simulate passcode verification
-      setTimeout(() => {
-        // For demo purposes, accept any 4-digit passcode
-        navigation.navigate('HomeScreen', {
-          userData: route.params?.userData,
-          loginMethod: 'passcode'
-        });
-      }, 500);
-    }
-  }, [passcode]);
+    const tryLogin = async () => {
+      if (passcode.length === 4 && !isProcessing && !isLoginInProgress.current) {
+        isLoginInProgress.current = true;
+        setIsProcessing(true);
+        try {
+          const identity = route.params?.identity; // from Login screen (email/phone/username)
+          if (!identity) {
+            Toast.show({
+              type: 'error',
+              text1: 'Error',
+              text2: 'Identity not found. Please go back and enter your email/phone/username.',
+              position: 'top',
+              visibilityTime: 4000,
+            });
+            setPasscode('');
+            return;
+          }
+
+          const result = await authService.login(identity, passcode);
+          console.log("Sdgasdgsadgs", result);
+
+          if (result.success) {
+            console.log("fdgdsfgs", result?.success);
+
+            // Store token from API response
+            if (result.data?.token) {
+              await AsyncStorage.setItem('dokoToken', result.data.token);
+            }
+            Toast.show({
+              type: 'success',
+              text1: 'Success',
+              text2: 'Logged in successfully!',
+              position: 'top',
+              visibilityTime: 2000,
+            });
+            navigation.navigate('HomeScreen', {
+              userData: result.data,
+              loginMethod: 'passcode',
+            });
+          } else {
+            Toast.show({
+              type: 'error',
+              text1: 'Login failed',
+              text2: result.error || 'Invalid credentials. Please try again.',
+              position: 'top',
+              visibilityTime: 4000,
+            });
+            setPasscode('');
+          }
+        } catch (e) {
+          console.log("Sdgasdgasdg", e);
+
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'An unexpected error occurred. Please try again.',
+            position: 'top',
+            visibilityTime: 4000,
+          });
+          setPasscode('');
+        } finally {
+          setIsProcessing(false);
+          isLoginInProgress.current = false;
+        }
+      }
+    };
+    tryLogin();
+  }, [passcode, navigation, route.params]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
 
       <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-      
+
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.welcomeText,{color:theme.colors.text}]}>Welcome Back Swati!</Text>
-          <Text style={[styles.title,{color:theme.colors.text}]}>Enter Passcode</Text>
+          <Text style={[styles.welcomeText, { color: theme.colors.text }]}>
+            Welcome Back {currentUser?.firstName ?? route.params?.userData?.firstName ?? "User"}!
+          </Text>
+
+          <Text style={[styles.title, { color: theme.colors.text }]}>Enter Passcode</Text>
         </View>
 
         {/* Passcode Dots */}
@@ -260,7 +382,7 @@ const styles = StyleSheet.create({
     height: 70,
     borderRadius: 35,
     justifyContent: 'center',
-        backgroundColor: '#2C2E41',
+    backgroundColor: '#2C2E41',
     alignItems: 'center',
   },
   keypadNumber: {

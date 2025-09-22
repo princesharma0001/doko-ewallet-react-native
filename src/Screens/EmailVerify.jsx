@@ -16,15 +16,20 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import Toast from 'react-native-toast-message';
+import { authService } from '../services/apiService';
+import { CommonActions } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
-const EmailVerify = ({ navigation }) => {
+const EmailVerify = ({ navigation, route }) => {
     const { theme } = useTheme();
     const [verificationCode, setVerificationCode] = useState(['', '', '', '',]);
     const [isResending, setIsResending] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+    const { userData } = route.params || {};
+    const email = userData?.email;
 
     const handleCodeChange = (value, index) => {
         // Clear error when user starts typing
@@ -50,52 +55,116 @@ const EmailVerify = ({ navigation }) => {
         }
     };
 
-    const handleVerify = () => {
+    const handleVerify = async () => {
         const code = verificationCode.join('');
 
-        if (code.length !== 4 ) {
+        if (code.length !== 4) {
             setErrorMessage('Please enter the complete verification code');
             return;
         }
 
+        if (!email) {
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'Email not found. Please go back and try again.',
+                position: 'top',
+                visibilityTime: 4000,
+            });
+            return;
+        }
+
         setIsVerifying(true);
+        setErrorMessage('');
 
-        // Simulate verification
-        setTimeout(() => {
-            setIsVerifying(false);
-
-            // For demo purposes, accept any 6-digit code
-            if (/^\d{4}$/.test(code)) {
-                Alert.alert(
-                    'Email Verified',
-                    'Your email has been verified successfully!',
-                    [
-                        {
-                            text: 'Continue',
-                                                         onPress: () => navigation.navigate('CreatePassword'),
-                        }
-                    ]
+        try {
+            const result = await authService.verifyOTP(email, code);
+            if (result.success) {
+                Toast.show({
+                    type: 'success',
+                    text1: 'Success',
+                    text2: 'Email verified successfully!',
+                    position: 'top',
+                    visibilityTime: 3000,
+                });
+                navigation.dispatch(
+                    CommonActions.reset({
+                        index: 0,
+                        routes: [{ name: 'CreatePassword' }],
+                    })
                 );
             } else {
-                setErrorMessage('Invalid verification code. Please try again.');
-                setVerificationCode(['', '', '', '', ]);
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: result.error || 'Invalid OTP. Please try again.',
+                    position: 'top',
+                    visibilityTime: 4000,
+                });
+                setVerificationCode(['', '', '', '',]);
             }
-        }, 2000);
+        } catch (err) {
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'An unexpected error occurred. Please try again.',
+                position: 'top',
+                visibilityTime: 4000,
+            });
+            setVerificationCode(['', '', '', '',]);
+        } finally {
+            setIsVerifying(false);
+        }
     };
 
-    const handleResendCode = () => {
-        setIsResending(true);
+    const handleResendCode = async () => {
+        if (!email) {
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'Email not found. Please go back and try again.',
+                position: 'top',
+                visibilityTime: 4000,
+            });
+            return;
+        }
 
-        // Simulate resend
-        setTimeout(() => {
+        setIsResending(true);
+        try {
+            const result = await authService.resendOTP(email);
+            if (result.success) {
+                Toast.show({
+                    type: 'success',
+                    text1: 'Success',
+                    text2: 'OTP has been sent Successfully.',
+                    position: 'top',
+                    visibilityTime: 3000,
+                });
+            } else {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: result.error || 'Failed to resend code. Please try again.',
+                    position: 'top',
+                    visibilityTime: 4000,
+                });
+            }
+        } catch (err) {
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'An unexpected error occurred. Please try again.',
+                position: 'top',
+                visibilityTime: 4000,
+            });
+        } finally {
             setIsResending(false);
-            Alert.alert('Code Sent', 'A new verification code has been sent to your email.');
-        }, 1500);
+        }
     };
 
     return (
-         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-     
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+
             <KeyboardAvoidingView
                 style={styles.keyboardAvoidingView}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -110,8 +179,8 @@ const EmailVerify = ({ navigation }) => {
                             onPress={() => navigation.goBack()}
                             activeOpacity={0.7}
                         >
-                                       <AntDesign name="arrowleft" size={24} color={theme.colors.text} />
-                         
+                            <AntDesign name="arrowleft" size={24} color={theme.colors.text} />
+
                         </TouchableOpacity>
                     </View>
 
@@ -192,7 +261,7 @@ const EmailVerify = ({ navigation }) => {
                     <View style={styles.bottomSection}>
                         <TouchableOpacity
                             style={styles.resendContainer}
-                            // onPress={handleResendCode}
+                            onPress={isResending ? undefined : handleResendCode}
                             activeOpacity={0.7}
                         >
                             <Text
@@ -206,7 +275,7 @@ const EmailVerify = ({ navigation }) => {
                                     },
                                 ]}
                             >
-                                Didn't receive the code?
+                                {isResending ? 'Resending...' : "Didn't receive the code?"}
                             </Text>
                         </TouchableOpacity>
                         {/* Verify Button */}
@@ -246,7 +315,7 @@ const EmailVerify = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-         backgroundColor: '#000000',
+        backgroundColor: '#000000',
     },
     keyboardAvoidingView: {
         flex: 1,
