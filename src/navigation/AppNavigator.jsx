@@ -19,6 +19,7 @@ import EnterNameSign from '../Screens/EnterNameSign';
 import TakeSelfie from '../Screens/TakeSelfie';
 import CameraScreen from '../Screens/CameraScreen';
 import CreatePassword from '../Screens/CreatePassword';
+import ForgotCreatePassword from '../Screens/ForgotCreatePassword';
 import FaceID from '../Screens/FaceID';
 import ForgotVerify from '../Screens/ForgotVerify';
 import HomeScreen from '../Screens/HomeScreen';
@@ -35,6 +36,7 @@ import ProfileDetails from "../components/ProfileDetails"
 import MySubscription from "../components/MySubscription"
 import MyDocument from "../components/MyDocument"
 import MyTerms from "../components/MyTerms"
+import TermsDetails from "../components/TermsDetails"
 import Subscription from "../components/Subscription"
 import TransactionManagement from "../components/TransactionManagement"
 import SubscriptionDetails from "../components/SubscriptionDetails"
@@ -42,6 +44,7 @@ import CreditCard from "../components/CreditCard"
 import CurrentHistory from "../Screens/History/CurrentHistory"
 import PhysicalCard from "../components/PhysicalCard"
 import NewChat from "../components/NewChat"
+import NewGroup from "../Screens/NewGroup"
 import BankTransfer from "../Screens/Deposit/BankTransfer"
 import SendInternational from "../Screens/SendInternational"
 import KYCSection from "../Screens/KYCSection"
@@ -289,6 +292,10 @@ const AppNavigator = () => {
           component={MyTerms}
         />
         <Stack.Screen
+          name="TermsDetails"
+          component={TermsDetails}
+        />
+        <Stack.Screen
           name="Subscription"
           component={Subscription}
         />
@@ -359,6 +366,13 @@ const AppNavigator = () => {
           }}
         />
         <Stack.Screen
+          name="ForgotCreatePassword"
+          component={ForgotCreatePassword}
+          options={{
+            gestureEnabled: false, // Disable swipe back on passcode
+          }}
+        />
+        <Stack.Screen
           name="SearchUserChat"
           component={SearchUserChat}
           options={{
@@ -411,6 +425,10 @@ const AppNavigator = () => {
         <Stack.Screen
           name="NewChat"
           component={NewChat}
+        />
+        <Stack.Screen
+          name="NewGroup"
+          component={NewGroup}
         />
         <Stack.Screen
           name="BankTransfer"

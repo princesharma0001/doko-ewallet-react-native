@@ -70,7 +70,7 @@ const UserProfileModal = ({ visible, onClose, user, onActionPress }) => {
   );
 
   const EmptySection = ({ title }) => (
-    <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.card, { backgroundColor: theme.colors.surface, }]}>
       <TouchableOpacity style={styles.seeAllBtn} >
         <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>See all</Text>
       </TouchableOpacity>

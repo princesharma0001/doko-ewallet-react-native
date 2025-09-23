@@ -282,7 +282,7 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                             <Button
                                 title={"New Group"}
                                 variant="outline"
-                                onPress={() => setShow(!show)}
+                                onPress={() => navigation.navigate('NewGroup')}
                             />
                         </View>
                     </View>

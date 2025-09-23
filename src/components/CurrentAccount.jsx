@@ -45,7 +45,7 @@ const CurrentAccount = ({ navigation }) => {
   const activities = [
     {
       id: 1,
-      type: "Send UQ....R12F",
+      type: "Sent UQ....R12F",
       time: "07:36 AM",
       amount: "-1.1 BTC",
       icon: require("../assets/Images/quick1.png"),

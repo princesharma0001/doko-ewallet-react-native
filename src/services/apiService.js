@@ -161,16 +161,26 @@ export const authService = {
   },
 
   // Verify OTP API call
-  verifyOTP: async (identity, otp) => {
+  verifyOTP: async (identity, otp, otpType = null) => {
     try {
-      console.log('Calling verify OTP API with identity:', identity, 'and OTP:', otp);
+      console.log('Calling verify OTP API with identity:', identity, 'OTP:', otp, 'and otpType:', otpType);
       
-      const response = await apiClient.post(ApiConfig.verifyOTP, { 
+      const requestData = { 
         identity, 
         otp 
-      });
+      };
       
-      console.log('Verify OTP API response:', response.data);
+      // Add otpType if provided
+      if (otpType) {
+        requestData.otpType = otpType;
+      }
+      console.log("Sdagasdg",requestData);
+      
+      
+      const response = await apiClient.post(ApiConfig.verifyOTP, requestData);
+
+      
+      console.log('Verify OTP API response:', response);
       
       return {
         success: true,
@@ -224,7 +234,7 @@ export const authService = {
         message: response.data.message,
       };
     } catch (error) {
-      console.error('Update profile API Error:', error);
+      console.error('Update profile API Error:', error?.response);
       
       // Handle different types of errors
       if (error.response) {
@@ -342,7 +352,7 @@ export const authService = {
         identity,
       });
 
-      console.log('Forgot passcode API response:', response.data);
+      console.log('Forgot passcode API response:', response);
 
       return {
         success: true,
@@ -354,6 +364,124 @@ export const authService = {
 
       if (error.response) {
         const errorMessage = error.response.data?.message || 'Forgot passcode failed';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Delete Account API call
+  deleteAccount: async (token) => {
+    try {
+      console.log('Calling delete account API');
+
+      const response = await apiClient.delete(ApiConfig.deleteAccount, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      console.log('Delete account API response:', response);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Delete Account API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Delete account failed';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Get Plans API call
+  getPlans: async () => {
+    try {
+      console.log('Calling get plans API');
+
+      const response = await apiClient.get(ApiConfig.getPlans);
+
+      console.log('Get plans API response:', response);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Get Plans API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to fetch plans';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Get Content API call
+  getContent: async () => {
+    try {
+      console.log('Calling get content API');
+
+      const response = await apiClient.get(ApiConfig.getContent);
+
+      console.log('Get content API response:', response);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Get Content API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to fetch content';
         return {
           success: false,
           error: errorMessage,

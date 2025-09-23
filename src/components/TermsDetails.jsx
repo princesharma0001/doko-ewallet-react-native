@@ -17,10 +17,10 @@ import Toast from 'react-native-toast-message';
 
 const { width, height } = Dimensions.get('window');
 
-const MyDocument = ({ navigation }) => {
+const TermsDetails = ({ navigation }) => {
     const { theme } = useTheme();
     const dispatch = useAppDispatch();
-    const { privacyPolicy, isLoading, error } = useAppSelector((state) => state.content);
+    const { termsAndConditions, isLoading, error } = useAppSelector((state) => state.content);
 
     // Fetch content on component mount
     useEffect(() => {
@@ -60,12 +60,12 @@ const MyDocument = ({ navigation }) => {
     );
 
 
-    const renderPrivacyContent = () => {
-        if (!privacyPolicy) {
+    const renderTermsContent = () => {
+        if (!termsAndConditions) {
             return (
                 <View style={[styles.contentCard, { backgroundColor: theme.colors.surface }]}>
                     <Text style={[styles.noContentText, { color: theme.colors.textSecondary }]}>
-                        No privacy policy found
+                        No terms and conditions found
                     </Text>
                 </View>
             );
@@ -74,25 +74,25 @@ const MyDocument = ({ navigation }) => {
         return (
             <View style={[styles.contentCard, { backgroundColor: theme.colors.surface }]}>
                 <Text style={[styles.contentTitle, { color: theme.colors.text }]}>
-                    {privacyPolicy.title}
+                    {termsAndConditions.title}
                 </Text>
                 
                 <Text style={[styles.contentDescription, { color: theme.colors.textSecondary }]}>
-                    {privacyPolicy.description}
+                    {termsAndConditions.description}
                 </Text>
 
                 <View style={styles.contentBody}>
                     <Text style={[styles.contentText, { color: theme.colors.text }]}>
-                        {privacyPolicy.formattedContent}
+                        {termsAndConditions.formattedContent}
                     </Text>
                 </View>
 
                 <View style={styles.metaInfo}>
                     <Text style={[styles.metaText, { color: theme.colors.textSecondary }]}>
-                        Last Updated: {new Date(privacyPolicy.updatedAt).toLocaleDateString()}
+                        Last Updated: {new Date(termsAndConditions.updatedAt).toLocaleDateString()}
                     </Text>
                     <Text style={[styles.metaText, { color: theme.colors.textSecondary }]}>
-                        Version: {privacyPolicy.version}
+                        Version: {termsAndConditions.version}
                     </Text>
                 </View>
             </View>
@@ -102,9 +102,9 @@ const MyDocument = ({ navigation }) => {
     const renderContent = () => (
         <View style={styles.contentContainer}>
             <View style={styles.titleContainer}>
-                <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Privacy & Policy</Text>
+                <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Terms & Conditions</Text>
             </View>
-            {renderPrivacyContent()}
+            {renderTermsContent()}
         </View>
     );
 
@@ -112,7 +112,7 @@ const MyDocument = ({ navigation }) => {
         <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
             <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-                Loading privacy policy...
+                Loading terms and conditions...
             </Text>
         </View>
     );
@@ -290,4 +290,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default MyDocument;
+export default TermsDetails;

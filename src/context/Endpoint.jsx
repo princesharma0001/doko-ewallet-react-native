@@ -11,5 +11,8 @@ const ApiConfig = {
     checkAccount: `${url}api/v1/auth/checkAccount`,
     getProfile: `${url}api/v1/auth/getProfile`,
     forgotPasscode: `${url}api/v1/auth/forgotPasscode`,
+    deleteAccount: `${url}api/v1/auth/deleteAccount`,
+    getPlans: `${url}api/v1/plan/list`,
+    getContent: `${url}api/v1/content/list`,
 };
 export default ApiConfig;

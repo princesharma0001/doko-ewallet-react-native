@@ -108,6 +108,7 @@ const EnterPassword = ({ navigation, route }) => {
               setIsProcessing(true);
 
               const result = await authService.forgotPasscode(identity);
+              console.log("sdagahandleSubmitsdgsa", result);
 
               if (result.success) {
                 Toast.show({

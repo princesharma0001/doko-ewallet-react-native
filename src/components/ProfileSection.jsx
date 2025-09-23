@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -14,28 +14,120 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { useAppSelector } from '../store';
+import { authService } from '../services/apiService';
+import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DeleteAccountConfirmationModal from './DeleteAccountConfirmationModal';
 
 const { width, height } = Dimensions.get('window');
 
 const ProfileSection = ({ navigation }) => {
     const { theme } = useTheme();
     const [activeItem, setActiveItem] = useState('Dashboard');
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [token, setToken] = useState(null);
+    const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
+
+    // Get token from AsyncStorage on component mount
+    useEffect(() => {
+        const getToken = async () => {
+            try {
+                const storedToken = await AsyncStorage.getItem('dokoToken');
+                if (storedToken) {
+                    setToken(storedToken);
+                }
+            } catch (error) {
+                console.error('Error retrieving token:', error);
+            }
+        };
+        getToken();
+    }, []);
 
     const menuItems = [
         { id: 'Personal Details', label: 'Personal Details', route: 'ProfileDetails', icon: <Ionicons name="person-outline" size={20} color={theme.colors.text} /> },
-
         { id: 'Subscription', route: "MySubscription", label: 'My Subscription', icon: <Ionicons name="ribbon-outline" size={20} color={theme.colors.text} /> },
         { id: 'notifications', label: 'Notification Settings', route: "Notification", icon: <Ionicons name="notifications-outline" size={20} color={theme.colors.text} /> },
         { id: 'Privacy', label: 'Privacy', route: "MyDocument", icon: <Ionicons name="shield-checkmark-outline" size={20} color={theme.colors.text} /> },
         { id: 'terms', label: 'Terms & Conditions', route: "MyTerms", icon: <Ionicons name="document-text-outline" size={20} color={theme.colors.text} /> },
         { id: 'referral', label: 'Referral', route: "ReferralSection", icon: <Ionicons name="grid-outline" size={20} color={theme.colors.text} /> },
-
+        { id: 'delete', label: 'Delete Account', action: 'delete', icon: <MaterialIcons name="delete-outline" size={20} color="#FF3B30" /> },
     ];
 
 
-    const handleMenuItemPress = (itemId, route) => {
+    const handleMenuItemPress = (itemId, route, action) => {
         setActiveItem(itemId);
-        navigation.navigate(route);
+        
+        if (action === 'delete') {
+            setShowDeleteModal(true);
+        } else {
+            navigation.navigate(route);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (!token) {
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'Authentication token not found. Please login again.',
+                position: 'top',
+                visibilityTime: 4000,
+            });
+            return;
+        }
+
+        setIsDeleting(true);
+        
+        try {
+            const result = await authService.deleteAccount(token);
+            
+            if (result.success) {
+                // Clear stored data
+                await AsyncStorage.multiRemove(['dokoToken', 'userData']);
+                
+                Toast.show({
+                    type: 'success',
+                    text1: 'Account Deleted',
+                    text2: 'Your account has been successfully deleted.',
+                    position: 'top',
+                    visibilityTime: 3000,
+                });
+                
+                // Navigate to login screen
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Login' }],
+                });
+            } else {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: result.error || 'Failed to delete account. Please try again.',
+                    position: 'top',
+                    visibilityTime: 4000,
+                });
+            }
+        } catch (error) {
+            console.error('Delete account error:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'An unexpected error occurred. Please try again.',
+                position: 'top',
+                visibilityTime: 4000,
+            });
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteModal(false);
+        }
+    };
+
+    const handleCloseModal = () => {
+        if (!isDeleting) {
+            setShowDeleteModal(false);
+        }
     };
 
 
@@ -73,10 +165,10 @@ const ProfileSection = ({ navigation }) => {
                 </View>
             </View>
 
-            <Text style={[styles.userName, { color: theme.colors.text }]}>Devon Lane</Text>
+            <Text style={[styles.userName, { color: theme.colors.text }]}>{currentUser?.firstName} {currentUser?.lastName}</Text>
 
             <View style={styles.usernameContainer}>
-                <Text style={[styles.username, { color: theme.colors.text }]}>Faizan_231</Text>
+                <Text style={[styles.username, { color: theme.colors.text }]}>{currentUser?.username}</Text>
                 <Ionicons name="grid-outline" size={16} color={theme.colors.text} style={styles.usernameIcon} />
             </View>
         </View>
@@ -106,7 +198,7 @@ const ProfileSection = ({ navigation }) => {
                                     styles.menuItem,
                                     isActive && { backgroundColor: theme.colors.border },
                                 ]}
-                                onPress={() => handleMenuItemPress(item.id, item?.route)}
+                                onPress={() => handleMenuItemPress(item.id, item?.route, item?.action)}
                             >
                                 <View style={styles.menuContent}>
                                     {item.icon}
@@ -115,7 +207,7 @@ const ProfileSection = ({ navigation }) => {
                                             styles.menuLabel,
                                             {
                                                 fontFamily: theme.typography.fontFamily,
-                                                color: theme.colors.text
+                                                color: item.id === 'delete' ? '#FF3B30' : theme.colors.text
                                             },
                                         ]}
                                     >
@@ -128,6 +220,14 @@ const ProfileSection = ({ navigation }) => {
                     })}
                 </View>
             </ScrollView>
+            
+            {/* Delete Account Confirmation Modal */}
+            <DeleteAccountConfirmationModal
+                visible={showDeleteModal}
+                onClose={handleCloseModal}
+                onConfirm={handleDeleteAccount}
+                isLoading={isDeleting}
+            />
         </View>
     );
 };

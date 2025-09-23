@@ -74,7 +74,7 @@ const HomeScreen = () => {
   const activities = [
     {
       id: 1,
-      type: "Send UQ....R12F",
+      type: "Sent UQ....R12F",
       time: "07:36 AM",
       amount: "-1.1 BTC Sent",
       icon: require("../assets/Images/quick1.png"),
@@ -289,7 +289,7 @@ const HomeScreen = () => {
 
   const renderQuickStats = () => {
     const stats = [
-      { label: "Send: UQ....R12F", value: "$3,428.20", onPress: () => console.log("Send pressed") },
+      { label: "Sent: UQ....R12F", value: "$3,428.20", onPress: () => console.log("Send pressed") },
       { label: "Expenses", value: "$1,694.80", onPress: () => console.log("Expenses pressed") },
       { label: "Wallets", value: "3", onPress: () => console.log("Wallets pressed") },
     ];

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -14,20 +14,46 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
+import { useAppSelector } from '../store';
+import { authService } from '../services/apiService';
+import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch } from 'react-redux';
+import { getProfile } from '../store/slices/userSlice';
 
 const { width, height } = Dimensions.get('window');
 
 const ProfileDetails = ({ navigation }) => {
     const { theme } = useTheme();
-         const [formData, setFormData] = useState({
-         name: '',
-         username: '',
-         email1: '',
-         dateOfBirth: '',
-         address: '',
-         phoneNumber: '',
-         email2: '',
-     });
+    const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
+    const [isLoading, setIsLoading] = useState(false);
+    const [token, setToken] = useState(null);
+    const dispatch = useDispatch();
+    // Get token from AsyncStorage on component mount
+    useEffect(() => {
+        const getToken = async () => {
+            try {
+                const storedToken = await AsyncStorage.getItem('dokoToken');
+                if (storedToken) {
+                    setToken(storedToken);
+                }
+            } catch (error) {
+                console.error('Error retrieving token:', error);
+            }
+        };
+        getToken();
+    }, []);
+
+    const [formData, setFormData] = useState({
+        name: currentUser?.firstName ?? '',
+        lastName: currentUser?.lastName ?? "",
+        username: currentUser?.username ?? '',
+        email1: currentUser?.email ?? '',
+        dateOfBirth: currentUser?.dateOfBirth ?? '',
+        address: currentUser?.address?.formattedAddress ?? '',
+        phoneNumber: currentUser?.phone ?? '',
+        // email2: '',
+    });
 
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,32 +68,37 @@ const ProfileDetails = ({ navigation }) => {
         return phoneRegex.test(phone) && phone.length >= 10;
     };
 
-         const validateDate = (date) => {
-         const dateRegex = /^\d{2}\/\d{2}\/\d{4}$/;
-         return dateRegex.test(date);
-     };
+    const validateDate = (date) => {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        return dateRegex.test(date);
+    };
 
-     const validateUsername = (username) => {
-         const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
-         return usernameRegex.test(username);
-     };
+    const validateUsername = (username) => {
+        const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+        return usernameRegex.test(username);
+    };
 
     const validateForm = () => {
         const newErrors = {};
 
-                 // Name validation
-         if (!formData.name.trim()) {
-             newErrors.name = 'Name is required';
-         } else if (formData.name.trim().length < 2) {
-             newErrors.name = 'Name must be at least 2 characters';
-         }
+        // Name validation
+        if (!formData.name.trim()) {
+            newErrors.name = 'Name is required';
+        } else if (formData.name.trim().length < 2) {
+            newErrors.name = 'Name must be at least 2 characters';
+        }
+        if (!formData.lastName.trim()) {
+            newErrors.lastName = 'Last name is required';
+        } else if (formData.lastName.trim().length < 2) {
+            newErrors.lastName = 'Last name must be at least 2 characters';
+        }
 
-         // Username validation
-         if (!formData.username.trim()) {
-             newErrors.username = 'Username is required';
-         } else if (!validateUsername(formData.username)) {
-             newErrors.username = 'Username must be 3-20 characters, letters, numbers, and underscores only';
-         }
+        // Username validation
+        if (!formData.username.trim()) {
+            newErrors.username = 'Username is required';
+        } else if (!validateUsername(formData.username)) {
+            newErrors.username = 'Username must be 3-20 characters, letters, numbers, and underscores only';
+        }
 
         // Email 1 validation
         if (!formData.email1.trim()) {
@@ -80,7 +111,7 @@ const ProfileDetails = ({ navigation }) => {
         if (!formData.dateOfBirth.trim()) {
             newErrors.dateOfBirth = 'Date of Birth is required';
         } else if (!validateDate(formData.dateOfBirth)) {
-            newErrors.dateOfBirth = 'Please enter date in MM/DD/YYYY format';
+            newErrors.dateOfBirth = 'Please enter date in YYYY-MM-DD format';
         }
 
         // Address validation
@@ -98,11 +129,11 @@ const ProfileDetails = ({ navigation }) => {
         }
 
         // Email 2 validation
-        if (!formData.email2.trim()) {
-            newErrors.email2 = 'Email is required';
-        } else if (!validateEmail(formData.email2)) {
-            newErrors.email2 = 'Please enter a valid email address';
-        }
+        // if (!formData.email2.trim()) {
+        //     newErrors.email2 = 'Email is required';
+        // } else if (!validateEmail(formData.email2)) {
+        //     newErrors.email2 = 'Please enter a valid email address';
+        // }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -127,12 +158,75 @@ const ProfileDetails = ({ navigation }) => {
         if (validateForm()) {
             setIsSubmitting(true);
             try {
-                // Simulate API call
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                console.log('Form submitted successfully:', formData);
-                // You can add navigation or success message here
+                // Check if token is available
+                if (!token) {
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: 'Authentication token not found. Please login again.',
+                        position: 'top',
+                        visibilityTime: 4000,
+                    });
+                    setIsSubmitting(false);
+                    return;
+                }
+
+                const profileData = {
+                    username: formData?.username.trim(),
+                    firstName: formData.name.trim(),
+                    lastName: formData?.lastName.trim(),
+                    email: formData.email1.trim(),
+                    phone: formData.phoneNumber.trim(),
+                    countryCode: currentUser?.countryCode || '+1', // Use existing or default
+                    dateOfBirth: formData.dateOfBirth.trim(), // Already in YYYY-MM-DD format
+                    address: {
+                        street: formData.address.trim(),
+                        city: '', // Not collected separately
+                        state: '', // Empty for now
+                        country: currentUser?.address?.country || 'Unknown',
+                        zipCode: '', // Empty for now
+                        formattedAddress: formData.address.trim()
+                    },
+                };
+
+                console.log('Updating profile with data:', profileData);
+                const updateResult = await authService.updateProfile(profileData, token);
+
+                if (updateResult.success) {
+                    console.log('Profile updated successfully:', updateResult.data);
+                    dispatch(getProfile());
+                    Toast.show({
+                        type: 'success',
+                        text1: 'Success',
+                        text2: 'Profile updated successfully!',
+                        position: 'top',
+                        visibilityTime: 3000,
+                    });
+                    navigation.goBack();
+
+
+
+
+                } else {
+
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: updateResult.error || 'Failed to update profile. Please try again.',
+                        position: 'top',
+                        visibilityTime: 4000,
+                    });
+                }
             } catch (error) {
-                console.error('Error submitting form:', error);
+                console.error('Unexpected error during profile update:', error);
+
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'An unexpected error occurred. Please try again.',
+                    position: 'top',
+                    visibilityTime: 4000,
+                });
             } finally {
                 setIsSubmitting(false);
             }
@@ -184,20 +278,22 @@ const ProfileDetails = ({ navigation }) => {
         </View>
     );
 
-         const renderForm = () => (
-         <View style={styles.formContainer}>
-             <View style={styles.titleContainer}>
-                 <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Personal Details</Text>
-             </View>
-             {renderInputField('name', 'Name')}
-             {renderInputField('username', 'Username')}
-             {renderInputField('email1', 'Email')}
-             {renderInputField('dateOfBirth', 'Date of Birth')}
-             {renderInputField('address', 'Address')}
-             {renderInputField('phoneNumber', 'Phone Number', 'phone-pad')}
-             {renderInputField('email2', 'Email')}
-         </View>
-     );
+    const renderForm = () => (
+        <View style={styles.formContainer}>
+            <View style={styles.titleContainer}>
+                <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Personal Details</Text>
+            </View>
+            {renderInputField('name', 'Name')}
+            {renderInputField('lastName', 'Last Name')}
+
+            {renderInputField('username', 'Username')}
+            {renderInputField('email1', 'Email')}
+            {renderInputField('dateOfBirth', 'Date of Birth (YYYY-MM-DD)')}
+            {renderInputField('address', 'Address')}
+            {renderInputField('phoneNumber', 'Phone Number', 'phone-pad')}
+            {/* {renderInputField('email2', 'Email')} */}
+        </View>
+    );
 
     const renderInfoMessage = () => (
         <View style={styles.messageContainer}>
@@ -243,28 +339,28 @@ const ProfileDetails = ({ navigation }) => {
         </TouchableOpacity>
     );
 
-         return (
-         <KeyboardAvoidingView 
-             style={[styles.container, { backgroundColor: theme.colors.background }]}
-             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-             keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-         >
-             {renderHeader()}
-             <ScrollView 
-                 style={styles.scrollView} 
-                 showsVerticalScrollIndicator={false}
-                 keyboardShouldPersistTaps="handled"
-                 contentContainerStyle={styles.scrollContent}
-             >
-                 <View style={styles.content}>
-                     {renderForm()}
-                     {renderSubmitButton()}
-                     {renderInfoMessage()}
-                     {renderContactSupport()}
-                 </View>
-             </ScrollView>
-         </KeyboardAvoidingView>
-     );
+    return (
+        <KeyboardAvoidingView
+            style={[styles.container, { backgroundColor: theme.colors.background }]}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+            {renderHeader()}
+            <ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={styles.scrollContent}
+            >
+                <View style={styles.content}>
+                    {renderForm()}
+                    {renderSubmitButton()}
+                    {renderInfoMessage()}
+                    {renderContactSupport()}
+                </View>
+            </ScrollView>
+        </KeyboardAvoidingView>
+    );
 };
 
 const styles = StyleSheet.create({
@@ -297,17 +393,17 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         marginBottom: 20,
     },
-         scrollView: {
-         flex: 1,
-     },
-     scrollContent: {
-         flexGrow: 1,
-     },
-     content: {
-         paddingHorizontal: 20,
-         paddingVertical: 20,
-         flex: 1,
-     },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
+    },
+    content: {
+        paddingHorizontal: 20,
+        paddingVertical: 20,
+        flex: 1,
+    },
     formContainer: {
         marginBottom: 30,
     },

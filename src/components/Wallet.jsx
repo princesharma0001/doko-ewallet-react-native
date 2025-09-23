@@ -44,7 +44,7 @@ const Wallet = ({ navigation }) => {
     {
       id: 1,
       type: 'send',
-      description: 'Send: UQ....R12F',
+      description: 'Sent: UQ....R12F',
       date: '15 July, 2023',
       amount: '- 1.1 BTC',
       status: 'Sended',
@@ -52,7 +52,7 @@ const Wallet = ({ navigation }) => {
     {
       id: 2,
       type: 'send',
-      description: 'Send: UQ....R12F',
+      description: 'Sent: UQ....R12F',
       date: '15 July, 2023',
       amount: '- 1.1 BTC',
       status: 'Sended',
@@ -60,7 +60,7 @@ const Wallet = ({ navigation }) => {
     {
       id: 3,
       type: 'send',
-      description: 'Send: UQ....R12F',
+      description: 'Sent: UQ....R12F',
       date: '15 July, 2023',
       amount: '- 1.1 BTC',
       status: 'Sended',
@@ -68,7 +68,7 @@ const Wallet = ({ navigation }) => {
     {
       id: 4,
       type: 'send',
-      description: 'Send: UQ....R12F',
+      description: 'Sent: UQ....R12F',
       date: '15 July, 2023',
       amount: '- 1.1 BTC',
       status: 'Sended',
@@ -78,7 +78,7 @@ const Wallet = ({ navigation }) => {
   const activities = [
     {
       id: 1,
-      type: "Send UQ....R12F",
+      type: "Sent UQ....R12F",
       time: "15 July, 2023",
       amount: "-1.1 BTC Sent",
       icon: require("../assets/Images/quick1.png"),

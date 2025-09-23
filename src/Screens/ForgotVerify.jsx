@@ -101,7 +101,9 @@ const ForgotVerify = ({ navigation, route }) => {
     setErrorMessage('');
 
     try {
-      const result = await authService.verifyOTP(identity, completeOtp);
+      const result = await authService.verifyOTP(identity, completeOtp, "PASSWORD_RESET");
+      console.log("SDAgasdgsa",result);
+      
       
       if (result.success) {
         Toast.show({
@@ -111,9 +113,13 @@ const ForgotVerify = ({ navigation, route }) => {
           position: 'top',
           visibilityTime: 2000,
         });
-        
+          await AsyncStorage.setItem(
+          "dokoToken",
+          result.data?.token
+        );
+
         // Navigate to CreatePassword screen for passcode reset
-        navigation.navigate('CreatePassword', {
+        navigation.navigate('ForgotCreatePassword', {
           userData: userData,
           isResetPasscode: true
         });
@@ -144,7 +150,7 @@ const ForgotVerify = ({ navigation, route }) => {
     setIsResending(true);
     
     try {
-      const result = await authService.resendOTP(identity);
+      const result = await authService.forgotPasscode(identity);
       
       if (result.success) {
         Toast.show({

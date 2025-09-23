@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -15,14 +15,27 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
+import { useAppSelector, useAppDispatch } from '../store';
+import { setSelectedPlan } from '../store/slices/subscriptionSlice';
 
 const { width, height } = Dimensions.get('window');
 
-const SubscriptionDetails = ({ navigation }) => {
+const SubscriptionDetails = ({ navigation, route }) => {
     const { theme, isDarkMode } = useTheme();
-    const [selectedPlan, setSelectedPlan] = useState('Standard');
+    const dispatch = useAppDispatch();
+    const { selectedPlan } = useAppSelector((state) => state.subscription);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [modalAnimation] = useState(new Animated.Value(0));
+    
+    // Get plan from route params or Redux state
+    const planData = route?.params?.plan || selectedPlan;
+
+    // Update Redux state when plan data changes
+    useEffect(() => {
+        if (route?.params?.plan) {
+            dispatch(setSelectedPlan(route.params.plan));
+        }
+    }, [route?.params?.plan, dispatch]);
 
     const openModal = () => {
         setIsModalVisible(true);
@@ -49,80 +62,6 @@ const SubscriptionDetails = ({ navigation }) => {
         console.log('Pay with pickup or card pressed');
     };
 
-    const planData = {
-        Standard: {
-            title: 'Standard',
-            pricing: '1 month on us, then $4.99/mo',
-            tagline: 'Best for digital day to day consumption',
-            features: [
-                {
-                    title: 'Personalized Virtual Card',
-                    description: 'Get coverage for up to $1,000 on stolen or damaged purchases, within a year of purchase'
-                },
-                {
-                    title: 'Canceled event protection',
-                    description: 'Get refunded for tickets to events you can\'t make it to, up to $1,000 per year'
-                },
-                {
-                    title: 'Refund protection',
-                    description: 'Get refund protection of up to $300 on eligible purchases, within 90 days of purchase'
-                }
-            ],
-            buttonText: 'Start your complimentary trial'
-        },
-        Plus: {
-            title: 'Plus',
-            pricing: '1 month on us, then $9.99/mo',
-            tagline: 'Perfect for frequent travelers and online shoppers',
-            features: [
-                {
-                    title: 'Enhanced Virtual Card',
-                    description: 'Get coverage for up to £2,500 on stolen or damaged purchases, within a year of purchase'
-                },
-                {
-                    title: 'Travel protection',
-                    description: 'Get refunded for canceled flights and hotels, up to £2,000 per year'
-                },
-                {
-                    title: 'Extended refund protection',
-                    description: 'Get refund protection of up to £500 on eligible purchases, within 120 days of purchase'
-                },
-                {
-                    title: 'Priority support',
-                    description: '24/7 customer support with faster response times'
-                }
-            ],
-            buttonText: 'Start your complimentary trial'
-        },
-        Pro: {
-            title: 'Pro',
-            pricing: '1 month on us, then $19.99/mo',
-            tagline: 'Ultimate protection for business and premium users',
-            features: [
-                {
-                    title: 'Premium Virtual Card',
-                    description: 'Get coverage for up to £5,000 on stolen or damaged purchases, within a year of purchase'
-                },
-                {
-                    title: 'Comprehensive event protection',
-                    description: 'Get refunded for any canceled events, up to £5,000 per year'
-                },
-                {
-                    title: 'Maximum refund protection',
-                    description: 'Get refund protection of up to £1,000 on eligible purchases, within 180 days of purchase'
-                },
-                {
-                    title: 'Concierge service',
-                    description: 'Personal concierge for all your protection needs'
-                },
-                {
-                    title: 'Business features',
-                    description: 'Advanced analytics and team management tools'
-                }
-            ],
-            buttonText: 'Start your complimentary trial'
-        }
-    };
 
 
     const renderHeader = () => (
@@ -146,7 +85,23 @@ const SubscriptionDetails = ({ navigation }) => {
 
 
     const renderPlanCard = () => {
-        const currentPlan = planData[selectedPlan];
+        if (!planData) {
+            return (
+                <View style={[styles.planCard, {
+                    backgroundColor: theme.colors.surface,
+                    shadowColor: theme.colors.shadow,
+                    shadowOffset: {
+                        width: 0,
+                        height: 2,
+                    },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 8,
+                    elevation: 4,
+                }]}>
+                    <Text style={[styles.planTitle, { color: theme.colors.text }]}>No plan selected</Text>
+                </View>
+            );
+        }
 
         return (
             <View style={[styles.planCard, {
@@ -160,18 +115,32 @@ const SubscriptionDetails = ({ navigation }) => {
                 shadowRadius: 8,
                 elevation: 4,
             }]}>
-                <Text style={[styles.planTitle, { color: theme.colors.text }]}>{currentPlan.title}</Text>
-                <Text style={[styles.planPricing, { color: theme.colors.text }]}>{currentPlan.pricing}</Text>
-                <Text style={[styles.planTagline, { color: theme.colors.textSecondary }]}>{currentPlan.tagline}</Text>
+                <View style={styles.planHeader}>
+                    <Text style={[styles.planTitle, { color: theme.colors.text }]}>{planData.name}</Text>
+                    {planData.isPopular && (
+                        <View style={styles.popularBadge}>
+                            <Text style={styles.popularText}>Most Popular</Text>
+                        </View>
+                    )}
+                </View>
+                
+                <Text style={[styles.planPricing, { color: theme.colors.text }]}>
+                    {planData.formattedPrice} / {planData.durationText}
+                </Text>
+                <Text style={[styles.planTagline, { color: theme.colors.textSecondary }]}>
+                    {planData.description}
+                </Text>
 
                 <View style={styles.featuresSection}>
                     <Text style={[styles.featuresTitle, { color: theme.colors.text }]}>Features for you</Text>
 
-                    {currentPlan.features.map((feature, index) => (
+                    {planData.features.map((feature, index) => (
                         <View key={index} style={styles.featureItem}>
-                            <Text style={[styles.featureTitle, { color: theme.colors.text }]}>{feature.title}</Text>
-                            <Text style={[styles.featureDescription, { color: theme.colors.textSecondary }]}>
-                                {feature.description}
+                            <View style={styles.featureIcon}>
+                                <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                            </View>
+                            <Text style={[styles.featureText, { color: theme.colors.text }]}>
+                                {feature}
                             </Text>
                         </View>
                     ))}
@@ -253,7 +222,7 @@ const SubscriptionDetails = ({ navigation }) => {
                      style={styles.gradientButton}
                  >
                      <Text style={[styles.trialButtonText, { color: "#fff" }]}>
-                         Pay 14.98$/Month and Open Account
+                         Pay {planData?.formattedPrice || '$0.00'}/Month and Open Account
                      </Text>
                  </LinearGradient>
              </TouchableOpacity>
@@ -305,8 +274,12 @@ const SubscriptionDetails = ({ navigation }) => {
                         </View>
 
                         <View style={styles.paymentItem}>
-                            <Text style={[styles.paymentItemText, { color: theme.colors.text }]}>Monthly Subscription</Text>
-                            <Text style={[styles.paymentItemAmount, { color: theme.colors.text }]}>14.98$</Text>
+                            <Text style={[styles.paymentItemText, { color: theme.colors.text }]}>
+                                {planData?.name || 'Plan'} Subscription
+                            </Text>
+                            <Text style={[styles.paymentItemAmount, { color: theme.colors.text }]}>
+                                {planData?.formattedPrice || '$0.00'}
+                            </Text>
                         </View>
 
                         <View style={styles.paymentItem}>
@@ -318,7 +291,9 @@ const SubscriptionDetails = ({ navigation }) => {
 
                         <View style={styles.totalPayment}>
                             <Text style={[styles.totalText, { color: theme.colors.text }]}>Total Payment</Text>
-                            <Text style={[styles.totalAmount, { color: theme.colors.text }]}>44.98$</Text>
+                            <Text style={[styles.totalAmount, { color: theme.colors.text }]}>
+                                ${(planData?.price || 0 + 30).toFixed(2)}
+                            </Text>
                         </View>
                     </View>
                 </View>
@@ -442,10 +417,28 @@ const styles = StyleSheet.create({
         padding: 24,
         marginBottom: 20,
     },
+    planHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 8,
+    },
     planTitle: {
         fontSize: 28,
         fontWeight: '700',
-        marginBottom: 8,
+        flex: 1,
+    },
+    popularBadge: {
+        backgroundColor: '#FF6B6B',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 12,
+        marginLeft: 12,
+    },
+    popularText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '600',
     },
     planPricing: {
         fontSize: 18,
@@ -467,7 +460,17 @@ const styles = StyleSheet.create({
     },
 
     featureItem: {
-        marginBottom: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    featureIcon: {
+        marginRight: 12,
+    },
+    featureText: {
+        fontSize: 16,
+        flex: 1,
+        lineHeight: 22,
     },
     featureTitle: {
         fontSize: 16,

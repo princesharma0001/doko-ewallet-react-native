@@ -91,9 +91,9 @@ const Login = ({ navigation }) => {
                 <View style={styles.overlay}>
                     {/* Header */}
                     <View style={styles.header}>
-                        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                        {/* <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                             <AntDesign name="arrowleft" size={24} color={theme.colors.text} />
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
 
                     </View>
 

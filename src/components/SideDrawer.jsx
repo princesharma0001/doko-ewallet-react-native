@@ -18,7 +18,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { BlurView } from '@react-native-community/blur';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAppDispatch } from '../store';
+import { useAppDispatch, useAppSelector } from '../store';
 import { logout } from '../store/slices/userSlice';
 import Toast from 'react-native-toast-message';
 
@@ -27,6 +27,9 @@ const { width } = Dimensions.get('window');
 const SideDrawer = ({ isOpen, onClose, navigation }) => {
   const { theme } = useTheme();
   const [activeItem, setActiveItem] = useState('Dashboard');
+  const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
+  console.log("asdgadgasdg", currentUser);
+
   const dispatch = useAppDispatch();
 
   const menuItems = [
@@ -68,10 +71,10 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
               // Clear token from AsyncStorage
               await AsyncStorage.removeItem('dokoToken');
               await AsyncStorage.removeItem('dokoDeviceToken');
-              
+
               // Clear Redux state
               dispatch(logout());
-              
+
               // Show success message
               Toast.show({
                 type: 'success',
@@ -80,7 +83,7 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
                 position: 'top',
                 visibilityTime: 2000,
               });
-              
+
               // Close drawer and navigate to login
               onClose();
               navigation.reset({
@@ -159,12 +162,12 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
               <Text style={[styles.userName, {
                 fontFamily: theme.typography.fontFamily,
                 color: theme.colors.text
-              }]}>Devon Lane</Text>
+              }]}>{currentUser?.firstName} {currentUser?.lastName}</Text>
               <View style={styles.userTagContainer}>
                 <Text style={[styles.userTag, {
                   fontFamily: theme.typography.fontFamily,
                   color: theme.colors.textSecondary
-                }]}>Faizan_231</Text>
+                }]}>{currentUser?.username}</Text>
                 <Ionicons name="qr-code" size={16} color={theme.colors.textSecondary} style={{ marginLeft: 8 }} />
               </View>
             </View>

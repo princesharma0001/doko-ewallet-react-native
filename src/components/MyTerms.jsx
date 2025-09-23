@@ -47,8 +47,9 @@ const MyTerms = ({ navigation }) => {
 
 
     const renderFeatureCard = (feature) => (
-        <View
+        <TouchableOpacity
             key={feature.id}
+            onPress={()=> navigation.navigate("TermsDetails")}
             style={[styles.featureCard, { backgroundColor: theme.colors.surface }]}
         >
             <View>
@@ -67,7 +68,7 @@ const MyTerms = ({ navigation }) => {
 
 
 
-        </View>
+        </TouchableOpacity>
     );
 
     const renderSubscriptionFeatures = () => (
