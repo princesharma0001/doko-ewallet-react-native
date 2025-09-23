@@ -11,7 +11,8 @@ import {
     Dimensions,
     TextInput,
     FlatList,
-    Alert
+    Alert,
+    ActivityIndicator
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
@@ -19,6 +20,8 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Button from '../components/Button';
 import { useNavigation } from '@react-navigation/native';
+import { chatService } from '../services/apiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,6 +33,8 @@ const NewGroup = () => {
     const [groupImage, setGroupImage] = useState(null);
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isCreating, setIsCreating] = useState(false);
+    const [authToken, setAuthToken] = useState(null);
 
     // Mock user data - replace with actual API call
     const [users] = useState([
@@ -79,7 +84,21 @@ const NewGroup = () => {
     //     });
     // };
 
-    const handleCreateGroup = () => {
+    // Load auth token on component mount
+    React.useEffect(() => {
+        loadAuthToken();
+    }, []);
+
+    const loadAuthToken = async () => {
+        try {
+            const token = await AsyncStorage.getItem('authToken');
+            setAuthToken(token);
+        } catch (error) {
+            console.error('Error loading auth token:', error);
+        }
+    };
+
+    const handleCreateGroup = async () => {
         if (!groupName.trim()) {
             Alert.alert('Error', 'Please enter a group name');
             return;
@@ -88,20 +107,42 @@ const NewGroup = () => {
             Alert.alert('Error', 'Please select at least 2 members for the group');
             return;
         }
+        if (!authToken) {
+            Alert.alert('Error', 'Authentication required. Please login again.');
+            return;
+        }
 
-        // Here you would typically make an API call to create the group
-        console.log('Creating group:', {
-            name: groupName,
-            image: groupImage,
-            members: selectedUsers
-        });
+        setIsCreating(true);
 
-        Alert.alert('Success', 'Group created successfully!', [
-            {
-                text: 'OK',
-                onPress: () => navigation.goBack()
+        try {
+            // Prepare group data according to API specification
+            const groupData = {
+                name: groupName.trim(),
+                description: groupDescription.trim() || '',
+                participants: selectedUsers.map(user => user.id), // Assuming user.id is the participant ID
+                isPrivate: false // You can make this configurable if needed
+            };
+
+            console.log('Creating group with data:', groupData);
+
+            const response = await chatService.createGroup(groupData, authToken);
+
+            if (response.success) {
+                Alert.alert('Success', 'Group created successfully!', [
+                    {
+                        text: 'OK',
+                        onPress: () => navigation.goBack()
+                    }
+                ]);
+            } else {
+                Alert.alert('Error', response.error || 'Failed to create group');
             }
-        ]);
+        } catch (error) {
+            console.error('Error creating group:', error);
+            Alert.alert('Error', 'An unexpected error occurred while creating the group');
+        } finally {
+            setIsCreating(false);
+        }
     };
 
     const renderUserItem = ({ item }) => {
@@ -343,6 +384,29 @@ const NewGroup = () => {
             textAlign: 'center',
             paddingVertical: theme.spacing.md,
         },
+        loadingOverlay: {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+        },
+        loadingContainer: {
+            backgroundColor: theme.colors.surface,
+            padding: theme.spacing.xl,
+            borderRadius: theme.borderRadius.lg,
+            alignItems: 'center',
+            minWidth: 200,
+        },
+        loadingText: {
+            marginTop: theme.spacing.md,
+            fontSize: theme.typography.sizes.md,
+            fontWeight: theme.typography.weights.medium,
+        },
     });
 
     return (
@@ -364,14 +428,18 @@ const NewGroup = () => {
                 <TouchableOpacity
                     style={styles.createButton}
                     onPress={handleCreateGroup}
-                    disabled={!groupName.trim() || selectedUsers.length < 2}
+                    disabled={!groupName.trim() || selectedUsers.length < 2 || isCreating}
                 >
-                    <Text style={[
-                        styles.createButtonText,
-                        (!groupName.trim() || selectedUsers.length < 2) && { opacity: 0.5 }
-                    ]}>
-                        Create
-                    </Text>
+                    {isCreating ? (
+                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                    ) : (
+                        <Text style={[
+                            styles.createButtonText,
+                            (!groupName.trim() || selectedUsers.length < 2 || isCreating) && { opacity: 0.5 }
+                        ]}>
+                            Create
+                        </Text>
+                    )}
                 </TouchableOpacity>
             </View>
 
@@ -448,6 +516,18 @@ const NewGroup = () => {
                     />
                 </View>
             </ScrollView>
+
+            {/* Loading Overlay */}
+            {isCreating && (
+                <View style={styles.loadingOverlay}>
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color={theme.colors.primary} />
+                        <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+                            Creating group...
+                        </Text>
+                    </View>
+                </View>
+            )}
         </SafeAreaView>
     );
 };

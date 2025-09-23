@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,9 @@ import {
   ImageBackground,
   Image,
   TouchableHighlight,
+  PermissionsAndroid,
+  Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
@@ -23,6 +26,7 @@ import Feather from 'react-native-vector-icons/Feather';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import { useNavigation } from '@react-navigation/native';
+import Contacts from 'react-native-contacts';
 
 const { width, height } = Dimensions.get('window');
 
@@ -36,8 +40,120 @@ const HomeScreen = () => {
   const [currentView, setCurrentView] = useState('home'); // 'home' or 'currentAccount'
   const navigation = useNavigation();
   const [activeFilter, setActiveFilter] = useState("All");
+  const [contacts, setContacts] = useState([]);
+  const [isLoadingContacts, setIsLoadingContacts] = useState(false);
 
   const filters = ["All", "Income", "Expenses"];
+
+  // Request contacts permission
+  const requestContactsPermission = async () => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
+          {
+            title: 'Contacts Permission',
+            message: 'This app needs access to your contacts to show them in the app.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          }
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true; // iOS permissions are handled in Info.plist
+  };
+
+  // Fetch contacts from device
+  const fetchContacts = async () => {
+    try {
+      console.log('Starting to fetch real contacts...');
+      setIsLoadingContacts(true);
+
+      const hasPermission = await requestContactsPermission();
+      console.log('Permission granted:', hasPermission);
+
+      if (!hasPermission) {
+        Alert.alert(
+          'Permission Required',
+          'This app needs access to your contacts to show them. Please grant permission in Settings > Privacy & Security > Contacts.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Open Settings', onPress: () => {
+                // This will open the app settings
+                console.log('User should open settings manually');
+              }
+            }
+          ]
+        );
+        setIsLoadingContacts(false);
+        return;
+      }
+
+      console.log('Fetching contacts from device...');
+      Contacts.getAll((err, contacts) => {
+        console.log('Contacts fetch result - Error:', err);
+        console.log('Contacts fetch result - Total contacts:', contacts ? contacts.length : 0);
+
+        if (err) {
+          console.error('Error fetching contacts:', err);
+          Alert.alert('Error', `Failed to fetch contacts: ${err.message || 'Unknown error'}`);
+          setIsLoadingContacts(false);
+          return;
+        }
+
+        if (!contacts || contacts.length === 0) {
+          console.log('No contacts found on device');
+          Alert.alert('No Contacts', 'No contacts found on your device. Please add some contacts to your phone first.');
+          setContacts([]);
+          setIsLoadingContacts(false);
+          return;
+        }
+
+        // Process all contacts (not just those with phone numbers)
+        const processedContacts = contacts
+          .slice(0, 50) // Limit to first 50 contacts
+          .map((contact, index) => {
+            const contactData = {
+              id: contact.recordID || `contact_${index}`,
+              name: contact.displayName ||
+                `${contact.givenName || ''} ${contact.familyName || ''}`.trim() ||
+                'Unknown Contact',
+              phone: contact.phoneNumbers && contact.phoneNumbers.length > 0
+                ? contact.phoneNumbers[0].number
+                : 'No phone number',
+              email: contact.emailAddresses && contact.emailAddresses.length > 0
+                ? contact.emailAddresses[0].email
+                : '',
+              avatar: contact.thumbnailPath || null,
+            };
+            return contactData;
+          });
+
+        console.log('Successfully processed contacts:', processedContacts.length);
+        setContacts(processedContacts);
+        setIsLoadingContacts(false);
+
+        // Show success message
+        Alert.alert('Success', `Loaded ${processedContacts.length} contacts from your device!`);
+      });
+    } catch (error) {
+      console.error('Error in fetchContacts:', error);
+      setIsLoadingContacts(false);
+      Alert.alert('Error', `Failed to fetch contacts: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  // Load contacts when component mounts
+  useEffect(() => {
+    console.log('HomeScreen mounted, fetching real contacts...');
+    fetchContacts();
+  }, []);
 
   const handleTabPress = (tabId) => {
     setActiveTab(tabId);
@@ -102,33 +218,6 @@ const HomeScreen = () => {
     },
   ];
 
-  const contacts = [
-    {
-      id: 1,
-      type: "Alex Johnson",
-      time: "@alex.api",
-      amount: "-1.1 BTC Sent",
-      icon: require("../assets/Images/RedFlag.png"),
-    },
-    {
-      id: 2,
-      type: "Alex Johnson",
-
-      time: "@alex.api",
-
-      amount: "+0.5 BTC Received",
-      icon: require("../assets/Images/RedFlag.png"),
-    },
-    {
-      id: 3,
-      type: "Alex Johnson",
-      time: "@alex.api",
-
-      amount: "-0.2 BTC Spent",
-      icon: require("../assets/Images/RedFlag.png"),
-    },
-
-  ];
 
   const Cards = [
     {
@@ -184,7 +273,13 @@ const HomeScreen = () => {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.profileButton}>
+        <TouchableOpacity
+          style={styles.profileButton}
+          onPress={() => {
+            console.log('Refreshing real contacts...');
+            fetchContacts();
+          }}
+        >
           <Image source={require("../assets/Images/Profile.png")} resizeMode="contain" />
           {/* <View style={[styles.profileIcon, { backgroundColor: '#10B981' }]}>
             <Icon name="person" size={20} color="#fff" />
@@ -230,10 +325,11 @@ const HomeScreen = () => {
   );
 
   const renderActionButtons = () => (
-    <View style={styles.actionButtons}>
-      <TouchableOpacity style={[styles.actionButton, {
+    <View style={styles.actionButtons2}>
+      <TouchableOpacity style={[styles.actionButton1, {
         backgroundColor: theme.colors.surface,
-        borderColor: theme.colors.border
+        borderColor: theme.colors.border,
+
       }]}>
         <Image source={require("../assets/Images/SendIcon.png")} resizeMode="contain" style={{ width: 45, height: 45 }} />
         {/* <Icon name="send" size={20} color="#fff" /> */}
@@ -246,7 +342,7 @@ const HomeScreen = () => {
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.actionButton, {
+      <TouchableOpacity style={[styles.actionButton1, {
         backgroundColor: theme.colors.surface,
         borderColor: theme.colors.border
       }]}>
@@ -284,7 +380,7 @@ const HomeScreen = () => {
     </TouchableHighlight>
   );
 
-  
+
 
 
   const renderQuickStats = () => {
@@ -511,42 +607,76 @@ const HomeScreen = () => {
         My Contact
       </Text>
 
+      {isLoadingContacts ? (
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.loadingText, { color: theme.colors.textSecondary, fontFamily: theme.typography.fontFamily }]}>
+            Loading contacts...
+          </Text>
+        </View>
+      ) : contacts.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={[styles.emptyText, { color: theme.colors.textSecondary, fontFamily: theme.typography.fontFamily }]}>
+            No contacts found on your device
+          </Text>
+          <TouchableOpacity
+            style={[styles.refreshButton, { backgroundColor: theme.colors.primary }]}
+            onPress={fetchContacts}
+          >
+            <Text style={[styles.refreshButtonText, { color: '#FFFFFF', fontFamily: theme.typography.fontFamily }]}>
+              Try Again
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          {contacts.slice(0, 5).map((contact) => (
+            <TouchableHighlight
+              key={contact.id}
+              style={styles.activityItem}
+              onPress={() => console.log("Contact pressed:", contact)}
+              underlayColor={theme.colors.border}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+                <View style={[styles.activityIcon, { backgroundColor: theme.colors.primary + '20' }]}>
+                  {contact.avatar ? (
+                    <Image
+                      source={{ uri: contact.avatar }}
+                      style={{ width: 40, height: 40, borderRadius: 20 }}
+                    />
+                  ) : (
+                    <Text style={[styles.contactInitial, { color: theme.colors.primary, fontFamily: theme.typography.fontFamily }]}>
+                      {contact.name.charAt(0).toUpperCase()}
+                    </Text>
+                  )}
+                </View>
+                <View style={styles.activityContent}>
+                  <Text style={[styles.activityType, { color: theme.colors.text, fontFamily: theme.typography.fontFamily, fontWeight: "600" }]}>
+                    {contact.name}
+                  </Text>
+                  <Text style={[styles.activityTime, {
+                    color: theme.colors.textSecondary,
+                    fontFamily: theme.typography.fontFamily
+                  }]}>
+                    {contact.phone !== 'No phone number' ? contact.phone : (contact.email || 'No contact info')}
+                  </Text>
+                </View>
+              </View>
+            </TouchableHighlight>
+          ))}
+        </>
+      )}
 
-
-      {contacts.map((item) => (
-        <TouchableHighlight key={item.id} style={styles.activityItem} onPress={() => console.log("f")
-        } underlayColor={theme.colors.border} // softer highlight for dark theme
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-            <View style={styles.activityIcon}>
-              <Image source={item.icon} resizeMode="contain" style={{ width: 40, height: 40 }} />
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={[styles.activityType, { color: theme.colors.text, fontFamily: theme.typography.fontFamily, fontWeight: "600" }]}>
-                {item.type}
-              </Text>
-              <Text style={[styles.activityTime, {
-                color: theme.colors.textSecondary,
-                fontFamily: theme.typography.fontFamily
-              }]}>
-                {item.time}
-              </Text>
-            </View>
-
-          </View>
-        </TouchableHighlight>
-      ))}
-
-
-      <TouchableOpacity style={[styles.seeAllButton, { backgroundColor: theme.colors.border }]}>
+      <TouchableOpacity
+        style={[styles.seeAllButton, { backgroundColor: theme.colors.border }]}
+        onPress={() => console.log("View all contacts pressed")}
+      >
         <Text style={[styles.seeAllText, {
           color: theme.colors.text,
           fontFamily: theme.typography.fontFamily
         }]}>
-          View All Contact
+          View All Contact ({contacts.length})
         </Text>
         <AntDesign name="right" size={20} color={theme.colors.text} />
-
       </TouchableOpacity>
     </View>
   );
@@ -715,6 +845,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 15,
     marginBottom: 25,
+  },
+  actionButtons2: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: 20,
+
+
   },
   actionButton: {
     flex: 1,
@@ -922,12 +1059,14 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     alignItems: 'center',
   },
-  actionButton: {
+  actionButton1: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 16,
     paddingHorizontal: 12,
     borderRadius: 12,
+    // gap:10
+    // width:width / 3,
     marginRight: 12,
   },
   actionIcon: {
@@ -1007,6 +1146,40 @@ const styles = StyleSheet.create({
   },
   transactionStatus: {
     fontSize: 12,
+  },
+  // Contact specific styles
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  emptyText: {
+    fontSize: 14,
+    marginBottom: 15,
+  },
+  refreshButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  refreshButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  contactInitial: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 

@@ -501,3 +501,48 @@ export const authService = {
     }
   },
 };
+
+// Chat service functions
+export const chatService = {
+  // Create Group API call
+  createGroup: async (groupData, token) => {
+    try {
+      console.log('Calling create group API with data:', groupData);
+      
+      const response = await apiClient.post('https://1f9dq437-8000.inc1.devtunnels.ms/api/v1/chat/create/group', groupData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      console.log('Create group API response:', response.data);
+      
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Create Group API Error:', error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Group creation failed';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+};
