@@ -500,6 +500,103 @@ export const authService = {
       }
     }
   },
+
+  // Purchase Subscription API call
+  purchaseSubscription: async (planId, autoRenew = false, token) => {
+    try {
+      console.log('Calling purchase subscription API with planId:', planId, 'autoRenew:', autoRenew);
+
+      const response = await apiClient.post(
+        ApiConfig.purchaseSubscription,
+        {
+          planId,
+          autoRenew,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log('Purchase subscription API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Purchase Subscription API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Subscription purchase failed';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Verify Payment API call
+  verifyPayment: async (paymentIntentId, token) => {
+    try {
+      console.log('Calling verify payment API with paymentIntentId:', paymentIntentId);
+
+      const response = await apiClient.post(
+        ApiConfig.verifyPayment,
+        {
+          paymentIntentId: paymentIntentId,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log('Verify payment API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Verify Payment API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Payment verification failed';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
 };
 
 // Chat service functions

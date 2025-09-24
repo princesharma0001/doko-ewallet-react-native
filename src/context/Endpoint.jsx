@@ -14,5 +14,7 @@ const ApiConfig = {
     deleteAccount: `${url}api/v1/auth/deleteAccount`,
     getPlans: `${url}api/v1/plan/list`,
     getContent: `${url}api/v1/content/list`,
+    purchaseSubscription: `${url}api/v1/subscription/purchase`,
+    verifyPayment: `${url}api/v1/subscription/verify-payment`,
 };
 export default ApiConfig;

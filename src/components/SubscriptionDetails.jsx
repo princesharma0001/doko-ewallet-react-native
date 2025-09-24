@@ -17,6 +17,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useAppSelector, useAppDispatch } from '../store';
 import { setSelectedPlan } from '../store/slices/subscriptionSlice';
+import StripePaymentModal from './StripePaymentModal';
+import Toast from 'react-native-toast-message';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,6 +27,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
     const dispatch = useAppDispatch();
     const { selectedPlan } = useAppSelector((state) => state.subscription);
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [isStripeModalVisible, setIsStripeModalVisible] = useState(false);
     const [modalAnimation] = useState(new Animated.Value(0));
     
     // Get plan from route params or Redux state
@@ -60,6 +63,27 @@ const SubscriptionDetails = ({ navigation, route }) => {
         closeModal();
         // Handle payment with pickup logic
         console.log('Pay with pickup or card pressed');
+    };
+
+    const handlePayWithCard = () => {
+        closeModal();
+        setIsStripeModalVisible(true);
+    };
+
+    const handlePaymentSuccess = (subscriptionData) => {
+        console.log('Payment successful:', subscriptionData);
+        Toast.show({
+            type: 'success',
+            text1: 'Subscription Activated',
+            text2: 'Your subscription has been successfully activated!',
+            position: 'top',
+            visibilityTime: 4000,
+        });
+        
+        // Navigate back or to a success screen
+        if (navigation) {
+            navigation.goBack();
+        }
     };
 
 
@@ -197,14 +221,24 @@ const SubscriptionDetails = ({ navigation, route }) => {
                          You need to deposit money to your account to subscribe :)
                      </Text>
                      
-                     {/* Action Button */}
+                     {/* Action Buttons */}
                      <TouchableOpacity
                          style={styles.modalActionButton}
                          onPress={handlePayWithPickup}
                          activeOpacity={0.7}
                      >
                          <Text style={[styles.modalActionText, { color: '#169BFF' }]}>
-                             Pay With Pickup or Card
+                             Pay With Pickup
+                         </Text>
+                     </TouchableOpacity>
+                     
+                     <TouchableOpacity
+                         style={[styles.modalActionButton, { marginTop: 12 }]}
+                         onPress={handlePayWithCard}
+                         activeOpacity={0.7}
+                     >
+                         <Text style={[styles.modalActionText, { color: '#169BFF' }]}>
+                             Pay With Card
                          </Text>
                      </TouchableOpacity>
                  </Animated.View>
@@ -229,11 +263,11 @@ const SubscriptionDetails = ({ navigation, route }) => {
 
              <View style={styles.linksContainer}>
                  <TouchableOpacity
-                     onPress={openModal}
+                     onPress={handlePayWithCard}
                      style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingTop: 20,paddingBottom:15 }}
                      activeOpacity={0.7}
                  >
-                     <Text style={[styles.trialButtonText, { color: "#169BFF" }]}>Pay With Pickup or Card</Text>
+                     <Text style={[styles.trialButtonText, { color: "#169BFF" }]}>Pay With Card</Text>
                  </TouchableOpacity>
              </View>
          </View>
@@ -300,6 +334,14 @@ const SubscriptionDetails = ({ navigation, route }) => {
                  {renderFooter()}
              </ScrollView>
              {renderBottomSheet()}
+             
+             {/* Stripe Payment Modal */}
+             <StripePaymentModal
+                 visible={isStripeModalVisible}
+                 onClose={() => setIsStripeModalVisible(false)}
+                 planData={planData}
+                 onPaymentSuccess={handlePaymentSuccess}
+             />
          </View>
      );
 };
