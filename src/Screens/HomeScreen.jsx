@@ -27,6 +27,8 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
 import { useNavigation } from '@react-navigation/native';
 import Contacts from 'react-native-contacts';
+import { getProfile } from '../store/slices/userSlice';
+import { useDispatch } from 'react-redux';
 
 const { width, height } = Dimensions.get('window');
 
@@ -42,7 +44,7 @@ const HomeScreen = () => {
   const [activeFilter, setActiveFilter] = useState("All");
   const [contacts, setContacts] = useState([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState(false);
-
+  const dispatch = useDispatch();
   const filters = ["All", "Income", "Expenses"];
 
   // Request contacts permission
@@ -153,6 +155,7 @@ const HomeScreen = () => {
   useEffect(() => {
     console.log('HomeScreen mounted, fetching real contacts...');
     fetchContacts();
+    dispatch(getProfile());
   }, []);
 
   const handleTabPress = (tabId) => {
