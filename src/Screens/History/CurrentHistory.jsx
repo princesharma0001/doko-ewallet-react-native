@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -11,12 +11,16 @@ import {
     Platform,
     Alert,
     Image,
+    ActivityIndicator,
+    RefreshControl,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import LinearGradient from 'react-native-linear-gradient';
+import { authService } from '../../services/apiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CurrentHistory = () => {
     const { theme, isDarkMode } = useTheme();
@@ -27,35 +31,136 @@ const CurrentHistory = () => {
     const [toDate, setToDate] = useState(null);
     const [showFromDatePicker, setShowFromDatePicker] = useState(false);
     const [showToDatePicker, setShowToDatePicker] = useState(false);
+    const [transactions, setTransactions] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
+    const [error, setError] = useState(null);
 
 
-    // Sample transaction data
-    const transactions = [
-        {
-            id: 1,
-            type: 'Money Transfer',
-            date: '2023-12-06 00:42:14',
-            recipient: 'Sent to Swati',
-            amount: '$62',
-            shares: '3 Shares',
-            fee: '$1.8',
-            total: '$65',
-            duration: 'Instant',
-        },
-        {
-            id: 2,
-            type: 'Money Transfer',
-            date: '2023-12-06 00:42:14',
-            recipient: 'Received From Abhi',
-            amount: '$62',
-            shares: '3 Shares',
-            fee: '$1.8',
-            total: '$65',
-            duration: 'Instant',
-        },
-    ];
+    // Fetch transactions from API
+    const fetchTransactions = async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            
+            const token = await AsyncStorage.getItem('dokoToken');
+            if (!token) {
+                setError('Authentication required');
+                return;
+            }
+
+            const result = await authService.getTransactionList(token);
+            
+            if (result.success) {
+                setTransactions(result.data?.docs || []);
+                console.log('Transactions fetched successfully:', result.data?.docs?.length || 0);
+            } else {
+                setError(result.error || 'Failed to fetch transactions');
+                setTransactions([]);
+            }
+        } catch (error) {
+            console.error('Error fetching transactions:', error);
+            setError('An error occurred while fetching transactions');
+            setTransactions([]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Filter transactions based on selected tab
+    const getFilteredTransactions = () => {
+        if (selectedFilter === 'All') {
+            return transactions;
+        } else if (selectedFilter === 'Pending') {
+            return transactions.filter(transaction => 
+                transaction.status === 'PENDING' || 
+                transaction.status === 'pending' ||
+                transaction.status === 'INITIATED'
+            );
+        } else if (selectedFilter === 'Completed') {
+            return transactions.filter(transaction => 
+                transaction.status === 'COMPLETED' || 
+                transaction.status === 'completed' ||
+                transaction.status === 'SUCCESS'
+            );
+        }
+        return transactions;
+    };
+
+    // Load transactions on component mount
+    useEffect(() => {
+        fetchTransactions();
+    }, []);
+
+    // Refresh transactions
+    const handleRefresh = async () => {
+        setIsRefreshing(true);
+        await fetchTransactions();
+        setIsRefreshing(false);
+    };
 
     const filters = ['All', 'Pending', 'Completed'];
+
+    // Helper functions for transaction formatting
+    const getTransactionType = (transaction) => {
+        if (transaction.type === 'transfer') {
+            return transaction.subType === 'sent' ? 'Transfer Sent' : 'Transfer Received';
+        } else if (transaction.type === 'deposit') {
+            return 'Wallet Deposit';
+        }
+        return transaction.description || 'Transaction';
+    };
+
+    const getTransactionAmount = (transaction) => {
+        const amount = transaction.amount;
+        const currency = transaction.currency;
+        const symbol = currency === 'NPR' ? '₨' : '$';
+        
+        if (transaction.type === 'transfer' && transaction.subType === 'sent') {
+            return `-${symbol}${amount}`;
+        } else {
+            return `+${symbol}${amount}`;
+        }
+    };
+
+    const formatTransactionDate = (dateString) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
+    const getTransactionDescription = (transaction) => {
+        if (transaction.type === 'transfer') {
+            if (transaction.metadata?.receiver) {
+                return `To ${transaction.metadata.receiver.firstName} ${transaction.metadata.receiver.lastName}`;
+            }
+            return transaction.description || 'Transfer';
+        } else if (transaction.type === 'deposit') {
+            return 'Wallet top-up';
+        }
+        return transaction.description || 'Transaction';
+    };
+
+    const getStatusColor = (status) => {
+        switch (status?.toLowerCase()) {
+            case 'completed':
+            case 'success':
+                return '#4CAF50';
+            case 'pending':
+            case 'initiated':
+                return '#FF9800';
+            case 'failed':
+            case 'cancelled':
+                return '#F44336';
+            default:
+                return '#9E9E9E';
+        }
+    };
 
     // Handler functions
     const handleBackPress = () => {
@@ -364,44 +469,111 @@ const CurrentHistory = () => {
             fontSize: 16,
             fontWeight: 'bold',
         },
+        // Skeleton loading styles
+        skeletonText: {
+            backgroundColor: '#E0E0E0',
+            borderRadius: 4,
+        },
+        // Error and empty state styles
+        errorContainer: {
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: 40,
+        },
+        errorText: {
+            fontSize: 16,
+            textAlign: 'center',
+            marginBottom: 16,
+        },
+        retryButton: {
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: '#1AA5FF',
+        },
+        retryButtonText: {
+            fontSize: 16,
+            fontWeight: '600',
+        },
+        emptyContainer: {
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: 40,
+        },
+        emptyText: {
+            fontSize: 16,
+            textAlign: 'center',
+        },
     });
 
+    // Skeleton loading component
+    const TransactionSkeleton = () => (
+        <View style={[styles.transactionCard, { backgroundColor: theme.colors.card }]}>
+            <View style={styles.cardHeader}>
+                <View style={[styles.skeletonText, { width: 120, height: 18, marginBottom: 8 }]} />
+                <View style={[styles.skeletonText, { width: 80, height: 14 }]} />
+            </View>
+            <View style={[styles.skeletonText, { width: 150, height: 16, marginBottom: 16 }]} />
+            <View style={styles.transactionDetails}>
+                <View style={styles.detailRow}>
+                    <View style={[styles.skeletonText, { width: 60, height: 14 }]} />
+                    <View style={[styles.skeletonText, { width: 80, height: 14 }]} />
+                </View>
+                <View style={styles.detailRow}>
+                    <View style={[styles.skeletonText, { width: 40, height: 14 }]} />
+                    <View style={[styles.skeletonText, { width: 100, height: 14 }]} />
+                </View>
+                <View style={styles.detailRow}>
+                    <View style={[styles.skeletonText, { width: 30, height: 14 }]} />
+                    <View style={[styles.skeletonText, { width: 60, height: 14 }]} />
+                </View>
+            </View>
+        </View>
+    );
+
     const renderTransactionCard = (transaction) => (
-        <View key={transaction.id} style={[styles.transactionCard, { backgroundColor: theme.colors.card }]}>
+        <View key={transaction._id} style={[styles.transactionCard, { backgroundColor: theme.colors.card }]}>
             <View style={styles.cardHeader}>
                 <Text style={[styles.transactionTitle, { color: theme.colors.text }]}>
-                    {transaction.type}
+                    {getTransactionType(transaction)}
                 </Text>
                 <Text style={[styles.transactionDate, { color: theme.colors.textSecondary }]}>
-                    {transaction.date}
+                    {formatTransactionDate(transaction.createdAt)}
                 </Text>
             </View>
 
             <Text style={[styles.recipientText, { color: theme.colors.text }]}>
-                {transaction.recipient}
+                {getTransactionDescription(transaction)}
             </Text>
 
             <View style={styles.transactionDetails}>
                 <View style={styles.detailRow}>
                     <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Amount</Text>
-                    <Text style={[styles.detailValue, { color: theme.colors.text }]}>{transaction.amount}</Text>
+                    <Text style={[styles.detailValue, { 
+                        color: getTransactionAmount(transaction).startsWith('+') ? '#4CAF50' : '#F44336' 
+                    }]}>
+                        {getTransactionAmount(transaction)}
+                    </Text>
                 </View>
                 <View style={styles.detailRow}>
-                    <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>To</Text>
-                    <Text style={[styles.detailValue, { color: theme.colors.text }]}>{transaction.shares}</Text>
+                    <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Currency</Text>
+                    <Text style={[styles.detailValue, { color: theme.colors.text }]}>{transaction.currency}</Text>
                 </View>
                 <View style={styles.detailRow}>
-                    <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Fee</Text>
-                    <Text style={[styles.detailValue, { color: theme.colors.text }]}>{transaction.fee}</Text>
+                    <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Status</Text>
+                    <Text style={[styles.detailValue, { color: getStatusColor(transaction.status) }]}>
+                        {transaction.status}
+                    </Text>
                 </View>
-                <View style={styles.detailRow}>
-                    <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Total USD</Text>
-                    <Text style={[styles.detailValue, { color: theme.colors.text }]}>{transaction.total}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                    <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Duration</Text>
-                    <Text style={[styles.detailValue, { color: theme.colors.text }]}>{transaction.duration}</Text>
-                </View>
+                {transaction.metadata?.fee && (
+                    <View style={styles.detailRow}>
+                        <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Fee</Text>
+                        <Text style={[styles.detailValue, { color: theme.colors.text }]}>
+                            {transaction.currency === 'NPR' ? '₨' : '$'}{transaction.metadata.fee}
+                        </Text>
+                    </View>
+                )}
             </View>
         </View>
     );
@@ -471,8 +643,45 @@ const CurrentHistory = () => {
                 style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefreshing}
+                        onRefresh={handleRefresh}
+                        colors={[theme.colors.primary]}
+                        tintColor={theme.colors.primary}
+                        title="Pull to refresh"
+                        titleColor={theme.colors.textSecondary}
+                    />
+                }
             >
-                {transactions.map(renderTransactionCard)}
+                {isLoading ? (
+                    // Show skeleton loading
+                    Array.from({ length: 3 }).map((_, index) => (
+                        <TransactionSkeleton key={index} />
+                    ))
+                ) : error ? (
+                    <View style={styles.errorContainer}>
+                        <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>
+                            {error}
+                        </Text>
+                        <TouchableOpacity 
+                            style={styles.retryButton}
+                            onPress={fetchTransactions}
+                        >
+                            <Text style={[styles.retryButtonText, { color: theme.colors.primary }]}>
+                                Retry
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : getFilteredTransactions().length > 0 ? (
+                    getFilteredTransactions().map(renderTransactionCard)
+                ) : (
+                    <View style={styles.emptyContainer}>
+                        <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                            No {selectedFilter.toLowerCase()} transactions found
+                        </Text>
+                    </View>
+                )}
             </ScrollView>
 
             {/* Filter Modal */}

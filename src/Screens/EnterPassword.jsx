@@ -25,7 +25,6 @@ const EnterPassword = ({ navigation, route }) => {
   const [passcode, setPasscode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const { currentUser } = useAppSelector((state) => state.user);
-  console.log("Sdfsdgfsda", currentUser);
 
   const isLoginInProgress = useRef(false);
 
@@ -235,10 +234,8 @@ const EnterPassword = ({ navigation, route }) => {
           }
 
           const result = await authService.login(identity, passcode);
-          console.log("Sdgasdgsadgs", result);
 
           if (result.success) {
-            console.log("fdgdsfgs", result?.success);
 
             // Store token from API response
             if (result.data?.token) {

@@ -23,6 +23,8 @@ const UserProfileModal = ({ visible, onClose, user, onActionPress }) => {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const [showReportModal, setShowReportModal] = useState(false);
+  console.log("dasfdgsd", user);
+
 
   const handleActionPress = (action) => {
     console.log('Action pressed:', action);
@@ -151,7 +153,7 @@ const UserProfileModal = ({ visible, onClose, user, onActionPress }) => {
 
                 </View>
                 <Text style={[styles.username, { color: theme.colors.text }]}>
-                  @{user?.username || 'username'}
+                  @{user?.username || user?.firstName || 'username'}
                 </Text>
               </View>
             </View>
@@ -170,7 +172,12 @@ const UserProfileModal = ({ visible, onClose, user, onActionPress }) => {
                 iconColor="#169BFF"
                 title="Send"
                 backgroundColor={theme.colors.surface}
-                onPress={() => { onActionPress(), navigation.navigate('AddingAmount') }}
+                onPress={() => {
+                  onActionPress();
+                  navigation.navigate('AddingAmount', {
+                    data: user,
+                  });
+                }}
               />
             </View>
             <View style={{ marginBottom: 20, width: 220 }}>

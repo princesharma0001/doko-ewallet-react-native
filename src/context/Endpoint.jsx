@@ -16,5 +16,12 @@ const ApiConfig = {
     getContent: `${url}api/v1/content/list`,
     purchaseSubscription: `${url}api/v1/subscription/purchase`,
     verifyPayment: `${url}api/v1/subscription/verify-payment`,
+    getActiveSubscription: `${url}api/v1/subscription/getActive`,
+    getWalletList: `${url}api/v1/wallet/list`,
+    initiateDeposit: `${url}api/v1/deposit/initiate`,
+    verifyDeposit: `${url}api/v1/deposit/verify`,
+    searchUsers: `${url}api/v1/user/list`,
+    sendTransfer: `${url}api/v1/transfer/send`,
+    getTransactionList: `${url}api/v1/transaction/list`,
 };
 export default ApiConfig;

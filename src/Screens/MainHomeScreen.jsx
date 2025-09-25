@@ -35,7 +35,7 @@ const MainHomeScreen = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('home');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isAccountSheetVisible, setIsAccountSheetVisible] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState('card');
+  const [selectedAccount, setSelectedAccount] = useState('current');
 
   const toggleDrawer = () => {
     setIsDrawerOpen(!isDrawerOpen);

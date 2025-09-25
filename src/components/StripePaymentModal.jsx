@@ -18,11 +18,11 @@ import Toast from 'react-native-toast-message';
 
 const { width, height } = Dimensions.get('window');
 
-const StripePaymentModal = ({ 
-  visible, 
-  onClose, 
-  planData, 
-  onPaymentSuccess 
+const StripePaymentModal = ({
+  visible,
+  onClose,
+  planData,
+  onPaymentSuccess
 }) => {
   const { theme } = useTheme();
   const { currentUser } = useAppSelector((state) => state.user);
@@ -35,7 +35,7 @@ const StripePaymentModal = ({
   const handlePaymentVerification = async (subscriptionData) => {
     try {
       console.log('Verifying payment for subscription:', subscriptionData);
-      
+
       // Get user token
       const token = await AsyncStorage.getItem('dokoToken');
       if (!token) {
@@ -52,7 +52,7 @@ const StripePaymentModal = ({
 
       // Call verify payment API
       const verifyResult = await authService.verifyPayment(paymentIntentId, token);
-      
+
       if (verifyResult.success) {
         console.log('final_payment', verifyResult.data);
         Toast.show({
@@ -62,7 +62,7 @@ const StripePaymentModal = ({
           position: 'top',
           visibilityTime: 4000,
         });
-        
+
         // Call success callback with verified data
         if (onPaymentSuccess) {
           onPaymentSuccess(subscriptionData);
@@ -118,43 +118,34 @@ const StripePaymentModal = ({
         token
       );
 
-      console.log("sdagsadgsadg",result);
-      
+      console.log("sdagsadgsadg", result);
+
 
       if (result.success && result.data?.paymentDetails?.client_secret) {
         const { client_secret } = result.data.paymentDetails;
         console.log("Payment Intent ID from API:", client_secret);
         console.log("Full API response:", result.data);
-        
+
         // The issue is that your API returns payment intent ID (pi_xxx) 
         // but Stripe needs client secret (pi_xxx_secret_xxx)
         // We need to either:
         // 1. Update your backend to return client secret, OR
         // 2. Use a different approach
-        
+
         // For now, let's try to use the payment intent ID as client secret
         // This might work if the format is correct
         let clientSecret = client_secret;
-        
+
         // If the payment intent ID doesn't contain '_secret_', we need to get the client secret
         if (!clientSecret.includes('_secret_')) {
           console.log("❌ ERROR: Your API returned payment intent ID but Stripe needs client secret!");
-          console.log("❌ Current value:", clientSecret);
           console.log("❌ Expected format: pi_xxx_secret_xxx");
-          
-          Alert.alert(
-            'Backend Configuration Required',
-            `Your backend API needs to return the Stripe client secret instead of payment intent ID.\n\n` +
-            `Current: ${clientSecret}\n` +
-            `Expected: pi_xxx_secret_xxx\n\n` +
-            `Please update your backend to return the client secret from the Stripe Payment Intent.`
-          );
           setLoading(false);
           return;
         }
-        
+
         console.log("Using client secret:", clientSecret);
-        
+
         // Confirm payment with Stripe
         const { error, paymentIntent: confirmedPaymentIntent } = await confirmPayment(
           clientSecret,
@@ -174,7 +165,7 @@ const StripePaymentModal = ({
           Alert.alert('Payment Failed', error.message);
         } else if (confirmedPaymentIntent) {
           console.log('Payment successful:', confirmedPaymentIntent);
-          
+
           // Call payment verification
           await handlePaymentVerification(result.data);
         }
@@ -273,8 +264,8 @@ const StripePaymentModal = ({
 
       <TouchableOpacity
         style={[
-          styles.payButton, 
-          { 
+          styles.payButton,
+          {
             backgroundColor: cardDetails?.complete ? '#1AA5FF' : '#CCCCCC',
             opacity: cardDetails?.complete ? 1 : 0.6
           }

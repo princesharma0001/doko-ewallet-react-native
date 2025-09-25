@@ -304,7 +304,6 @@ export const authService = {
   // Get Profile API call
   getProfile: async (token) => {
     try {
-      console.log('Calling get profile API');
 
       const response = await apiClient.get(ApiConfig.getProfile, {
         headers: {
@@ -312,7 +311,6 @@ export const authService = {
         },
       });
 
-      console.log('Get profile API response:', response.data);
 
       return {
         success: true,
@@ -579,6 +577,322 @@ export const authService = {
 
       if (error.response) {
         const errorMessage = error.response.data?.message || 'Payment verification failed';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Get Active Subscription API call
+  getActiveSubscription: async (token) => {
+    try {
+
+      const response = await apiClient.get(ApiConfig.getActiveSubscription, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Get Active Subscription API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to fetch subscription details';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Get Wallet List API call
+  getWalletList: async (token) => {
+    try {
+      const response = await apiClient.get(ApiConfig.getWalletList, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Get Wallet List API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to fetch wallet list';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Initiate Deposit API call
+  initiateDeposit: async (amount, description = "Wallet top-up", currency = "NPR", token) => {
+    try {
+      console.log('Calling initiate deposit API with amount:', amount, 'currency:', currency);
+
+      const response = await apiClient.post(
+        ApiConfig.initiateDeposit,
+        {
+          amount,
+          description,
+          currency,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log('Initiate deposit API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Initiate Deposit API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Deposit initiation failed';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Verify Deposit API call
+  verifyDeposit: async (paymentIntentId, token) => {
+    try {
+      console.log('Calling verify deposit API with paymentIntentId:', paymentIntentId);
+
+      const response = await apiClient.post(
+        ApiConfig.verifyDeposit,
+        {
+          paymentIntentId,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log('Verify deposit API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Verify Deposit API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Deposit verification failed';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Search Users API call
+  searchUsers: async (searchQuery, token) => {
+    try {
+      console.log('Calling search users API with query:', searchQuery);
+
+      const response = await apiClient.get(
+        `${ApiConfig.searchUsers}?search=${encodeURIComponent(searchQuery)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log('Search users API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Search Users API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'User search failed';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Send Transfer API call
+  sendTransfer: async (identity, amount, currency, notes, token) => {
+    try {
+      console.log('Calling send transfer API with:', { identity, amount, currency, notes });
+
+      const response = await apiClient.post(
+        ApiConfig.sendTransfer,
+        {
+          identity,
+          amount,
+          currency,
+          notes,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log('Send transfer API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Send Transfer API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Transfer failed';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Get Transaction List API call
+  getTransactionList: async (token) => {
+    try {
+      console.log('Calling get transaction list API');
+
+      const response = await apiClient.get(
+        ApiConfig.getTransactionList,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log('Get transaction list API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Get Transaction List API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to fetch transactions';
         return {
           success: false,
           error: errorMessage,

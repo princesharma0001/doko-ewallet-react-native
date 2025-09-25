@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,8 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import { BlurView } from '@react-native-community/blur';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppDispatch, useAppSelector } from '../store';
-import { logout } from '../store/slices/userSlice';
+import { getProfile, logout } from '../store/slices/userSlice';
+import { getActiveSubscription } from '../store/slices/subscriptionSlice';
 import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
@@ -28,9 +29,21 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
   const { theme } = useTheme();
   const [activeItem, setActiveItem] = useState('Dashboard');
   const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
-  console.log("asdgadgasdg", currentUser);
+  const { activeSubscription, isSubscriptionLoading, subscriptionError } = useAppSelector((state) => state.subscription);
 
   const dispatch = useAppDispatch();
+
+  // Fetch active subscription when component mounts or drawer opens
+  useEffect(() => {
+    if (isOpen && currentUser) {
+      dispatch(getActiveSubscription());
+    }
+  }, [isOpen, currentUser, dispatch]);
+
+  useEffect(() => {
+    dispatch(getProfile());
+
+  }, [])
 
   const menuItems = [
 
@@ -144,7 +157,10 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
                 }}
                 style={[styles.badge, { backgroundColor: theme.colors.surface }]}
               >
-                <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>Standard</Text>
+                <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>
+                  {isSubscriptionLoading ? '' :
+                    activeSubscription?.planId?.name || 'Standard'} Plan
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -171,6 +187,8 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
                 <Ionicons name="qr-code" size={16} color={theme.colors.textSecondary} style={{ marginLeft: 8 }} />
               </View>
             </View>
+
+
             <View style={{
               flex: 1,
               backgroundColor: theme.colors.surface,
@@ -283,9 +301,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 22,
+    paddingVertical: 8,
+    borderRadius: 50,
   },
   menuItem: {
     flexDirection: 'row',
@@ -326,6 +344,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 10,
+  },
+  subscriptionContainer: {
+    marginHorizontal: 15,
+    marginBottom: 15,
+    borderRadius: 13,
+    paddingVertical: 15,
+    paddingHorizontal: 15,
+  },
+  subscriptionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  subscriptionTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  planName: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  subscriptionDetails: {
+    gap: 8,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  detailLabel: {
+    fontSize: 12,
+    fontWeight: '400',
+  },
+  detailValue: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 

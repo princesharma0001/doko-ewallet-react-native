@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,14 @@ import {
   StatusBar,
   Image,
   TouchableHighlight,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import UserProfileModal from './UserProfileModal';
+import { authService } from '../services/apiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -24,62 +27,90 @@ const SearchUsernameModal = ({ visible, onClose, onSelectUser }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserProfileModal, setShowUserProfileModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const searchTimeoutRef = useRef(null);
 
-  const mockUsers = [
-    {
-      id: 'sami343',
-      username: 'sami343',
-      avatar: 'D',
-      avatarColor: '#169BFF',
-      isSelected: true,
-    },
-    {
-      id: 'housen',
-      username: 'Housen',
-      avatar: 'H',
-      avatarColor: '#E91E63',
-    },
-    {
-      id: 'khaled32',
-      username: 'Khaled32',
-      avatar: 'K',
-      avatarColor: '#4CAF50',
-    },
-    {
-      id: 'david234',
-      username: 'David234',
-      avatar: 'D',
-      avatarColor: '#FF9800',
-    },
-    {
-      id: 'ali34adf',
-      username: 'Ali34adf',
-      avatar: 'A',
-      avatarColor: '#9C27B0',
-    },
-    {
-      id: 'chantale33',
-      username: 'Chantale33',
-      avatar: 'C',
-      avatarColor: '#F44336',
-    },
-    {
-      id: 'javed345',
-      username: 'Javed345',
-      avatar: 'J',
-      avatarColor: '#00BCD4',
-    },
-    {
-      id: 'chantal78',
-      username: 'Chantal78',
-      avatar: 'C',
-      avatarColor: '#795548',
-    },
-  ];
+  // Search function
+  const searchUsers = async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setSearchError(null);
+      return;
+    }
 
-  const filteredUsers = mockUsers.filter(user =>
-    user.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    try {
+      setIsSearching(true);
+      setSearchError(null);
+      
+      const token = await AsyncStorage.getItem('dokoToken');
+      if (!token) {
+        setSearchError('Authentication required');
+        return;
+      }
+
+      const result = await authService.searchUsers(query, token);
+      
+      if (result.success) {
+        setSearchResults(result.data || []);
+      } else {
+        setSearchError(result.error || 'Search failed');
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchError('An error occurred while searching');
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search effect
+  useEffect(() => {
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Set new timeout for search
+    searchTimeoutRef.current = setTimeout(() => {
+      searchUsers(searchQuery);
+    }, 500); // 500ms delay
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // Clear search results when modal closes
+  useEffect(() => {
+    if (!visible) {
+      setSearchQuery('');
+      setSearchResults([]);
+      setSearchError(null);
+      setIsSearching(false);
+    }
+  }, [visible]);
+
+  // Generate avatar color based on user data
+  const getAvatarColor = (user) => {
+    const colors = ['#169BFF', '#E91E63', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#795548'];
+    const index = (user.firstName?.charCodeAt(0) || 0) % colors.length;
+    return colors[index];
+  };
+
+  // Get avatar text from user data
+  const getAvatarText = (user) => {
+    if (user.firstName) {
+      return user.firstName.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
 
   const handleUserSelect = (user) => {
     console.log('Selected user:', user.username);
@@ -95,23 +126,37 @@ const SearchUsernameModal = ({ visible, onClose, onSelectUser }) => {
 
   const UserItem = ({ user }) => (
     <TouchableHighlight
-      style={[
-        styles.userItem,
-
-      ]}
+      style={[styles.userItem]}
       onPress={() => handleUserSelect(user)}
-      underlayColor={theme.colors.surface} // highlight color when pressed
+      underlayColor={theme.colors.surface}
     >
       <View style={styles.userContent}>
-        <View style={[styles.avatar, { backgroundColor: user.avatarColor }]}>
-          <Text style={styles.avatarText}>{user.avatar}</Text>
-         
+        <View style={[styles.avatar, { backgroundColor: getAvatarColor(user) }]}>
+          <Text style={styles.avatarText}>{getAvatarText(user)}</Text>
         </View>
-        <Text style={[styles.username, { color: theme.colors.text }]}>
-          @{user.username}
-        </Text>
+        <View style={styles.userInfo}>
+          <Text style={[styles.username, { color: theme.colors.text }]}>
+            {user.firstName} {user.lastName}
+          </Text>
+          <Text style={[styles.userPhone, { color: theme.colors.textSecondary }]}>
+            {user.countryCode} {user.phone}
+          </Text>
+        </View>
       </View>
     </TouchableHighlight>
+  );
+
+  // Skeleton loading component
+  const SkeletonItem = () => (
+    <View style={styles.userItem}>
+      <View style={styles.userContent}>
+        <View style={[styles.avatar, styles.skeletonAvatar]} />
+        <View style={styles.userInfo}>
+          <View style={[styles.skeletonText, { width: 120, height: 16, marginBottom: 4 }]} />
+          <View style={[styles.skeletonText, { width: 80, height: 14 }]} />
+        </View>
+      </View>
+    </View>
   );
 
   return (
@@ -174,9 +219,38 @@ const SearchUsernameModal = ({ visible, onClose, onSelectUser }) => {
 
           {/* Users List */}
           <ScrollView style={styles.usersList} showsVerticalScrollIndicator={false}>
-            {filteredUsers.map((user) => (
-              <UserItem key={user.id} user={user} />
-            ))}
+            {isSearching ? (
+              // Show skeleton loading
+              Array.from({ length: 3 }).map((_, index) => (
+                <SkeletonItem key={index} />
+              ))
+            ) : searchError ? (
+              // Show error message
+              <View style={styles.errorContainer}>
+                <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>
+                  {searchError}
+                </Text>
+              </View>
+            ) : searchResults.length > 0 ? (
+              // Show search results
+              searchResults.map((user) => (
+                <UserItem key={user._id || user.id} user={user} />
+              ))
+            ) : searchQuery.trim() ? (
+              // Show no results message
+              <View style={styles.noResultsContainer}>
+                <Text style={[styles.noResultsText, { color: theme.colors.textSecondary }]}>
+                  No users found for "{searchQuery}"
+                </Text>
+              </View>
+            ) : (
+              // Show initial message
+              <View style={styles.initialContainer}>
+                <Text style={[styles.initialText, { color: theme.colors.textSecondary }]}>
+                  Search for users by phone number or name
+                </Text>
+              </View>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -297,6 +371,54 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     fontFamily: 'System',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userPhone: {
+    fontSize: 14,
+    fontWeight: '400',
+    fontFamily: 'System',
+    marginTop: 2,
+  },
+  // Skeleton loading styles
+  skeletonAvatar: {
+    backgroundColor: '#E0E0E0',
+  },
+  skeletonText: {
+    backgroundColor: '#E0E0E0',
+    borderRadius: 4,
+  },
+  // Container styles
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  errorText: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  noResultsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  noResultsText: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  initialContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  initialText: {
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
 

@@ -13,6 +13,7 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 
 const { width, height } = Dimensions.get('window');
 
@@ -72,7 +73,7 @@ const AccountBottomSheet = ({ isVisible, onClose, onSelectAccount, selectedAccou
     },
     onPanResponderRelease: (evt, gestureState) => {
       pan.flattenOffset();
-      
+
       // If user swiped down more than 100px, close the modal
       if (gestureState.dy > 100 || gestureState.vy > 0.5) {
         onClose();
@@ -87,12 +88,6 @@ const AccountBottomSheet = ({ isVisible, onClose, onSelectAccount, selectedAccou
   });
 
   const accountOptions = [
-     {
-      id: 'card',
-      title: 'Card Account',
-      icon: 'credit-card',
-      iconType: 'MaterialIcons',
-    },
     {
       id: 'current',
       title: 'Current Account',
@@ -100,12 +95,19 @@ const AccountBottomSheet = ({ isVisible, onClose, onSelectAccount, selectedAccou
       iconType: 'MaterialIcons',
     },
     {
-      id: 'crypto',
-      title: 'Crypto Account',
-      icon: 'dolby',
+      id: 'card',
+      title: 'Card Account',
+      icon: 'credit-card',
       iconType: 'MaterialIcons',
     },
-   
+
+    {
+      id: 'crypto',
+      title: 'Crypto Account',
+      icon: 'credit-card',
+      iconType: 'MaterialIcons',
+    },
+
   ];
 
   const handleAccountSelect = (account) => {
@@ -122,8 +124,8 @@ const AccountBottomSheet = ({ isVisible, onClose, onSelectAccount, selectedAccou
         key={account.id}
         style={[
           styles.accountOption,
-          { 
-          // backgroundColor: "red",
+          {
+            // backgroundColor: "red",
             borderBottomColor: theme.colors.surface,
           },
           isSelected && { backgroundColor: theme.colors.border }
@@ -132,15 +134,15 @@ const AccountBottomSheet = ({ isVisible, onClose, onSelectAccount, selectedAccou
       >
         <View style={styles.accountLeft}>
           <View style={[styles.accountIcon, { backgroundColor: theme.colors.background }]}>
-            <IconComponent 
-              name={account.icon} 
-              size={24} 
-              color={isSelected ? theme.colors.primary : theme.colors.text} 
+            <IconComponent
+              name={account.icon}
+              size={24}
+              color={isSelected ? theme.colors.primary : theme.colors.text}
             />
           </View>
           <Text style={[
-            styles.accountTitle, 
-            { 
+            styles.accountTitle,
+            {
               color: isSelected ? theme.colors.primary : theme.colors.text,
               fontWeight: isSelected ? '600' : '500'
             }
@@ -148,10 +150,10 @@ const AccountBottomSheet = ({ isVisible, onClose, onSelectAccount, selectedAccou
             {account.title}
           </Text>
         </View>
-        <Ionicons 
-          name="chevron-forward" 
-          size={20} 
-          color={theme.colors.textSecondary} 
+        <Ionicons
+          name="chevron-forward"
+          size={20}
+          color={theme.colors.textSecondary}
         />
       </TouchableOpacity>
     );
@@ -165,31 +167,31 @@ const AccountBottomSheet = ({ isVisible, onClose, onSelectAccount, selectedAccou
       onRequestClose={onClose}
     >
       <Animated.View style={[styles.overlay, { opacity: fadeAnim }]}>
-        <TouchableOpacity 
-          style={styles.backdrop} 
-          activeOpacity={1} 
-          onPress={onClose} 
+        <TouchableOpacity
+          style={styles.backdrop}
+          activeOpacity={1}
+          onPress={onClose}
         />
-        
-        <Animated.View 
+
+        <Animated.View
           style={[
-            styles.bottomSheet, 
-            { 
+            styles.bottomSheet,
+            {
               backgroundColor: theme.colors.background,
               transform: [{ translateY: Animated.add(slideAnim, pan) }]
             }
           ]}
           {...panResponder.panHandlers}
         >
-          <StatusBar 
-            barStyle={theme.isDarkMode ? 'light-content' : 'dark-content'} 
-            backgroundColor="transparent" 
+          <StatusBar
+            barStyle={theme.isDarkMode ? 'light-content' : 'dark-content'}
+            backgroundColor="transparent"
             translucent
           />
-          
+
           {/* Handle */}
           <View style={[styles.handle, { backgroundColor: theme.colors.border }]} />
-          
+
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
@@ -199,7 +201,7 @@ const AccountBottomSheet = ({ isVisible, onClose, onSelectAccount, selectedAccou
               <Ionicons name="close" size={24} color={theme.colors.text} />
             </TouchableOpacity>
           </View>
-          
+
           {/* Account Options */}
           <View style={styles.optionsContainer}>
             {accountOptions.map(renderAccountOption)}

@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { authService } from '../../services/apiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface Plan {
   _id: string;
@@ -28,18 +29,63 @@ export interface Plan {
   updatedBy: string;
 }
 
+export interface PaymentDetails {
+  stripeSubscriptionId: string | null;
+  stripeCustomerId: string;
+  stripePaymentIntentId: string;
+  paymentMethod: string;
+  amount: number;
+  currency: string;
+  paymentStatus: string;
+  client_secret: string;
+}
+
+export interface UsageStats {
+  usersCreated: number;
+  transactionsCount: number;
+  walletsCreated: number;
+  cardsCreated: number;
+}
+
+export interface ActiveSubscription {
+  _id: string;
+  id: string;
+  userId: string;
+  planId: Plan;
+  subscriptionStatus: string;
+  startDate: string;
+  endDate: string;
+  autoRenew: boolean;
+  isTrialPeriod: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  updatedBy: string;
+  isActive: boolean;
+  daysRemaining: number;
+  paymentDetails: PaymentDetails;
+  usageStats: UsageStats;
+}
+
 interface SubscriptionState {
   plans: Plan[];
   selectedPlan: Plan | null;
+  activeSubscription: ActiveSubscription | null;
   isLoading: boolean;
+  isSubscriptionLoading: boolean;
   error: string | null;
+  subscriptionError: string | null;
 }
 
 const initialState: SubscriptionState = {
   plans: [],
   selectedPlan: null,
+  activeSubscription: null,
   isLoading: false,
+  isSubscriptionLoading: false,
   error: null,
+  subscriptionError: null,
 };
 
 // Async thunk for getting subscription plans
@@ -60,6 +106,29 @@ export const getPlans = createAsyncThunk(
   }
 );
 
+// Async thunk for getting active subscription
+export const getActiveSubscription = createAsyncThunk(
+  'subscription/getActiveSubscription',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = await AsyncStorage.getItem('dokoToken');
+      if (!token) {
+        return rejectWithValue('No token found');
+      }
+
+      const result = await authService.getActiveSubscription(token);
+      
+      if (result.success) {
+        return result.data;
+      } else {
+        return rejectWithValue(result.error);
+      }
+    } catch (error) {
+      return rejectWithValue(error.message || 'Failed to fetch active subscription');
+    }
+  }
+);
+
 const subscriptionSlice = createSlice({
   name: 'subscription',
   initialState,
@@ -75,6 +144,12 @@ const subscriptionSlice = createSlice({
     },
     clearError: (state) => {
       state.error = null;
+    },
+    clearSubscriptionError: (state) => {
+      state.subscriptionError = null;
+    },
+    setSubscriptionLoading: (state, action: PayloadAction<boolean>) => {
+      state.isSubscriptionLoading = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -97,6 +172,20 @@ const subscriptionSlice = createSlice({
       .addCase(getPlans.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      // Get Active Subscription cases
+      .addCase(getActiveSubscription.pending, (state) => {
+        state.isSubscriptionLoading = true;
+        state.subscriptionError = null;
+      })
+      .addCase(getActiveSubscription.fulfilled, (state, action) => {
+        state.isSubscriptionLoading = false;
+        state.activeSubscription = action.payload;
+        state.subscriptionError = null;
+      })
+      .addCase(getActiveSubscription.rejected, (state, action) => {
+        state.isSubscriptionLoading = false;
+        state.subscriptionError = action.payload as string;
       });
   },
 });
@@ -106,6 +195,8 @@ export const {
   setLoading,
   setError,
   clearError,
+  clearSubscriptionError,
+  setSubscriptionLoading,
 } = subscriptionSlice.actions;
 
 export default subscriptionSlice.reducer;

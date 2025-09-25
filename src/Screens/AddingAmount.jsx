@@ -11,11 +11,16 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import SuccessModal from '../components/SuccessModal';
+import { authService } from '../services/apiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 
 const AddingAmount = ({ navigation, route }) => {
   const { theme } = useTheme();
@@ -23,9 +28,14 @@ const AddingAmount = ({ navigation, route }) => {
   const [message, setMessage] = useState('');
   const [showMessage, setShowMessage] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [transferResult, setTransferResult] = useState(null);
   const messageInputRef = useRef(null);
 
   const recipient = route?.params?.recipient || '@Sami343';
+  const usersDetails = route?.params?.data || '@Sami343';
+  console.log("Sdgsagasdg",usersDetails);
+  
 
   const handleAmountChange = (text) => {
     // Remove any non-numeric characters except decimal point
@@ -52,16 +62,78 @@ const AddingAmount = ({ navigation, route }) => {
     }, 100);
   };
 
-  const handleSendNow = () => {
+  const handleSendNow = async () => {
     // Validate amount
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      alert('Please enter a valid amount');
+      Alert.alert('Error', 'Please enter a valid amount');
       return;
     }
 
-    // Show success modal
-    setShowSuccessModal(true);
+    setIsLoading(true);
+    try {
+      // Get user token
+      const token = await AsyncStorage.getItem('dokoToken');
+      if (!token) {
+        Alert.alert('Error', 'User not authenticated');
+        setIsLoading(false);
+        return;
+      }
+
+      // Get recipient identity from route params
+      const recipientIdentity = usersDetails?.email || usersDetails?.phone || usersDetails?.username;
+      if (!recipientIdentity) {
+        Alert.alert('Error', 'Recipient information not found');
+        setIsLoading(false);
+        return;
+      }
+
+      // Call transfer API
+      const result = await authService.sendTransfer(
+        recipientIdentity,
+        numAmount,
+        'NPR', // Default currency, you can make this dynamic
+        message || 'Transfer via DOKO',
+        token
+      );
+
+      if (result.success) {
+        console.log('Transfer successful:', result.data);
+        setTransferResult(result.data);
+        setShowSuccessModal(true);
+        
+        Toast.show({
+          type: 'success',
+          text1: 'Transfer Successful',
+          text2: `Successfully sent $${numAmount.toFixed(2)} to ${recipient}`,
+          position: 'top',
+          visibilityTime: 4000,
+        });
+      } else {
+        console.error('Transfer failed:', result.error);
+        
+        Toast.show({
+          type: 'error',
+          text1: 'Transfer Failed',
+          text2: result.error || 'Failed to send transfer',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+      }
+    } catch (error) {
+      console.error('Transfer error:', error);
+      Alert.alert('Error', 'An unexpected error occurred during transfer');
+      
+      Toast.show({
+        type: 'error',
+        text1: 'Transfer Error',
+        text2: 'An unexpected error occurred',
+        position: 'top',
+        visibilityTime: 4000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleCloseSuccessModal = () => {
@@ -150,8 +222,13 @@ const AddingAmount = ({ navigation, route }) => {
                     <TouchableOpacity
                       style={styles.sendButtonContent}
                       onPress={handleSendNow}
+                      disabled={isLoading}
                     >
-                      <Text style={styles.sendButtonText}>Send Now</Text>
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text style={styles.sendButtonText}>Send Now</Text>
+                      )}
                     </TouchableOpacity>
                   </LinearGradient>
                 </View>
@@ -226,8 +303,13 @@ const AddingAmount = ({ navigation, route }) => {
                     <TouchableOpacity
                       style={styles.sendButtonContent}
                       onPress={handleSendNow}
+                      disabled={isLoading}
                     >
-                      <Text style={styles.sendButtonText}>Send Now</Text>
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text style={styles.sendButtonText}>Send Now</Text>
+                      )}
                     </TouchableOpacity>
                   </LinearGradient>
                 </View>
@@ -242,7 +324,11 @@ const AddingAmount = ({ navigation, route }) => {
           onClose={handleCloseSuccessModal}
           amount={amount}
           recipient={recipient}
+          transferResult={transferResult}
         />
+        
+        {/* Toast Messages */}
+        <Toast />
       </SafeAreaView>
     </TouchableWithoutFeedback>
   );
