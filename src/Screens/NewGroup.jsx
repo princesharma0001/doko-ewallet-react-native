@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -20,8 +20,9 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Button from '../components/Button';
 import { useNavigation } from '@react-navigation/native';
-import { chatService } from '../services/apiService';
+import { chatService, authService } from '../services/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,33 +33,34 @@ const NewGroup = () => {
     const [groupDescription, setGroupDescription] = useState('');
     const [groupImage, setGroupImage] = useState(null);
     const [selectedUsers, setSelectedUsers] = useState([]);
+    console.log("adgadsgfads", selectedUsers);
+
+    const [selectedUserIds, setSelectedUserIds] = useState([]); // Store array of user IDs
     const [searchQuery, setSearchQuery] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const [authToken, setAuthToken] = useState(null);
 
-    // Mock user data - replace with actual API call
-    const [users] = useState([
-        { id: '1', name: 'John Doe', username: '@johndoe', avatar: null, isOnline: true },
-        { id: '2', name: 'Jane Smith', username: '@janesmith', avatar: null, isOnline: false },
-        { id: '3', name: 'Mike Johnson', username: '@mikej', avatar: null, isOnline: true },
-        { id: '4', name: 'Sarah Wilson', username: '@sarahw', avatar: null, isOnline: true },
-        { id: '5', name: 'David Brown', username: '@davidb', avatar: null, isOnline: false },
-        { id: '6', name: 'Lisa Davis', username: '@lisad', avatar: null, isOnline: true },
-        { id: '7', name: 'Tom Anderson', username: '@toma', avatar: null, isOnline: false },
-        { id: '8', name: 'Emma Taylor', username: '@emmat', avatar: null, isOnline: true },
-    ]);
+    // Search related states
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchError, setSearchError] = useState(null);
+    const [hasSearched, setHasSearched] = useState(false);
 
-    const filteredUsers = users.filter(user =>
-        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Debounce timer ref
+    const searchTimeoutRef = useRef(null);
 
     const handleUserSelect = (user) => {
         const isSelected = selectedUsers.find(selectedUser => selectedUser.id === user.id);
         if (isSelected) {
-            setSelectedUsers(selectedUsers.filter(selectedUser => selectedUser.id !== user.id));
+            // Remove user from selection
+            const updatedUsers = selectedUsers.filter(selectedUser => selectedUser.id !== user.id);
+            const updatedIds = selectedUserIds.filter(id => id !== user.id);
+            setSelectedUsers(updatedUsers);
+            setSelectedUserIds(updatedIds);
         } else {
+            // Add user to selection
             setSelectedUsers([...selectedUsers, user]);
+            setSelectedUserIds([...selectedUserIds, user.id]);
         }
     };
 
@@ -85,13 +87,65 @@ const NewGroup = () => {
     // };
 
     // Load auth token on component mount
-    React.useEffect(() => {
+    useEffect(() => {
         loadAuthToken();
     }, []);
 
+    // Search users function
+    const searchUsers = async (query) => {
+        if (!query.trim() || !authToken) {
+            setSearchResults([]);
+            setHasSearched(false);
+            return;
+        }
+
+        setIsSearching(true);
+        setSearchError(null);
+
+        try {
+            console.log('Searching users with query:', query);
+            const response = await authService.searchUsers(query, authToken);
+
+            if (response.success) {
+                setSearchResults(response.data || []);
+                setHasSearched(true);
+                console.log('Search results:', response.data);
+            } else {
+                setSearchError(response.error || 'Search failed');
+                setSearchResults([]);
+            }
+        } catch (error) {
+            console.error('Error searching users:', error);
+            setSearchError('Failed to search users');
+            setSearchResults([]);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    // Debounced search effect
+    useEffect(() => {
+        // Clear previous timeout
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+
+        // Set new timeout
+        searchTimeoutRef.current = setTimeout(() => {
+            searchUsers(searchQuery);
+        }, 500); // 500ms debounce
+
+        // Cleanup function
+        return () => {
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
+            }
+        };
+    }, [searchQuery, authToken]);
+
     const loadAuthToken = async () => {
         try {
-            const token = await AsyncStorage.getItem('authToken');
+            const token = await AsyncStorage.getItem('dokoToken');
             setAuthToken(token);
         } catch (error) {
             console.error('Error loading auth token:', error);
@@ -103,7 +157,7 @@ const NewGroup = () => {
             Alert.alert('Error', 'Please enter a group name');
             return;
         }
-        if (selectedUsers.length < 2) {
+        if (selectedUserIds.length < 2) {
             Alert.alert('Error', 'Please select at least 2 members for the group');
             return;
         }
@@ -119,34 +173,69 @@ const NewGroup = () => {
             const groupData = {
                 name: groupName.trim(),
                 description: groupDescription.trim() || '',
-                participants: selectedUsers.map(user => user.id), // Assuming user.id is the participant ID
+                participants: selectedUserIds, // Use the stored array of user IDs
                 isPrivate: false // You can make this configurable if needed
             };
 
             console.log('Creating group with data:', groupData);
 
             const response = await chatService.createGroup(groupData, authToken);
+            console.log("adfgasdgas", response);
+
 
             if (response.success) {
-                Alert.alert('Success', 'Group created successfully!', [
-                    {
-                        text: 'OK',
-                        onPress: () => navigation.goBack()
-                    }
-                ]);
+                Toast.show({
+                    type: 'success',
+                    text1: 'Success',
+                    text2: response?.message ?? "Group chat created successfully",
+                    position: 'top',
+                    visibilityTime: 4000,
+                });
+                // Toast.show(response?.message ?? "Group chat created successfully")
             } else {
-                Alert.alert('Error', response.error || 'Failed to create group');
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: response.error ?? 'Failed to create group',
+                    position: 'top',
+                    visibilityTime: 4000,
+                });
+
             }
         } catch (error) {
             console.error('Error creating group:', error);
-            Alert.alert('Error', 'An unexpected error occurred while creating the group');
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: error.response?.data.message ?? "An unexpected error occurred while creating the group",
+                position: 'top',
+                visibilityTime: 4000,
+            });
+
         } finally {
             setIsCreating(false);
         }
     };
 
+    // Skeleton loading component
+    const renderSkeletonItem = () => (
+        <View style={[styles.userItem, { backgroundColor: theme.colors.surface }]}>
+            <View style={styles.userInfo}>
+                <View style={[styles.avatar, { backgroundColor: theme.colors.border }]} />
+                <View style={styles.userDetails}>
+                    <View style={[styles.skeletonText, { width: '70%', height: 16, backgroundColor: theme.colors.border }]} />
+                    <View style={[styles.skeletonText, { width: '50%', height: 14, backgroundColor: theme.colors.border, marginTop: 4 }]} />
+                </View>
+                <View style={styles.userStatus}>
+                    <View style={[styles.statusIndicator, { backgroundColor: theme.colors.border }]} />
+                </View>
+            </View>
+        </View>
+    );
+
     const renderUserItem = ({ item }) => {
         const isSelected = selectedUsers.find(selectedUser => selectedUser.id === item.id);
+        console.log("Sdgsadg", item);
 
         return (
             <TouchableOpacity
@@ -164,16 +253,20 @@ const NewGroup = () => {
                             <Image source={{ uri: item.avatar }} style={styles.avatarImage} />
                         ) : (
                             <Text style={[styles.avatarText, { color: '#FFFFFF' }]}>
-                                {item.name.charAt(0).toUpperCase()}
+                                {item.firstName && item.lastName
+                                    ? `${item.firstName.charAt(0).toUpperCase()}${item.lastName.charAt(0).toUpperCase()}`
+                                    : item.firstName
+                                        ? item.firstName.charAt(0).toUpperCase()
+                                        : "?"}
                             </Text>
                         )}
                     </View>
                     <View style={styles.userDetails}>
                         <Text style={[styles.userName, { color: theme.colors.text }]}>
-                            {item.name}
+                            {item.username || item.firstName || 'Unknown User'}
                         </Text>
                         <Text style={[styles.userUsername, { color: theme.colors.textSecondary }]}>
-                            {item.username}
+                            {item.email || item.username || ''}
                         </Text>
                     </View>
                     <View style={styles.userStatus}>
@@ -318,7 +411,7 @@ const NewGroup = () => {
             paddingHorizontal: theme.spacing.md,
             paddingVertical: theme.spacing.sm,
             borderRadius: theme.borderRadius.full,
-            borderRadius:10
+            borderRadius: 10
         },
         selectedUserName: {
             fontSize: theme.typography.sizes.sm,
@@ -407,6 +500,33 @@ const NewGroup = () => {
             fontSize: theme.typography.sizes.md,
             fontWeight: theme.typography.weights.medium,
         },
+        skeletonText: {
+            borderRadius: 4,
+        },
+        errorContainer: {
+            padding: theme.spacing.lg,
+            alignItems: 'center',
+        },
+        errorText: {
+            fontSize: theme.typography.sizes.md,
+            textAlign: 'center',
+        },
+        noResultsContainer: {
+            padding: theme.spacing.lg,
+            alignItems: 'center',
+        },
+        noResultsText: {
+            fontSize: theme.typography.sizes.md,
+            textAlign: 'center',
+        },
+        initialStateContainer: {
+            padding: theme.spacing.lg,
+            alignItems: 'center',
+        },
+        initialStateText: {
+            fontSize: theme.typography.sizes.md,
+            textAlign: 'center',
+        },
     });
 
     return (
@@ -428,14 +548,14 @@ const NewGroup = () => {
                 <TouchableOpacity
                     style={styles.createButton}
                     onPress={handleCreateGroup}
-                    disabled={!groupName.trim() || selectedUsers.length < 2 || isCreating}
+                    disabled={!groupName.trim() || selectedUserIds.length < 2 || isCreating}
                 >
                     {isCreating ? (
                         <ActivityIndicator size="small" color={theme.colors.primary} />
                     ) : (
                         <Text style={[
                             styles.createButtonText,
-                            (!groupName.trim() || selectedUsers.length < 2 || isCreating) && { opacity: 0.5 }
+                            (!groupName.trim() || selectedUserIds.length < 2 || isCreating) && { opacity: 0.5 }
                         ]}>
                             Create
                         </Text>
@@ -483,7 +603,7 @@ const NewGroup = () => {
                             <View style={styles.selectedUsersList}>
                                 {selectedUsers.map((user) => (
                                     <View key={user.id} style={styles.selectedUserChip}>
-                                        <Text style={styles.selectedUserName}>{user.name}</Text>
+                                        <Text style={styles.selectedUserName}>{user.username || user?.firstName}</Text>
                                         <TouchableOpacity onPress={() => handleUserSelect(user)}>
                                             <Ionicons name="close" size={16} color={theme.colors.primary} />
                                         </TouchableOpacity>
@@ -507,13 +627,46 @@ const NewGroup = () => {
                     </View>
 
                     {/* Users List */}
-                    <FlatList
-                        data={filteredUsers}
-                        renderItem={renderUserItem}
-                        keyExtractor={(item) => item.id}
-                        scrollEnabled={false}
-                        showsVerticalScrollIndicator={false}
-                    />
+                    {isSearching ? (
+                        // Show skeleton loading while searching
+                        <View>
+                            {Array.from({ length: 3 }).map((_, index) => (
+                                <View key={index}>
+                                    {renderSkeletonItem()}
+                                </View>
+                            ))}
+                        </View>
+                    ) : searchError ? (
+                        // Show error message
+                        <View style={styles.errorContainer}>
+                            <Text style={[styles.errorText, { color: theme.colors.error }]}>
+                                {searchError}
+                            </Text>
+                        </View>
+                    ) : hasSearched && searchResults.length === 0 ? (
+                        // Show no results message
+                        <View style={styles.noResultsContainer}>
+                            <Text style={[styles.noResultsText, { color: theme.colors.textSecondary }]}>
+                                No users found for "{searchQuery}"
+                            </Text>
+                        </View>
+                    ) : searchResults.length > 0 ? (
+                        // Show search results
+                        <FlatList
+                            data={searchResults}
+                            renderItem={renderUserItem}
+                            keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+                            scrollEnabled={false}
+                            showsVerticalScrollIndicator={false}
+                        />
+                    ) : (
+                        // Show initial state message
+                        <View style={styles.initialStateContainer}>
+                            <Text style={[styles.initialStateText, { color: theme.colors.textSecondary }]}>
+                                Start typing to search for users...
+                            </Text>
+                        </View>
+                    )}
                 </View>
             </ScrollView>
 

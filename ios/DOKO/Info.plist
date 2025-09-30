@@ -32,11 +32,13 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>This app needs access to camera to take your selfie for verification purposes.</string>
+	<string>Required for document and facial capture</string>
 	<key>NSContactsUsageDescription</key>
 	<string>This app needs access to your contacts to show them in the app for easy communication.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Required for video capture</string>
 	<key>RCTNewArchEnabled</key>
 	<false/>
 	<key>UIAppFonts</key>

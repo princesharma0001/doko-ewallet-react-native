@@ -35,11 +35,21 @@ const CurrentHistory = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState(null);
+    const [isFilterActive, setIsFilterActive] = useState(false);
 
 
     // Fetch transactions from API
-    const fetchTransactions = async () => {
+    const fetchTransactions = async (fromDateParam = null, toDateParam = null) => {
         try {
+            console.log('fetchTransactions called with:', {
+                fromDateParam,
+                toDateParam,
+                fromDateType: typeof fromDateParam,
+                toDateType: typeof toDateParam,
+                fromDateIsDate: fromDateParam instanceof Date,
+                toDateIsDate: toDateParam instanceof Date
+            });
+            
             setIsLoading(true);
             setError(null);
             
@@ -49,7 +59,7 @@ const CurrentHistory = () => {
                 return;
             }
 
-            const result = await authService.getTransactionList(token);
+            const result = await authService.getTransactionList(token, fromDateParam, toDateParam);
             
             if (result.success) {
                 setTransactions(result.data?.docs || []);
@@ -91,6 +101,14 @@ const CurrentHistory = () => {
     useEffect(() => {
         fetchTransactions();
     }, []);
+
+    // Reset date picker states when modal closes
+    useEffect(() => {
+        if (!isFilterModalVisible) {
+            setShowFromDatePicker(false);
+            setShowToDatePicker(false);
+        }
+    }, [isFilterModalVisible]);
 
     // Refresh transactions
     const handleRefresh = async () => {
@@ -172,7 +190,9 @@ const CurrentHistory = () => {
     };
 
     const handleFromDateChange = (event, selectedDate) => {
+        // Always close the date picker after selection
         setShowFromDatePicker(false);
+        
         if (selectedDate) {
             // If toDate is already selected and fromDate is after toDate, clear toDate
             if (toDate && selectedDate > toDate) {
@@ -188,7 +208,9 @@ const CurrentHistory = () => {
     };
 
     const handleToDateChange = (event, selectedDate) => {
+        // Always close the date picker after selection
         setShowToDatePicker(false);
+        
         if (selectedDate) {
             // If fromDate is already selected and toDate is before fromDate, show error
             if (fromDate && selectedDate < fromDate) {
@@ -211,12 +233,39 @@ const CurrentHistory = () => {
         setToDate(null);
     };
 
+
     const handleClearAllDates = () => {
         setFromDate(null);
         setToDate(null);
     };
 
-    const handleSubmitFilter = () => {
+    const handleClearFilters = async () => {
+        // Clear date filters
+        setFromDate(null);
+        setToDate(null);
+        setIsFilterActive(false);
+        
+        // Close modal
+        setIsFilterModalVisible(false);
+        
+        // Show loading state
+        setIsLoading(true);
+        
+        try {
+            // Fetch all transactions without date filters
+            await fetchTransactions();
+            console.log('Date filters cleared - showing all transactions');
+        } catch (error) {
+            console.error('Error clearing filters:', error);
+            Alert.alert(
+                'Error',
+                'Failed to clear filters. Please try again.',
+                [{ text: 'OK' }]
+            );
+        }
+    };
+
+    const handleSubmitFilter = async () => {
         // Validate that if both dates are selected, fromDate is not after toDate
         if (fromDate && toDate && fromDate > toDate) {
             Alert.alert(
@@ -227,15 +276,40 @@ const CurrentHistory = () => {
             return;
         }
 
-        // Here you would typically filter the transactions based on the selected dates
-        console.log('Filter from:', fromDate, 'to:', toDate);
-        const fromDateStr = fromDate ? fromDate.toLocaleDateString() : 'No start date';
-        const toDateStr = toDate ? toDate.toLocaleDateString() : 'No end date';
-        Alert.alert(
-            'Filter Applied',
-            `Showing transactions from ${fromDateStr} to ${toDateStr}`,
-            [{ text: 'OK', onPress: () => setIsFilterModalVisible(false) }]
-        );
+        // Close the modal first
+        setIsFilterModalVisible(false);
+
+        // Show loading state
+        setIsLoading(true);
+
+        try {
+            console.log('Submitting filter with dates:', {
+                fromDate,
+                toDate,
+                fromDateType: typeof fromDate,
+                toDateType: typeof toDate,
+                fromDateIsDate: fromDate instanceof Date,
+                toDateIsDate: toDate instanceof Date
+            });
+            
+            // Call API with date filters
+            await fetchTransactions(fromDate, toDate);
+            
+            // Set filter as active if any date is selected
+            setIsFilterActive(fromDate !== null || toDate !== null);
+            
+            const fromDateStr = fromDate ? fromDate.toLocaleDateString() : 'No start date';
+            const toDateStr = toDate ? toDate.toLocaleDateString() : 'No end date';
+            
+            console.log('Filter applied - from:', fromDateStr, 'to:', toDateStr);
+        } catch (error) {
+            console.error('Error applying filter:', error);
+            Alert.alert(
+                'Filter Error',
+                'Failed to apply date filter. Please try again.',
+                [{ text: 'OK' }]
+            );
+        }
     };
 
     const formatDate = (date) => {
@@ -505,6 +579,16 @@ const CurrentHistory = () => {
             fontSize: 16,
             textAlign: 'center',
         },
+        filterActiveIndicator: {
+            marginLeft: 8,
+            paddingHorizontal: 8,
+            paddingVertical: 4,
+            borderRadius: 12,
+        },
+        filterActiveText: {
+            fontSize: 12,
+            fontWeight: '600',
+        },
     });
 
     // Skeleton loading component
@@ -595,12 +679,16 @@ const CurrentHistory = () => {
             </View>
 
             <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
-                <View>
-
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: theme.typography.sizes.xxl }]}>History</Text>
+                    {isFilterActive && (
+                        <View style={[styles.filterActiveIndicator, { backgroundColor: theme.colors.primary }]}>
+                            <Text style={[styles.filterActiveText, { color: '#FFFFFF' }]}>Filtered</Text>
+                        </View>
+                    )}
                 </View>
-                <TouchableOpacity style={styles.filterButton} onPress={handleFilterPress}>
-                    <Image source={require('../../assets/Images/filters.png')} style={{ width: 20, height: 20, }} />
+                <TouchableOpacity style={[styles.filterButton, isFilterActive && { backgroundColor: theme.colors.primary, borderRadius: 20 }]} onPress={handleFilterPress}>
+                    <Image source={require('../../assets/Images/filters.png')} style={{ width: 20, height: 20, tintColor: isFilterActive ? '#FFFFFF' : undefined }} />
                     {/* <Text style={[styles.filterIcon, { color: theme.colors.primary }]}>⚙</Text> */}
                 </TouchableOpacity>
             </View>
@@ -712,7 +800,11 @@ const CurrentHistory = () => {
                                 <Text style={styles.datePickerLabel}>From Date</Text>
                                 <TouchableOpacity
                                     style={styles.datePickerButton}
-                                    onPress={() => setShowFromDatePicker(true)}
+                                    onPress={() => {
+                                        console.log('From date button pressed');
+                                        setShowFromDatePicker(true);
+                                    }}
+                                    activeOpacity={0.7}
                                 >
                                     <Text style={fromDate ? styles.datePickerButtonText : styles.datePickerButtonPlaceholder}>
                                         {fromDate ? formatDateForDisplay(fromDate) : 'DD/MM/YYYY'}
@@ -743,7 +835,11 @@ const CurrentHistory = () => {
                                 <Text style={styles.datePickerLabel}>To Date</Text>
                                 <TouchableOpacity
                                     style={styles.datePickerButton}
-                                    onPress={() => setShowToDatePicker(true)}
+                                    onPress={() => {
+                                        console.log('To date button pressed');
+                                        setShowToDatePicker(true);
+                                    }}
+                                    activeOpacity={0.7}
                                 >
                                     <Text style={toDate ? styles.datePickerButtonText : styles.datePickerButtonPlaceholder}>
                                         {toDate ? formatDateForDisplay(toDate) : 'DD/MM/YYYY'}
@@ -780,6 +876,14 @@ const CurrentHistory = () => {
                                 <Text style={styles.clearAllButtonText}>Clear All Dates</Text>
                             </TouchableOpacity>
                         )}
+
+                        {/* Clear Filters Button */}
+                        <TouchableOpacity
+                            style={[styles.clearAllButton, { marginBottom: 16 }]}
+                            onPress={handleClearFilters}
+                        >
+                            <Text style={styles.clearAllButtonText}>Clear All Filters</Text>
+                        </TouchableOpacity>
 
                         {/* Submit Button with Gradient */}
                         <LinearGradient

@@ -318,12 +318,12 @@ const HomeScreen = () => {
         }}>.00</Text>
       </Text>
 
-      <Text style={[styles.balanceChange, {
+      {/* <Text style={[styles.balanceChange, {
         color: theme.colors.success,
         fontFamily: theme.typography.fontFamily
       }]}>
         +2.5% from last week
-      </Text>
+      </Text> */}
     </View>
   );
 
@@ -454,51 +454,89 @@ const HomeScreen = () => {
         ))}
       </View>
 
-      {activities.map((item) => (
-        <TouchableHighlight key={item.id} style={styles.activityItem} onPress={() => console.log("f")
-        } underlayColor={theme.colors.border} // softer highlight for dark theme
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-            <View style={styles.activityIcon}>
-              <Image source={item.icon} resizeMode="contain" style={{ width: 40, height: 40 }} />
-            </View>
-            <View style={styles.activityContent}>
-              <Text style={[styles.activityType, { color: theme.colors.text, fontFamily: theme.typography.fontFamily, fontWeight: "600" }]}>
-                {item.type}
+      {!activities.length > 0 ? (
+        !activities.map((item) => (
+          <TouchableHighlight
+            key={item.id}
+            style={styles.activityItem}
+            onPress={() => console.log("f")}
+            underlayColor={theme.colors.border} // softer highlight for dark theme
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+              <View style={styles.activityIcon}>
+                <Image
+                  source={item.icon}
+                  resizeMode="contain"
+                  style={{ width: 40, height: 40 }}
+                />
+              </View>
+              <View style={styles.activityContent}>
+                <Text
+                  style={[
+                    styles.activityType,
+                    {
+                      color: theme.colors.text,
+                      fontFamily: theme.typography.fontFamily,
+                      fontWeight: "600",
+                    },
+                  ]}
+                >
+                  {item.type}
+                </Text>
+                <Text
+                  style={[
+                    styles.activityTime,
+                    {
+                      color: theme.colors.textSecondary,
+                      fontFamily: theme.typography.fontFamily,
+                    },
+                  ]}
+                >
+                  {item.time}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.activityAmount,
+                  {
+                    color: item.amount.startsWith("+")
+                      ? theme.colors.success
+                      : theme.colors.error, // income green / expense red
+                    fontFamily: theme.typography.fontFamily,
+                  },
+                ]}
+              >
+                {item.amount}
               </Text>
-              <Text style={[styles.activityTime, {
-                color: theme.colors.textSecondary,
-                fontFamily: theme.typography.fontFamily
-              }]}>
-                {item.time}
-              </Text>
             </View>
-            <Text
-              style={[
-                styles.activityAmount,
-                {
-                  color: item.amount.startsWith("+") ? theme.colors.success : theme.colors.error, // income green / expense red
-                  fontFamily: theme.typography.fontFamily,
-                },
-              ]}
-            >
-              {item.amount}
-            </Text>
-          </View>
-        </TouchableHighlight>
-      ))}
+          </TouchableHighlight>
+        ))
+      ) : (
+        <View style={{ padding: 20, alignItems: "center" }}>
+          <Text
+            style={{
+              color: theme.colors.textSecondary,
+              fontFamily: theme.typography.fontFamily,
+              fontSize: 16
+            }}
+          >
+            No recent activity found
+          </Text>
+        </View>
+      )}
 
 
-      <TouchableOpacity style={[styles.seeAllButton, { backgroundColor: theme.colors.border }]}>
-        <Text style={[styles.seeAllText, {
-          color: theme.colors.text,
-          fontFamily: theme.typography.fontFamily
-        }]}>
-          See all
-        </Text>
-        <AntDesign name="right" size={20} color={theme.colors.text} />
+      {!activities.length > 0 &&
+        <TouchableOpacity style={[styles.seeAllButton, { backgroundColor: theme.colors.border }]}>
+          <Text style={[styles.seeAllText, {
+            color: theme.colors.text,
+            fontFamily: theme.typography.fontFamily
+          }]}>
+            See all
+          </Text>
+          <AntDesign name="right" size={20} color={theme.colors.text} />
 
-      </TouchableOpacity>
+        </TouchableOpacity>}
     </View>
   );
 
@@ -521,7 +559,8 @@ const HomeScreen = () => {
         </Text>
 
         {/* Cards */}
-        {Cards.map((item) => (
+
+        {!Cards.length > 0 ? (Cards.map((item) => (
           <TouchableHighlight
             key={item.id}
             style={{ paddingVertical: 12 }}
@@ -555,7 +594,19 @@ const HomeScreen = () => {
               }}>{item.time}</Text>
             </View>
           </TouchableHighlight>
-        ))}
+        ))) : (
+          <View style={{ padding: 20, alignItems: "center" }}>
+            <Text
+              style={{
+                color: theme.colors.textSecondary,
+                fontFamily: theme.typography.fontFamily,
+                fontSize: 16
+              }}
+            >
+              No Wallet found
+            </Text>
+          </View>
+        )}
 
         {/* Divider */}
         <View style={{

@@ -248,7 +248,8 @@ const SubscriptionDetails = ({ navigation, route }) => {
 
      const renderFooter = () => (
          <View style={styles.footer}>
-             <TouchableOpacity style={styles.trialButton} onPress={openModal}>
+             {/* <TouchableOpacity style={styles.trialButton} onPress={openModal}> */}
+             <TouchableOpacity style={styles.trialButton}  onPress={handlePayWithCard}>
                  <LinearGradient
                      colors={['#1AA5FF', '#6B22E7']}
                      start={{ x: 0, y: 0 }}
@@ -261,7 +262,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
                  </LinearGradient>
              </TouchableOpacity>
 
-             <View style={styles.linksContainer}>
+             {/* <View style={styles.linksContainer}>
                  <TouchableOpacity
                      onPress={handlePayWithCard}
                      style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingTop: 20,paddingBottom:15 }}
@@ -269,7 +270,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
                  >
                      <Text style={[styles.trialButtonText, { color: "#169BFF" }]}>Pay With Card</Text>
                  </TouchableOpacity>
-             </View>
+             </View> */}
          </View>
      );
 

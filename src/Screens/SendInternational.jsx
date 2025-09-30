@@ -19,7 +19,8 @@ const { width, height } = Dimensions.get('window');
 // Country data based on the screenshot
 
 const suggestedCountries = [
-  { name: 'Lebanon', flag: '🇱🇧', currency: 'LBP', selected: true },
+  // { name: 'Lebanon', flag: '🇱🇧', currency: 'LBP', selected: true },
+  { name: 'Nepal', flag: '🇳🇵', currency: 'NPR', selected: true },
   { name: 'British', flag: '🇬🇧', currency: 'GBP', selected: false },
   { name: 'French', flag: '🇫🇷', currency: 'EUR', selected: false },
   { name: 'Canadian', flag: '🇨🇦', currency: 'CAD', selected: false },

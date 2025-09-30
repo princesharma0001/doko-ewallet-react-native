@@ -868,12 +868,63 @@ export const authService = {
   },
 
   // Get Transaction List API call
-  getTransactionList: async (token) => {
+  getTransactionList: async (token, fromDate = null, toDate = null) => {
     try {
-      console.log('Calling get transaction list API');
+      console.log('Calling get transaction list API with dates:', { 
+        fromDate, 
+        toDate, 
+        fromDateType: typeof fromDate,
+        toDateType: typeof toDate,
+        fromDateIsDate: fromDate instanceof Date,
+        toDateIsDate: toDate instanceof Date
+      });
+
+      // Build query parameters
+      let queryParams = '';
+      const params = [];
+      
+      if (fromDate) {
+        let formattedFromDate;
+        if (fromDate instanceof Date) {
+          formattedFromDate = fromDate.toISOString().split('T')[0];
+        } else if (typeof fromDate === 'string') {
+          // Try to parse string date
+          const dateObj = new Date(fromDate);
+          if (!isNaN(dateObj.getTime())) {
+            formattedFromDate = dateObj.toISOString().split('T')[0];
+          }
+        }
+        
+        if (formattedFromDate) {
+          params.push(`fromDate=${encodeURIComponent(formattedFromDate)}`);
+          console.log('Added fromDate parameter:', formattedFromDate);
+        }
+      }
+      
+      if (toDate) {
+        let formattedToDate;
+        if (toDate instanceof Date) {
+          formattedToDate = toDate.toISOString().split('T')[0];
+        } else if (typeof toDate === 'string') {
+          // Try to parse string date
+          const dateObj = new Date(toDate);
+          if (!isNaN(dateObj.getTime())) {
+            formattedToDate = dateObj.toISOString().split('T')[0];
+          }
+        }
+        
+        if (formattedToDate) {
+          params.push(`toDate=${encodeURIComponent(formattedToDate)}`);
+          console.log('Added toDate parameter:', formattedToDate);
+        }
+      }
+      
+      if (params.length > 0) {
+        queryParams = '?' + params.join('&');
+      }
 
       const response = await apiClient.get(
-        ApiConfig.getTransactionList,
+        `${ApiConfig.getTransactionList}${queryParams}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -938,6 +989,54 @@ export const chatService = {
       
       if (error.response) {
         const errorMessage = error.response.data?.message || 'Group creation failed';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Get Chat List API call
+  getChatList: async (chatType, token) => {
+    try {
+      console.log('Calling get chat list API with type:', chatType);
+      
+      let url = 'https://1f9dq437-8000.inc1.devtunnels.ms/api/v1/chat/list';
+      if (chatType && chatType !== 'all') {
+        url += `?chatType=${chatType}`;
+      }
+      
+      const response = await apiClient.get(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      console.log('Get chat list API response:', response.data);
+      
+      return {
+        success: true,
+        data: response.data.data?.docs || [],
+        message: response.data.message,
+        total: response.data.data?.total || 0,
+      };
+    } catch (error) {
+      console.error('Get Chat List API Error:', error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to fetch chat list';
         return {
           success: false,
           error: errorMessage,

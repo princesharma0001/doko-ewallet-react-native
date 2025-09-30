@@ -81,6 +81,8 @@ android {
 
     namespace "com.doko"
     defaultConfig {
+        multiDexEnabled true
+
         applicationId "com.doko"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion

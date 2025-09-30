@@ -35,6 +35,8 @@ const CurrentAccount = ({ navigation }) => {
   const [selectedCurrency, setSelectedCurrency] = useState('NPR');
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [transactions, setTransactions] = useState([]);
+  console.log("sdagasdgasd", transactions);
+
   const [isTransactionsLoading, setIsTransactionsLoading] = useState(false);
   const [transactionsError, setTransactionsError] = useState(null);
 
@@ -118,12 +120,17 @@ const CurrentAccount = ({ navigation }) => {
     }
   };
 
+  const truncateText = (text, maxLength = 50) => {
+    if (!text) return "";
+    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+  };
+
   // Fetch transactions from API
   const fetchTransactions = async () => {
     try {
       setIsTransactionsLoading(true);
       setTransactionsError(null);
-      
+
       const token = await AsyncStorage.getItem('dokoToken');
       if (!token) {
         setTransactionsError('Authentication required');
@@ -131,7 +138,7 @@ const CurrentAccount = ({ navigation }) => {
       }
 
       const result = await authService.getTransactionList(token);
-      
+
       if (result.success) {
         setTransactions(result.data?.docs || []);
         console.log('Transactions fetched successfully:', result.data?.docs?.length || 0);
@@ -192,14 +199,16 @@ const CurrentAccount = ({ navigation }) => {
     if (type === 'transfer') {
       return subType === 'sent' ? require("../assets/Images/quick1.png") : require("../assets/Images/quick1.png");
     } else if (type === 'deposit') {
-      return require("../assets/Images/quick1.png");
+      return require("../assets/Images/QuickRec.png");
     }
     return require("../assets/Images/quick1.png");
   };
 
   const getTransactionType = (transaction) => {
     if (transaction.type === 'transfer') {
-      return transaction.subType === 'sent' ? 'Transfer Sent' : 'Transfer Received';
+      return transaction.subType === "sent"
+        ? `Sent amount to ${transaction?.receiver?.username ?? transaction?.receiver?.firstName}`
+        : `Received amount from ${transaction?.sender?.username ?? transaction?.sender?.firstName}`;
     } else if (transaction.type === 'deposit') {
       return 'Wallet Deposit';
     }
@@ -210,7 +219,7 @@ const CurrentAccount = ({ navigation }) => {
     const amount = transaction.amount;
     const currency = transaction.currency;
     const symbol = currency === 'NPR' ? '₨' : '$';
-    
+
     if (transaction.type === 'transfer' && transaction.subType === 'sent') {
       return `-${symbol}${amount}`;
     } else {
@@ -222,7 +231,7 @@ const CurrentAccount = ({ navigation }) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) {
       return 'Just now';
     } else if (diffInHours < 24) {
@@ -487,7 +496,7 @@ const CurrentAccount = ({ navigation }) => {
       <Text style={[styles.transactionsTitle, { color: theme.colors.text }]}>
         Latest Transactions
       </Text>
-      
+
       {isTransactionsLoading ? (
         // Show skeleton loading
         Array.from({ length: 3 }).map((_, index) => (
@@ -501,23 +510,23 @@ const CurrentAccount = ({ navigation }) => {
         </View>
       ) : transactions.length > 0 ? (
         transactions.slice(0, 5).map((transaction) => (
-          <TouchableHighlight 
-            key={transaction._id} 
+          <TouchableHighlight
+            key={transaction._id}
             style={styles.activityItem}
             onPress={() => navigation.navigate('CurrentHistory')}
             underlayColor={theme.colors.border}
           >
             <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
               <View style={styles.activityIcon}>
-                <Image 
-                  source={getTransactionIcon(transaction.type, transaction.subType)} 
-                  resizeMode="contain" 
-                  style={{ width: 40, height: 40 }} 
+                <Image
+                  source={getTransactionIcon(transaction.type, transaction.subType)}
+                  resizeMode="contain"
+                  style={{ width: 40, height: 40 }}
                 />
               </View>
               <View style={styles.activityContent}>
                 <Text style={[styles.activityType, { color: theme.colors.text, fontFamily: theme.typography.fontFamily, fontWeight: "600" }]}>
-                  {getTransactionType(transaction)}
+                  {truncateText(getTransactionType(transaction), 40)}
                 </Text>
                 <Text style={[styles.activityTime, {
                   color: theme.colors.textSecondary,

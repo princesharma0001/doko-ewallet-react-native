@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -9,7 +9,9 @@ import {
     SafeAreaView,
     Image,
     Dimensions,
-    TextInput
+    TextInput,
+    FlatList,
+    ActivityIndicator
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
@@ -19,14 +21,22 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import Button from './Button';
 import { useNavigation } from '@react-navigation/native';
 import TransferModal from "./TransferModal";
+import { chatService } from '../services/apiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const NewChat = ({ onBackPress, onCreateChannel }) => {
     const { theme, isDarkMode } = useTheme();
-    const [activeTab, setActiveTab] = useState('guide');
+    const [activeTab, setActiveTab] = useState('all'); // Changed to 'all' for chat tabs
     const [show, setShow] = useState(false);
     const navigation = useNavigation();
     const [searchQuery, setSearchQuery] = useState('');
     const [showTransferModal, setShowTransferModal] = useState(false);
+    
+    // Chat list states
+    const [chatList, setChatList] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [authToken, setAuthToken] = useState(null);
+    const [error, setError] = useState(null);
 
 
     const handleSelectRecipient = (recipient) => {
@@ -46,6 +56,98 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
 
     const handleCloseTransferModal = () => {
         setShowTransferModal(false);
+    };
+
+    // Load auth token on component mount
+    useEffect(() => {
+        loadAuthToken();
+    }, []);
+
+    // Load chat list when tab changes
+    useEffect(() => {
+        if (authToken) {
+            loadChatList();
+        }
+    }, [activeTab, authToken]);
+
+    const loadAuthToken = async () => {
+        try {
+            const token = await AsyncStorage.getItem('dokoToken');
+            setAuthToken(token);
+        } catch (error) {
+            console.error('Error loading auth token:', error);
+        }
+    };
+
+    const loadChatList = async () => {
+        if (!authToken) return;
+        
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const chatType = activeTab === 'all' ? null : activeTab;
+            const response = await chatService.getChatList(chatType, authToken);
+            
+            if (response.success) {
+                setChatList(response.data || []);
+            } else {
+                setError(response.error || 'Failed to load chat list');
+            }
+        } catch (error) {
+            console.error('Error loading chat list:', error);
+            setError('Failed to load chat list');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+    };
+
+    const handleChatPress = (chat) => {
+        console.log('Chat pressed:', chat);
+        // Navigate to chat screen or handle chat selection
+        // navigation.navigate('ChatScreen', { chatId: chat.chatId });
+    };
+
+    const renderChatItem = ({ item }) => {
+        const isGroup = item.chatType === 'group';
+        const participantCount = item.participantCount || item.participants?.length || 0;
+        console.log("sdagasdg",item);
+        
+        return (
+            <TouchableOpacity
+                style={[styles.chatItem, { backgroundColor: theme.colors.surface }]}
+                onPress={() => handleChatPress(item)}
+                activeOpacity={0.7}
+            >
+                <View style={styles.chatItemContent}>
+                    <View style={[styles.chatAvatar, { backgroundColor: theme.colors.primary }]}>
+                        <Text style={[styles.chatAvatarText, { color: '#FFFFFF' }]}>
+                            {isGroup ? 'G' : item.name?.charAt(0)?.toUpperCase() || '?'}
+                        </Text>
+                    </View>
+                    <View style={styles.chatDetails}>
+                        <Text style={[styles.chatName, { color: theme.colors.text }]}>
+                            {item.name || 'Unknown Chat'}
+                        </Text>
+                        <Text style={[styles.chatDescription, { color: theme.colors.textSecondary }]}>
+                            {isGroup 
+                                ? `${participantCount} members` 
+                                : item.description || 'No description'
+                            }
+                        </Text>
+                    </View>
+                    <View style={styles.chatStatus}>
+                        {isGroup && (
+                            <Ionicons name="people" size={16} color={theme.colors.textSecondary} />
+                        )}
+                    </View>
+                </View>
+            </TouchableOpacity>
+        );
     };
 
 
@@ -206,6 +308,86 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
         lastStep: {
             marginBottom: 0,
         },
+        chatListContainer: {
+            marginHorizontal: theme.spacing.lg,
+            marginBottom: theme.spacing.lg,
+            maxHeight: 400,
+        },
+        chatList: {
+            maxHeight: 400,
+        },
+        chatItem: {
+            borderRadius: theme.borderRadius.lg,
+            marginBottom: theme.spacing.sm,
+            padding: theme.spacing.md,
+            backgroundColor: theme.colors.surface,
+        },
+        chatItemContent: {
+            flexDirection: 'row',
+            alignItems: 'center',
+        },
+        chatAvatar: {
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginRight: theme.spacing.md,
+        },
+        chatAvatarText: {
+            fontSize: theme.typography.sizes.lg,
+            fontWeight: theme.typography.weights.bold,
+        },
+        chatDetails: {
+            flex: 1,
+        },
+        chatName: {
+            fontSize: theme.typography.sizes.md,
+            fontWeight: theme.typography.weights.medium,
+            marginBottom: 2,
+        },
+        chatDescription: {
+            fontSize: theme.typography.sizes.sm,
+        },
+        chatStatus: {
+            alignItems: 'center',
+        },
+        loadingContainer: {
+            padding: theme.spacing.md,
+            alignItems: 'center',
+        },
+        loadingText: {
+            marginTop: theme.spacing.sm,
+            fontSize: theme.typography.sizes.sm,
+        },
+        errorContainer: {
+            padding: theme.spacing.md,
+            alignItems: 'center',
+        },
+        errorText: {
+            fontSize: theme.typography.sizes.sm,
+            textAlign: 'center',
+            marginBottom: theme.spacing.sm,
+        },
+        retryButton: {
+            paddingHorizontal: theme.spacing.md,
+            paddingVertical: theme.spacing.xs,
+            borderRadius: theme.borderRadius.sm,
+            borderWidth: 1,
+            borderColor: theme.colors.primary,
+        },
+        retryButtonText: {
+            fontSize: theme.typography.sizes.sm,
+            fontWeight: theme.typography.weights.medium,
+        },
+        emptyChatContainer: {
+            padding: theme.spacing.md,
+            alignItems: 'center',
+        },
+        emptyChatText: {
+            fontSize: theme.typography.sizes.sm,
+            textAlign: 'center',
+        },
     });
 
 
@@ -251,14 +433,93 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                     />
                 </View>
 
+                {/* Tabs outside the card */}
+                <View style={styles.tabsContainer}>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'all' && styles.activeTab]}
+                        onPress={() => handleTabChange('all')}
+                    >
+                        <Text style={[
+                            styles.tabText,
+                            activeTab === 'all' ? styles.activeTabText : styles.inactiveTabText
+                        ]}>
+                            All
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'individual' && styles.activeTab]}
+                        onPress={() => handleTabChange('individual')}
+                    >
+                        <Text style={[
+                            styles.tabText,
+                            activeTab === 'individual' ? styles.activeTabText : styles.inactiveTabText
+                        ]}>
+                            Chat
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, activeTab === 'group' && styles.activeTab]}
+                        onPress={() => handleTabChange('group')}
+                    >
+                        <Text style={[
+                            styles.tabText,
+                            activeTab === 'group' ? styles.activeTabText : styles.inactiveTabText
+                        ]}>
+                            Group
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Chat List outside the card */}
+                <View style={styles.chatListContainer}>
+                    {isLoading ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                            <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+                                Loading chats...
+                            </Text>
+                        </View>
+                    ) : error ? (
+                        <View style={styles.errorContainer}>
+                            <Text style={[styles.errorText, { color: theme.colors.error }]}>
+                                {error}
+                            </Text>
+                            {/* <TouchableOpacity
+                                style={styles.retryButton}
+                                onPress={loadChatList}
+                            >
+                                <Text style={[styles.retryButtonText, { color: theme.colors.primary }]}>
+                                    Retry
+                                </Text>
+                            </TouchableOpacity> */}
+                        </View>
+                    ) : chatList.length === 0 ? (
+                        <View style={styles.emptyChatContainer}>
+                            <Text style={[styles.emptyChatText, { color: theme.colors.textSecondary }]}>
+                                No chats found
+                            </Text>
+                        </View>
+                    ) : (
+                        <FlatList
+                            data={chatList}
+                            renderItem={renderChatItem}
+                            keyExtractor={(item) => item.id || item._id}
+                            showsVerticalScrollIndicator={false}
+                            scrollEnabled={true}
+                            style={styles.chatList}
+                            nestedScrollEnabled={true}
+                            bounces={true}
+                            alwaysBounceVertical={false}
+                        />
+                    )}
+                </View>
+
                 {/* No Channel Selected Section */}
                 <View style={styles.noChannelSection}>
                     <View style={styles.bookmarkIcon}>
                         <Image source={require("../assets/Images/Bookmark.png")} style={{ width: 65, height: 65, resizeMode: 'contain' }} />
-
                     </View>
                     <View style={{ flex: 1, width: "100%", paddingTop: 35 }}>
-
                         <Text style={styles.noChannelTitle}>No conversation selected</Text>
                         <Text style={styles.noChannelDescription}>
                             Choose a conversation from the sidebar or start a new one
@@ -278,7 +539,6 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                             </LinearGradient>
                         </TouchableOpacity>
                         <View style={{ paddingVertical: 15 }}>
-
                             <Button
                                 title={"New Group"}
                                 variant="outline"

@@ -25,6 +25,7 @@ import ForgotVerify from '../Screens/ForgotVerify';
 import HomeScreen from '../Screens/HomeScreen';
 import MainHomeScreen from '../Screens/MainHomeScreen';
 import Notification from '../Screens/Notification';
+import OnFido from '../Screens/OnFido';
 import Settings from '../Screens/Settings';
 import ButtonExamples from '../components/ButtonExamples';
 import { useTheme } from '../context/ThemeContext';
@@ -217,6 +218,10 @@ const AppNavigator = () => {
         <Stack.Screen
           name="Login"
           component={Login}
+        />
+        <Stack.Screen
+          name="OnFido"
+          component={OnFido}
         />
         <Stack.Screen
           name="EnterPassword"
