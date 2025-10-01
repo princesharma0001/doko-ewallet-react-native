@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -37,6 +37,8 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [authToken, setAuthToken] = useState(null);
     const [error, setError] = useState(null);
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);
 
 
     const handleSelectRecipient = (recipient) => {
@@ -66,9 +68,24 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
     // Load chat list when tab changes
     useEffect(() => {
         if (authToken) {
-            loadChatList();
+            if (searchQuery.trim()) {
+                searchChats(searchQuery);
+            } else {
+                loadChatList();
+            }
         }
     }, [activeTab, authToken]);
+
+    // Clear search results when search query is empty
+    useEffect(() => {
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            // Reload all chats when search is cleared
+            if (authToken) {
+                loadChatList();
+            }
+        }
+    }, [searchQuery, authToken]);
 
     const loadAuthToken = async () => {
         try {
@@ -79,7 +96,7 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
         }
     };
 
-    const loadChatList = async () => {
+    const loadChatList = async (searchQuery = null) => {
         if (!authToken) return;
         
         setIsLoading(true);
@@ -87,10 +104,14 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
 
         try {
             const chatType = activeTab === 'all' ? null : activeTab;
-            const response = await chatService.getChatList(chatType, authToken);
+            const response = await chatService.getChatList(chatType, authToken, searchQuery);
             
             if (response.success) {
-                setChatList(response.data || []);
+                if (searchQuery) {
+                    setSearchResults(response.data || []);
+                } else {
+                    setChatList(response.data || []);
+                }
             } else {
                 setError(response.error || 'Failed to load chat list');
             }
@@ -102,14 +123,76 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
         }
     };
 
+    const searchChats = async (query) => {
+        if (!authToken || !query.trim()) {
+            setSearchResults([]);
+            return;
+        }
+        
+        setIsSearching(true);
+        setError(null);
+
+        try {
+            await loadChatList(query.trim());
+        } catch (error) {
+            console.error('Error searching chats:', error);
+            setError('Search failed');
+            setSearchResults([]);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    // Debounced search function
+    const debouncedSearch = useCallback(
+        (() => {
+            let timeoutId;
+            return (query) => {
+                clearTimeout(timeoutId);
+                // Only search if query is not empty
+                if (query.trim()) {
+                    timeoutId = setTimeout(() => {
+                        searchChats(query);
+                    }, 500); // 500ms delay
+                }
+            };
+        })(),
+        [authToken, activeTab]
+    );
+
     const handleTabChange = (tab) => {
         setActiveTab(tab);
     };
 
+    const handleSearchChange = (text) => {
+        setSearchQuery(text);
+        if (text.trim()) {
+            debouncedSearch(text);
+        } else {
+            // Clear search results and load all chats when search is cleared
+            setSearchResults([]);
+            loadChatList();
+        }
+    };
+
     const handleChatPress = (chat) => {
         console.log('Chat pressed:', chat);
-        // Navigate to chat screen or handle chat selection
-        // navigation.navigate('ChatScreen', { chatId: chat.chatId });
+        
+        // Check if it's a group chat
+        if (chat.chatType === 'group') {
+            navigation.navigate('GroupSeperateChat', { 
+                groupData: {
+                    id: chat.chatId || chat.chatId,
+                    name: chat.name,
+                    participants: chat.participants || [],
+                    chatType: chat.chatType
+                }
+            });
+        } else {
+            // Handle individual chat navigation
+            // navigation.navigate('IndividualChat', { chatData: chat });
+            console.log('Individual chat navigation not implemented yet');
+        }
     };
 
     const renderChatItem = ({ item }) => {
@@ -280,6 +363,11 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
             marginBottom: 16,
             marginHorizontal: 20
         },
+        searchInput: {
+            flex: 1,
+            fontSize: 16,
+            marginLeft: 8,
+        },
         guideContainer: {
             backgroundColor: theme.colors.surface,
             borderRadius: theme.borderRadius.lg,
@@ -426,10 +514,10 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                     <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
                     <TextInput
                         style={[styles.searchInput, { color: theme.colors.text }]}
-                        placeholder="Search"
+                        placeholder="Search chats..."
                         placeholderTextColor={theme.colors.textSecondary}
                         value={searchQuery}
-                        onChangeText={setSearchQuery}
+                        onChangeText={handleSearchChange}
                     />
                 </View>
 
@@ -472,11 +560,11 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
 
                 {/* Chat List outside the card */}
                 <View style={styles.chatListContainer}>
-                    {isLoading ? (
+                    {isLoading || isSearching ? (
                         <View style={styles.loadingContainer}>
                             <ActivityIndicator size="small" color={theme.colors.primary} />
                             <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-                                Loading chats...
+                                {isSearching ? 'Searching...' : 'Loading chats...'}
                             </Text>
                         </View>
                     ) : error ? (
@@ -493,25 +581,33 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                                 </Text>
                             </TouchableOpacity> */}
                         </View>
-                    ) : chatList.length === 0 ? (
-                        <View style={styles.emptyChatContainer}>
-                            <Text style={[styles.emptyChatText, { color: theme.colors.textSecondary }]}>
-                                No chats found
-                            </Text>
-                        </View>
-                    ) : (
-                        <FlatList
-                            data={chatList}
-                            renderItem={renderChatItem}
-                            keyExtractor={(item) => item.id || item._id}
-                            showsVerticalScrollIndicator={false}
-                            scrollEnabled={true}
-                            style={styles.chatList}
-                            nestedScrollEnabled={true}
-                            bounces={true}
-                            alwaysBounceVertical={false}
-                        />
-                    )}
+                    ) : (() => {
+                        const displayData = searchQuery.trim() ? searchResults : chatList;
+                        const isEmpty = displayData.length === 0;
+                        const emptyMessage = searchQuery.trim() 
+                            ? `No chats found for "${searchQuery}"` 
+                            : 'No chats found';
+                        
+                        return isEmpty ? (
+                            <View style={styles.emptyChatContainer}>
+                                <Text style={[styles.emptyChatText, { color: theme.colors.textSecondary }]}>
+                                    {emptyMessage}
+                                </Text>
+                            </View>
+                        ) : (
+                            <FlatList
+                                data={displayData}
+                                renderItem={renderChatItem}
+                                keyExtractor={(item) => item.id || item._id}
+                                showsVerticalScrollIndicator={false}
+                                scrollEnabled={true}
+                                style={styles.chatList}
+                                nestedScrollEnabled={true}
+                                bounces={true}
+                                alwaysBounceVertical={false}
+                            />
+                        );
+                    })()}
                 </View>
 
                 {/* No Channel Selected Section */}

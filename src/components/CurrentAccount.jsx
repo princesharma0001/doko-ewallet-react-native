@@ -23,6 +23,7 @@ import { getWalletList } from '../store/slices/walletSlice';
 import { authService } from '../services/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import SearchUsernameModal from './SearchUsernameModal';
 
 
 
@@ -36,6 +37,7 @@ const CurrentAccount = ({ navigation }) => {
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [transactions, setTransactions] = useState([]);
   console.log("sdagasdgasd", transactions);
+  const [showSearchUsernameModal, setShowSearchUsernameModal] = useState(false);
 
   const [isTransactionsLoading, setIsTransactionsLoading] = useState(false);
   const [transactionsError, setTransactionsError] = useState(null);
@@ -53,6 +55,18 @@ const CurrentAccount = ({ navigation }) => {
     setSelectedCurrency(currencyCode);
     setShowCurrencyPicker(false);
   };
+
+  const handleOptionPress = (option) => {
+    console.log('Selected option:', option.title);
+   
+      setShowSearchUsernameModal(true);
+   
+  };
+  const handleUserSelect = (user) => {
+    console.log('Selected user:', user.username);
+    setShowSearchUsernameModal(false);
+  };
+
 
   // Convert NPR to USD using exchange rate
   const convertToUSD = (nprAmount) => {
@@ -630,8 +644,10 @@ const CurrentAccount = ({ navigation }) => {
             <View style={styles.sendOptionsContainer}>
               {/* Send to DOKO User */}
               <TouchableOpacity
+                onPress={() => { setIsSendModalVisible(false),setShowSearchUsernameModal(true)}}
+
                 style={[styles.sendOption, { backgroundColor: theme.colors.border }]}
-                onPress={() => handleSendOption('Send to DOKO User')}
+                // onPress={() => handleSendOption('Send to DOKO User')}
                 activeOpacity={0.7}
               >
                 <View style={styles.sendOptionIcon}>
@@ -674,6 +690,11 @@ const CurrentAccount = ({ navigation }) => {
           </View>
         </View>
       </Modal>
+      <SearchUsernameModal
+        visible={showSearchUsernameModal}
+        onClose={() => setShowSearchUsernameModal(false)}
+        onSelectUser={handleUserSelect}
+      />
 
       {/* Currency Picker Modal */}
       {renderCurrencyPicker()}

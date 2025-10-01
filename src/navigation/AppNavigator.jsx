@@ -46,6 +46,7 @@ import CurrentHistory from "../Screens/History/CurrentHistory"
 import PhysicalCard from "../components/PhysicalCard"
 import NewChat from "../components/NewChat"
 import NewGroup from "../Screens/NewGroup"
+import GroupSeperateChat from "../Screens/GroupSeperateChat"
 import BankTransfer from "../Screens/Deposit/BankTransfer"
 import SendInternational from "../Screens/SendInternational"
 import KYCSection from "../Screens/KYCSection"
@@ -434,6 +435,10 @@ const AppNavigator = () => {
         <Stack.Screen
           name="NewGroup"
           component={NewGroup}
+        />
+        <Stack.Screen
+          name="GroupSeperateChat"
+          component={GroupSeperateChat}
         />
         <Stack.Screen
           name="BankTransfer"

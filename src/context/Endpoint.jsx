@@ -21,6 +21,10 @@ const ApiConfig = {
     initiateDeposit: `${url}api/v1/deposit/initiate`,
     verifyDeposit: `${url}api/v1/deposit/verify`,
     searchUsers: `${url}api/v1/user/list`,
+    sendMessage: `${url}api/v1/message/send`,
+    getMessageList: `${url}api/v1/message/list`,
+    sendPaymentSplit: `${url}api/v1/message/payment/split`,
+    acceptPayment: `${url}api/v1/message/payment/accept`,
     sendTransfer: `${url}api/v1/transfer/send`,
     getTransactionList: `${url}api/v1/transaction/list`,
 };

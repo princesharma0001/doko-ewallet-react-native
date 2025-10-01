@@ -1009,13 +1009,23 @@ export const chatService = {
   },
 
   // Get Chat List API call
-  getChatList: async (chatType, token) => {
+  getChatList: async (chatType, token, searchQuery = null) => {
     try {
-      console.log('Calling get chat list API with type:', chatType);
+      console.log('Calling get chat list API with type:', chatType, 'and search:', searchQuery);
       
       let url = 'https://1f9dq437-8000.inc1.devtunnels.ms/api/v1/chat/list';
+      const params = [];
+      
       if (chatType && chatType !== 'all') {
-        url += `?chatType=${chatType}`;
+        params.push(`chatType=${chatType}`);
+      }
+      
+      if (searchQuery && searchQuery.trim()) {
+        params.push(`search=${encodeURIComponent(searchQuery.trim())}`);
+      }
+      
+      if (params.length > 0) {
+        url += `?${params.join('&')}`;
       }
       
       const response = await apiClient.get(url, {
@@ -1037,6 +1047,182 @@ export const chatService = {
       
       if (error.response) {
         const errorMessage = error.response.data?.message || 'Failed to fetch chat list';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Send Message API call
+  sendMessage: async (messageData, token) => {
+    try {
+      console.log('Calling send message API with data:', messageData);
+      
+      const response = await apiClient.post(ApiConfig.sendMessage, messageData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      console.log('Send message API response:', response.data);
+      
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Send Message API Error:', error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to send message';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Get Message List API call
+  getMessageList: async (chatId, token) => {
+    console.log("sdagsadgsad",chatId);
+    
+    try {
+      console.log('Calling get message list API with chatId:', chatId);
+      
+      const response = await apiClient.get(
+        `${ApiConfig.getMessageList}?chatId=${chatId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+      
+      console.log('Get message list API response:', response.data);
+      
+      return {
+        success: true,
+        data: response.data.data?.docs || [],
+        message: response.data.message,
+        total: response.data.data?.total || 0,
+        page: response.data.data?.page || 1,
+        totalPages: response.data.data?.totalPages || 1,
+      };
+    } catch (error) {
+      console.error('Get Message List API Error:', error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to fetch messages';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Send Payment Split API call
+  sendPaymentSplit: async (paymentData, token) => {
+    try {
+      console.log('Calling send payment split API with data:', paymentData);
+      
+      const response = await apiClient.post(ApiConfig.sendPaymentSplit, paymentData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      console.log('Send payment split API response:', response.data);
+      
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Send Payment Split API Error:', error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to send payment split';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Accept Payment API call
+  acceptPayment: async (paymentId, token) => {
+    try {
+      console.log('Calling accept payment API with paymentId:', paymentId);
+      
+      const response = await apiClient.post(ApiConfig.acceptPayment, { paymentId }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      
+      console.log('Accept payment API response:', response.data);
+      
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Accept Payment API Error:', error);
+      
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to accept payment';
         return {
           success: false,
           error: errorMessage,

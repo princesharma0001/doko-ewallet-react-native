@@ -191,6 +191,7 @@ const NewGroup = () => {
                     position: 'top',
                     visibilityTime: 4000,
                 });
+                navigation.navigate("NewChat")
                 // Toast.show(response?.message ?? "Group chat created successfully")
             } else {
                 Toast.show({

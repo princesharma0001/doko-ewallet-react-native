@@ -29,7 +29,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isStripeModalVisible, setIsStripeModalVisible] = useState(false);
     const [modalAnimation] = useState(new Animated.Value(0));
-    
+
     // Get plan from route params or Redux state
     const planData = route?.params?.plan || selectedPlan;
 
@@ -79,7 +79,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
             position: 'top',
             visibilityTime: 4000,
         });
-        
+
         // Navigate back or to a success screen
         if (navigation) {
             navigation.goBack();
@@ -147,7 +147,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
                         </View>
                     )}
                 </View>
-                
+
                 <Text style={[styles.planPricing, { color: theme.colors.text }]}>
                     {planData.formattedPrice} / {planData.durationText}
                 </Text>
@@ -173,96 +173,96 @@ const SubscriptionDetails = ({ navigation, route }) => {
         );
     };
 
-     const renderBottomSheet = () => (
-         <Modal
-             visible={isModalVisible}
-             transparent={true}
-             animationType="none"
-             onRequestClose={closeModal}
-         >
-             <View style={styles.modalOverlay}>
-                 <TouchableOpacity 
-                     style={styles.modalBackdrop} 
-                     activeOpacity={1} 
-                     onPress={closeModal}
-                 />
-                 <Animated.View 
-                     style={[
-                         styles.bottomSheet,
-                         {
-                             backgroundColor: theme.colors.surface,
-                             transform: [{
-                                 translateY: modalAnimation.interpolate({
-                                     inputRange: [0, 1],
-                                     outputRange: [height, 0],
-                                 })
-                             }]
-                         }
-                     ]}
-                 >
-                     {/* Drag Handle */}
-                     <View style={styles.dragHandle} />
-                     
-                     {/* Close Icon */}
-                     <View style={styles.closeIconContainer}>
-                        <Image source={require('../assets/Images/Cross.png')} style={{width:60,height:60,resizeMode:'contain'}} />
-                         {/* <View style={[styles.closeIcon, { backgroundColor: '#FF3B30' }]}>
+    const renderBottomSheet = () => (
+        <Modal
+            visible={isModalVisible}
+            transparent={true}
+            animationType="none"
+            onRequestClose={closeModal}
+        >
+            <View style={styles.modalOverlay}>
+                <TouchableOpacity
+                    style={styles.modalBackdrop}
+                    activeOpacity={1}
+                    onPress={closeModal}
+                />
+                <Animated.View
+                    style={[
+                        styles.bottomSheet,
+                        {
+                            backgroundColor: theme.colors.surface,
+                            transform: [{
+                                translateY: modalAnimation.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [height, 0],
+                                })
+                            }]
+                        }
+                    ]}
+                >
+                    {/* Drag Handle */}
+                    <View style={styles.dragHandle} />
+
+                    {/* Close Icon */}
+                    <View style={styles.closeIconContainer}>
+                        <Image source={require('../assets/Images/Cross.png')} style={{ width: 60, height: 60, resizeMode: 'contain' }} />
+                        {/* <View style={[styles.closeIcon, { backgroundColor: '#FF3B30' }]}>
                              <Ionicons name="close" size={24} color="#FFFFFF" />
                          </View> */}
-                     </View>
-                     
-                     {/* Title */}
-                     <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
-                         Add Money To Your Account
-                     </Text>
-                     
-                     {/* Description */}
-                     <Text style={[styles.modalDescription, { color: theme.colors.textSecondary }]}>
-                         You need to deposit money to your account to subscribe :)
-                     </Text>
-                     
-                     {/* Action Buttons */}
-                     <TouchableOpacity
-                         style={styles.modalActionButton}
-                         onPress={handlePayWithPickup}
-                         activeOpacity={0.7}
-                     >
-                         <Text style={[styles.modalActionText, { color: '#169BFF' }]}>
-                             Pay With Pickup
-                         </Text>
-                     </TouchableOpacity>
-                     
-                     <TouchableOpacity
-                         style={[styles.modalActionButton, { marginTop: 12 }]}
-                         onPress={handlePayWithCard}
-                         activeOpacity={0.7}
-                     >
-                         <Text style={[styles.modalActionText, { color: '#169BFF' }]}>
-                             Pay With Card
-                         </Text>
-                     </TouchableOpacity>
-                 </Animated.View>
-             </View>
-         </Modal>
-     );
+                    </View>
 
-     const renderFooter = () => (
-         <View style={styles.footer}>
-             {/* <TouchableOpacity style={styles.trialButton} onPress={openModal}> */}
-             <TouchableOpacity style={styles.trialButton}  onPress={handlePayWithCard}>
-                 <LinearGradient
-                     colors={['#1AA5FF', '#6B22E7']}
-                     start={{ x: 0, y: 0 }}
-                     end={{ x: 1, y: 0 }}
-                     style={styles.gradientButton}
-                 >
-                     <Text style={[styles.trialButtonText, { color: "#fff" }]}>
-                         Pay {planData?.formattedPrice || '$0.00'}/Month and Open Account
-                     </Text>
-                 </LinearGradient>
-             </TouchableOpacity>
+                    {/* Title */}
+                    <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+                        Add Money To Your Account
+                    </Text>
 
-             {/* <View style={styles.linksContainer}>
+                    {/* Description */}
+                    <Text style={[styles.modalDescription, { color: theme.colors.textSecondary }]}>
+                        You need to deposit money to your account to subscribe :)
+                    </Text>
+
+                    {/* Action Buttons */}
+                    <TouchableOpacity
+                        style={styles.modalActionButton}
+                        onPress={handlePayWithPickup}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={[styles.modalActionText, { color: '#169BFF' }]}>
+                            Pay With Pickup
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={[styles.modalActionButton, { marginTop: 12 }]}
+                        onPress={handlePayWithCard}
+                        activeOpacity={0.7}
+                    >
+                        <Text style={[styles.modalActionText, { color: '#169BFF' }]}>
+                            Pay With Card
+                        </Text>
+                    </TouchableOpacity>
+                </Animated.View>
+            </View>
+        </Modal>
+    );
+
+    const renderFooter = () => (
+        <View style={styles.footer}>
+            {/* <TouchableOpacity style={styles.trialButton} onPress={openModal}> */}
+            <TouchableOpacity style={styles.trialButton} onPress={handlePayWithCard}>
+                <LinearGradient
+                    colors={['#1AA5FF', '#6B22E7']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.gradientButton}
+                >
+                    <Text style={[styles.trialButtonText, { color: "#fff" }]}>
+                        Pay {planData?.formattedPrice || '$0.00'}/Month and Open Account
+                    </Text>
+                </LinearGradient>
+            </TouchableOpacity>
+
+            {/* <View style={styles.linksContainer}>
                  <TouchableOpacity
                      onPress={handlePayWithCard}
                      style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingTop: 20,paddingBottom:15 }}
@@ -271,8 +271,8 @@ const SubscriptionDetails = ({ navigation, route }) => {
                      <Text style={[styles.trialButtonText, { color: "#169BFF" }]}>Pay With Card</Text>
                  </TouchableOpacity>
              </View> */}
-         </View>
-     );
+        </View>
+    );
 
     return (
         <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
@@ -332,19 +332,17 @@ const SubscriptionDetails = ({ navigation, route }) => {
                         </View>
                     </View>
                 </View>
-                 {renderFooter()}
-             </ScrollView>
-             {renderBottomSheet()}
-             
-             {/* Stripe Payment Modal */}
-             <StripePaymentModal
-                 visible={isStripeModalVisible}
-                 onClose={() => setIsStripeModalVisible(false)}
-                 planData={planData}
-                 onPaymentSuccess={handlePaymentSuccess}
-             />
-         </View>
-     );
+                {renderFooter()}
+            </ScrollView>
+            {renderBottomSheet()}
+            <StripePaymentModal
+                visible={isStripeModalVisible}
+                onClose={() => setIsStripeModalVisible(false)}
+                planData={planData}
+                onPaymentSuccess={handlePaymentSuccess}
+            />
+        </View>
+    );
 };
 
 const styles = StyleSheet.create({
@@ -551,72 +549,72 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center'
     },
-     linkText: {
-         fontSize: 12,
-         fontWeight: '500',
-     },
-     // Bottom Sheet Modal Styles
-     modalOverlay: {
-         flex: 1,
-         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-         justifyContent: 'flex-end',
-     },
-     modalBackdrop: {
-         flex: 1,
-     },
-     bottomSheet: {
-         borderTopLeftRadius: 24,
-         borderTopRightRadius: 24,
-         borderBottomLeftRadius: 24,
-         borderBottomRightRadius: 24,
-         paddingTop: 12,
+    linkText: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    // Bottom Sheet Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalBackdrop: {
+        flex: 1,
+    },
+    bottomSheet: {
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        paddingTop: 12,
         //  paddingBottom: 40,
-         paddingHorizontal: 20,
-         alignItems: 'center',
-         minHeight: 280,
-         marginHorizontal: 16,
-         marginBottom: 40,
-     },
-     dragHandle: {
-         width: 40,
-         height: 4,
-         backgroundColor: 'rgba(255, 255, 255, 0.3)',
-         borderRadius: 2,
-         marginBottom: 20,
-     },
-     closeIconContainer: {
-         marginBottom: 24,
-     },
-     closeIcon: {
-         width: 60,
-         height: 60,
-         borderRadius: 30,
-         alignItems: 'center',
-         justifyContent: 'center',
-     },
-     modalTitle: {
-         fontSize: 20,
-         fontWeight: '700',
-         textAlign: 'center',
-         marginBottom: 16,
-     },
-     modalDescription: {
-         fontSize: 16,
-         textAlign: 'center',
-         lineHeight: 22,
-         marginBottom: 15,
-         paddingHorizontal: 8,
-     },
-     modalActionButton: {
-         paddingVertical: 16,
-         paddingHorizontal: 32,
-         alignItems: 'center',
-         justifyContent: 'center',
-     },
-     modalActionText: {
-         fontSize: 16,
-         fontWeight: '600',
-     },
- });
+        paddingHorizontal: 20,
+        alignItems: 'center',
+        minHeight: 280,
+        marginHorizontal: 16,
+        marginBottom: 40,
+    },
+    dragHandle: {
+        width: 40,
+        height: 4,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        borderRadius: 2,
+        marginBottom: 20,
+    },
+    closeIconContainer: {
+        marginBottom: 24,
+    },
+    closeIcon: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        textAlign: 'center',
+        marginBottom: 16,
+    },
+    modalDescription: {
+        fontSize: 16,
+        textAlign: 'center',
+        lineHeight: 22,
+        marginBottom: 15,
+        paddingHorizontal: 8,
+    },
+    modalActionButton: {
+        paddingVertical: 16,
+        paddingHorizontal: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalActionText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+});
 
 export default SubscriptionDetails;
