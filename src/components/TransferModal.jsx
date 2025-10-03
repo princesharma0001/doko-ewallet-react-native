@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,16 @@ import {
   TextInput,
   Dimensions,
   TouchableHighlight,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AddDokoFriendModal from './AddDokoFriendModal';
 import { useNavigation } from '@react-navigation/native';
+import { authService, chatService } from '../services/apiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 
 const { width, height } = Dimensions.get('window');
 
@@ -22,6 +26,11 @@ const TransferModal = ({ visible, onClose, onSelectRecipient }) => {
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddDokoFriendModal, setShowAddDokoFriendModal] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [authToken, setAuthToken] = useState(null);
+  const [creatingChatForUser, setCreatingChatForUser] = useState(null);
+  const searchTimeoutRef = useRef(null);
   const navigation = useNavigation();
 
   const recipientTypes = [
@@ -47,6 +56,63 @@ const TransferModal = ({ visible, onClose, onSelectRecipient }) => {
     //   icon: 'tree',
     // },
   ];
+
+  // Load auth token on component mount
+  useEffect(() => {
+    const loadAuthToken = async () => {
+      try {
+        const token = await AsyncStorage.getItem('dokoToken');
+        setAuthToken(token);
+      } catch (error) {
+        console.error('Error loading auth token:', error);
+      }
+    };
+    loadAuthToken();
+  }, []);
+
+  // Search users with debouncing
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (searchQuery.trim().length >= 2) {
+      searchTimeoutRef.current = setTimeout(() => {
+        searchUsers(searchQuery.trim());
+      }, 500); // 500ms debounce
+    } else {
+      setSearchResults([]);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  const searchUsers = async (query) => {
+    if (!authToken) {
+      console.log('No auth token available');
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await authService.searchUsers(query, authToken);
+      if (response.success) {
+        setSearchResults(response.data || []);
+      } else {
+        console.error('Search failed:', response.error);
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const recentRecipients = [
     {
@@ -106,9 +172,91 @@ const TransferModal = ({ visible, onClose, onSelectRecipient }) => {
     onSelectRecipient({ ...option, type: 'doko-friend-option' });
   };
 
-  const handleRecentRecipientPress = (recipient) => {
+  const handleRecentRecipientPress = async (recipient) => {
     console.log('Selected recent recipient:', recipient.name);
-    onSelectRecipient(recipient);
+    
+    // If it's a search result type, create individual chat
+    if (recipient.type === 'search-result') {
+      await createIndividualChat(recipient.id, recipient.id);
+    } else {
+      // For hardcoded recent recipients, just call onSelectRecipient
+      onSelectRecipient(recipient);
+    }
+  };
+
+  const handleSearchResultPress = async (user) => {
+    console.log('Selected search result:', user);
+    const userId = user._id || user.id;
+    
+    // Transform API user data to match expected recipient format
+    const recipient = {
+      id: userId,
+      name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown User',
+      initials: `${(user.firstName || '').charAt(0)}${(user.lastName || '').charAt(0)}`.toUpperCase() || 'U',
+      avatarColor: '#169BFF', // Default DOKO blue
+      email: user.email,
+      phone: user.phone,
+      username: user.username,
+      type: 'search-result'
+    };
+    
+    await createIndividualChat(userId, userId);
+  };
+
+  const createIndividualChat = async (participantId, userId) => {
+    if (!authToken) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Authentication required',
+        position: 'top',
+        visibilityTime: 3000,
+      });
+      return;
+    }
+
+    setCreatingChatForUser(userId);
+    
+    try {
+      const response = await chatService.createIndividualChat(participantId, authToken);
+      
+      if (response.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: response?.message ?? 'Individual chat created successfully!',
+          position: 'top',
+          visibilityTime: 3000,
+        });
+        
+        // Close the modal
+        onClose();
+        
+        // Navigate to the chat or handle the response
+        // You can add navigation logic here if needed
+        console.log('Chat created:', response.data);
+        
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: response.error ?? 'Failed to create individual chat',
+          position: 'top',
+          visibilityTime: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('Error creating individual chat:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to create individual chat',
+        position: 'top',
+        visibilityTime: 3000,
+      });
+    } finally {
+      setCreatingChatForUser(null);
+    }
   };
 
   const getIconComponent = (iconName) => {
@@ -170,6 +318,40 @@ const RecipientTypeItem = ({ type }) => (
     </TouchableOpacity>
   );
 
+  const SearchResultItem = ({ user }) => {
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown User';
+    const initials = `${(user.firstName || '').charAt(0)}${(user.lastName || '').charAt(0)}`.toUpperCase() || 'U';
+    const userId = user._id || user.id;
+    const isThisUserCreating = creatingChatForUser === userId;
+    
+    return (
+      <TouchableOpacity
+        style={[styles.recentRecipientItem, isThisUserCreating && styles.disabledItem]}
+        onPress={() => handleSearchResultPress(user)}
+        activeOpacity={0.7}
+        disabled={isThisUserCreating}
+      >
+        <View style={[styles.avatar, { backgroundColor: '#169BFF' }]}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
+        <View style={styles.recipientInfo}>
+          <Text style={[styles.recipientName, { color: theme.colors.text }]}>
+            {fullName}
+          </Text>
+          <Text style={[styles.lastTransaction, { color: theme.colors.textSecondary }]}>
+            {user.email}
+          </Text>
+         
+        </View>
+        {isThisUserCreating ? (
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+        ) : (
+          <Ionicons name="person-add" size={20} color={theme.colors.textSecondary} />
+        )}
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <Modal
       visible={visible}
@@ -224,17 +406,34 @@ const RecipientTypeItem = ({ type }) => (
               </View>
             </View>
 
-            {/* Recent Recipients Section */}
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                Add new
-              </Text>
-              <View style={styles.recentRecipientsContainer}>
-                {recentRecipients.map((recipient) => (
-                  <RecentRecipientItem key={recipient.id} recipient={recipient} />
-                ))}
+            {/* Search Results Section - Only show when actively searching */}
+            {searchQuery.trim().length >= 2 && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                  Search Results
+                </Text>
+                <View style={styles.recentRecipientsContainer}>
+                  {isSearching ? (
+                    <View style={styles.loadingContainer}>
+                      <ActivityIndicator size="small" color={theme.colors.primary} />
+                      <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
+                        Searching users...
+                      </Text>
+                    </View>
+                  ) : searchResults.length > 0 ? (
+                    searchResults.map((user) => (
+                      <SearchResultItem key={user._id || user.id} user={user} />
+                    ))
+                  ) : (
+                    <View style={styles.emptyContainer}>
+                      <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                        No users found for "{searchQuery}"
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </View>
-            </View>
+            )}
           </ScrollView>
         </View>
       </View>
@@ -374,6 +573,27 @@ const styles = StyleSheet.create({
   transactionDate: {
     fontSize: 14,
     fontFamily: 'System',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  loadingText: {
+    marginLeft: 8,
+    fontSize: 14,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  emptyText: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  disabledItem: {
+    opacity: 0.6,
   },
 });
 

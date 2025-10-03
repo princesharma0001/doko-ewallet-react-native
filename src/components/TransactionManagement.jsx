@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,9 @@ import {
   Image,
   Modal,
   Platform,
+  ActivityIndicator,
+  Share,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -19,6 +22,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import Button from './Button';
 import Svg, { Circle, G, Path } from 'react-native-svg';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { authService } from '../services/apiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 
@@ -26,7 +32,7 @@ const TransactionManagement = ({ navigation }) => {
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('All');
-  const [selectedType, setSelectedType] = useState('');
+  const [selectedType, setSelectedType] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedNetwork, setSelectedNetwork] = useState('');
   const [fromDate, setFromDate] = useState('');
@@ -39,18 +45,152 @@ const TransactionManagement = ({ navigation }) => {
   const [showToDatePicker, setShowToDatePicker] = useState(false);
   const [fromDateValue, setFromDateValue] = useState(new Date());
   const [toDateValue, setToDateValue] = useState(new Date());
+  
+  // New state for export functionality
+  const [authToken, setAuthToken] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [exportData, setExportData] = useState('');
 
+  // Load auth token and transactions
+  useEffect(() => {
+    loadAuthToken();
+  }, []);
+
+  useEffect(() => {
+    if (authToken) {
+      loadTransactions();
+    }
+  }, [authToken]);
+
+  const loadAuthToken = async () => {
+    try {
+      const token = await AsyncStorage.getItem('dokoToken');
+      setAuthToken(token);
+    } catch (error) {
+      console.error('Error loading auth token:', error);
+    }
+  };
+
+  const loadTransactions = async () => {
+    if (!authToken) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await authService.getTransactionList(authToken);
+      if (response.success) {
+        setTransactions(response.data.docs || []);
+      } else {
+        console.error('Failed to load transactions:', response.error);
+      }
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Export transactions function
+  const handleExportTransactions = async () => {
+    if (!authToken) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Authentication required',
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Map selected type to API type
+      let apiType = 'all';
+      if (selectedType === 'Deposit') {
+        apiType = 'deposit';
+      } else if (selectedType === 'Withdrawal') {
+        apiType = 'withdrawal';
+      } else if (selectedType === 'Subscription') {
+        apiType = 'subscription';
+      }
+
+      const response = await authService.getTransactionList(
+        authToken,
+        fromDateValue,
+        toDateValue,
+        apiType
+      );
+
+      if (response.success) {
+        const transactionData = response.data.docs || [];
+        setTransactions(transactionData);
+        
+        // Format data for export
+        const formattedData = formatTransactionData(transactionData);
+        setExportData(formattedData);
+        setShowShareModal(true);
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: response.error || 'Failed to fetch transactions',
+        });
+      }
+    } catch (error) {
+      console.error('Export transactions error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'An unexpected error occurred',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Format transaction data for export
+  const formatTransactionData = (transactions) => {
+    let csvData = 'Date,Type,Amount,Currency,Status,Description\n';
+    
+    transactions.forEach(transaction => {
+      const date = new Date(transaction.createdAt).toLocaleDateString();
+      const type = transaction.type || 'Unknown';
+      const amount = transaction.amount || 0;
+      const currency = transaction.currency || 'USD';
+      const status = transaction.status || 'Unknown';
+      const description = transaction.description || 'No description';
+      
+      csvData += `${date},${type},${amount},${currency},${status},"${description}"\n`;
+    });
+    
+    return csvData;
+  };
+
+  // Share functionality
+  const handleShare = async () => {
+    try {
+      await Share.share({
+        message: exportData,
+        title: 'Transaction Export',
+      });
+    } catch (error) {
+      console.error('Share error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to share data',
+      });
+    }
+  };
 
   const filterOptions = ['All', 'Send', 'Receive', 'Pending', 'Failed'];
 
   const typeOptions = [
-    'All Types',
-    'Send Money',
-    'Receive Money',
-    'Transfer',
-    'Payment',
+    'All',
+    'Deposit',
     'Withdrawal',
-    'Deposit'
+    'Subscription'
   ];
 
   const statusOptions = [
@@ -80,6 +220,12 @@ const TransactionManagement = ({ navigation }) => {
     if (selectedDate) {
       setFromDateValue(selectedDate);
       setFromDate(formatDate(selectedDate));
+      
+      // If to date is before from date, update to date
+      if (selectedDate > toDateValue) {
+        setToDateValue(selectedDate);
+        setToDate(formatDate(selectedDate));
+      }
     }
   };
 
@@ -111,6 +257,14 @@ const TransactionManagement = ({ navigation }) => {
     });
   };
 
+  // Clear date filters
+  const clearDateFilters = () => {
+    setFromDate('');
+    setToDate('');
+    setFromDateValue(new Date());
+    setToDateValue(new Date());
+  };
+
   // Analytics data for the donut chart
   const analyticsData = [
     { label: '-Select Network-', value: 35, color: '#2E5FFF' },
@@ -119,80 +273,7 @@ const TransactionManagement = ({ navigation }) => {
     { label: '-Select Network-', value: 15, color: '#D82F00' }
   ];
 
-  const transactions = [
-    {
-      id: 1,
-      type: 'send',
-      amount: '$1,200.00',
-      currency: 'USD',
-      recipient: 'John Doe',
-      status: 'completed',
-      date: '2024-01-15',
-      time: '10:30 AM',
-      icon: 'arrow-up-right',
-      color: '#FF6B6B',
-    },
-    {
-      id: 2,
-      type: 'receive',
-      amount: '$850.50',
-      currency: 'USD',
-      sender: 'Jane Smith',
-      status: 'completed',
-      date: '2024-01-14',
-      time: '2:15 PM',
-      icon: 'arrow-down-left',
-      color: '#4ECDC4',
-    },
-    {
-      id: 3,
-      type: 'send',
-      amount: '$2,500.00',
-      currency: 'USD',
-      recipient: 'Business Account',
-      status: 'pending',
-      date: '2024-01-13',
-      time: '9:45 AM',
-      icon: 'arrow-up-right',
-      color: '#FFA726',
-    },
-    {
-      id: 4,
-      type: 'receive',
-      amount: '$1,800.75',
-      currency: 'USD',
-      sender: 'Investment Fund',
-      status: 'completed',
-      date: '2024-01-12',
-      time: '4:20 PM',
-      icon: 'arrow-down-left',
-      color: '#66BB6A',
-    },
-    {
-      id: 5,
-      type: 'send',
-      amount: '$500.00',
-      currency: 'USD',
-      recipient: 'Family Member',
-      status: 'failed',
-      date: '2024-01-11',
-      time: '11:30 AM',
-      icon: 'arrow-up-right',
-      color: '#EF5350',
-    },
-    {
-      id: 6,
-      type: 'receive',
-      amount: '$3,200.00',
-      currency: 'USD',
-      sender: 'Salary Payment',
-      status: 'completed',
-      date: '2024-01-10',
-      time: '8:00 AM',
-      icon: 'arrow-down-left',
-      color: '#42A5F5',
-    },
-  ];
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -221,13 +302,20 @@ const TransactionManagement = ({ navigation }) => {
   };
 
   const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.recipient?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transaction.sender?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transaction.amount.toLowerCase().includes(searchQuery.toLowerCase());
+    // Safe string conversion for search
+    const safeString = (value) => {
+      if (value === null || value === undefined) return '';
+      return String(value);
+    };
+
+    const matchesSearch = safeString(transaction.recipient?.firstName || transaction.recipient?.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      safeString(transaction.initiator?.firstName || transaction.initiator?.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      safeString(transaction.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      safeString(transaction.amount || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesFilter = selectedFilter === 'All' ||
-      (selectedFilter === 'Send' && transaction.type === 'send') ||
-      (selectedFilter === 'Receive' && transaction.type === 'receive') ||
+      (selectedFilter === 'Send' && (transaction.type === 'chat_payment' || transaction.type === 'send')) ||
+      (selectedFilter === 'Receive' && (transaction.type === 'receive' || transaction.type === 'deposit')) ||
       (selectedFilter === 'Pending' && transaction.status === 'pending') ||
       (selectedFilter === 'Failed' && transaction.status === 'failed');
 
@@ -289,13 +377,48 @@ const TransactionManagement = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  const DateInput = ({ value, placeholder, onPress, isFromDate = false }) => (
-    <TouchableOpacity style={[styles.dateInput, { backgroundColor: theme.colors.surface }]} onPress={onPress}>
-      <Text style={[styles.dateText, { color: value ? theme.colors.text : theme.colors.textSecondary }]}>
-        {value || placeholder}
-      </Text>
-      <Ionicons name="calendar-outline" size={16} color={theme.colors.textSecondary} />
-    </TouchableOpacity>
+  const DateInput = ({ value, placeholder, onPress, isFromDate = false, onClear }) => (
+    <View style={styles.dateInputContainer}>
+      <TouchableOpacity 
+        style={[
+          styles.dateInput, 
+          { 
+            backgroundColor: theme.colors.surface,
+            borderColor: value ? theme.colors.primary : theme.colors.border,
+            borderWidth: value ? 2 : 1
+          }
+        ]} 
+        onPress={onPress}
+        activeOpacity={0.7}
+      >
+        <View style={styles.dateInputContent}>
+          <Ionicons 
+            name="calendar-outline" 
+            size={16} 
+            color={value ? theme.colors.primary : theme.colors.textSecondary} 
+            style={{ marginRight: 8 }}
+          />
+          <Text style={[
+            styles.dateText, 
+            { 
+              color: value ? theme.colors.text : theme.colors.textSecondary,
+              fontWeight: value ? '500' : '400'
+            }
+          ]}>
+            {value || placeholder}
+          </Text>
+        </View>
+        {value && onClear && (
+          <TouchableOpacity 
+            onPress={onClear}
+            style={styles.clearDateButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="close-circle" size={18} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        )}
+      </TouchableOpacity>
+    </View>
   );
 
   // Donut Chart Component
@@ -377,6 +500,125 @@ const TransactionManagement = ({ navigation }) => {
     </View>
   );
 
+  // Transaction Item Component
+  const TransactionItem = ({ transaction }) => {
+    const getTransactionIcon = (type) => {
+      switch (type) {
+        case 'subscription':
+          return 'card-outline';
+        case 'chat_payment':
+          return 'chatbubble-outline';
+        case 'deposit':
+          return 'arrow-down-circle';
+        case 'withdrawal':
+          return 'arrow-up-circle';
+        default:
+          return 'swap-horizontal-outline';
+      }
+    };
+
+    const getTransactionColor = (type, status) => {
+      if (status === 'failed' || status === 'cancelled') return '#EF5350';
+      if (status === 'pending') return '#FFA726';
+      if (type === 'subscription') return '#9C27B0';
+      if (type === 'chat_payment') return '#2196F3';
+      if (type === 'deposit') return '#4CAF50';
+      if (type === 'withdrawal') return '#FF9800';
+      return '#757575';
+    };
+
+    const formatAmount = (amount, currency) => {
+      return `${currency} ${Number(amount || 0).toFixed(2)}`;
+    };
+
+    const formatDate = (dateString) => {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    const getTransactionTitle = (transaction) => {
+      if (transaction.type === 'subscription') {
+        return 'Subscription Payment';
+      } else if (transaction.type === 'chat_payment') {
+        return 'Chat Payment';
+      } else if (transaction.type === 'deposit') {
+        return 'Deposit';
+      } else if (transaction.type === 'withdrawal') {
+        return 'Withdrawal';
+      }
+      return transaction.description || 'Transaction';
+    };
+
+    const getTransactionSubtitle = (transaction) => {
+      if (transaction.recipient?.firstName) {
+        return `To: ${transaction.recipient.firstName} ${transaction.recipient.lastName || ''}`.trim();
+      } else if (transaction.initiator?.firstName) {
+        return `From: ${transaction.initiator.firstName} ${transaction.initiator.lastName || ''}`.trim();
+      }
+      return transaction.description || 'Transaction';
+    };
+
+    return (
+      <View style={[styles.transactionCard, { backgroundColor: theme.colors.surface }]}>
+        <View style={styles.transactionHeader}>
+          <View style={styles.transactionIconContainer}>
+            <View style={[
+              styles.transactionIcon,
+              { backgroundColor: getTransactionColor(transaction.type, transaction.status) + '20' }
+            ]}>
+              <Ionicons 
+                name={getTransactionIcon(transaction.type)} 
+                size={20} 
+                color={getTransactionColor(transaction.type, transaction.status)} 
+              />
+            </View>
+          </View>
+          
+          <View style={styles.transactionInfo}>
+            <Text style={[styles.transactionTitle, { color: theme.colors.text }]}>
+              {getTransactionTitle(transaction)}
+            </Text>
+            <Text style={[styles.transactionSubtitle, { color: theme.colors.textSecondary }]}>
+              {getTransactionSubtitle(transaction)}
+            </Text>
+          </View>
+          
+          <View style={styles.transactionAmountContainer}>
+            <Text style={[
+              styles.transactionAmount,
+              { color: theme.colors.text }
+            ]}>
+              {formatAmount(transaction.amount, transaction.currency)}
+            </Text>
+            <View style={styles.statusContainer}>
+              <Ionicons 
+                name={getStatusIcon(transaction.status)} 
+                size={12} 
+                color={getStatusColor(transaction.status)} 
+              />
+              <Text style={[
+                styles.statusText,
+                { color: getStatusColor(transaction.status) }
+              ]}>
+                {transaction.status?.charAt(0).toUpperCase() + transaction.status?.slice(1)}
+              </Text>
+            </View>
+          </View>
+        </View>
+        
+        <Text style={[styles.transactionDate, { color: theme.colors.textSecondary }]}>
+          {formatDate(transaction.createdAt)}
+        </Text>
+      </View>
+    );
+  };
+
 
 
   return (
@@ -444,19 +686,46 @@ const TransactionManagement = ({ navigation }) => {
                  placeholder="From Date"
                  isFromDate={true}
                  onPress={openFromDatePicker}
+                 onClear={() => {
+                   setFromDate('');
+                   setFromDateValue(new Date());
+                 }}
                />
                <DateInput
                  value={toDate}
                  placeholder="To Date"
                  isFromDate={false}
                  onPress={openToDatePicker}
+                 onClear={() => {
+                   setToDate('');
+                   setToDateValue(new Date());
+                 }}
                />
              </View>
 
+             {/* Clear All Filters Button */}
+             {(fromDate || toDate || selectedType !== 'All' || selectedStatus || selectedNetwork) && (
+               <TouchableOpacity
+                 style={[styles.clearFiltersButton, { backgroundColor: theme.colors.surface }]}
+                 onPress={() => {
+                   clearDateFilters();
+                   setSelectedType('All');
+                   setSelectedStatus('');
+                   setSelectedNetwork('');
+                 }}
+               >
+                 <Ionicons name="refresh-outline" size={16} color={theme.colors.textSecondary} />
+                 <Text style={[styles.clearFiltersText, { color: theme.colors.textSecondary }]}>
+                   Clear All Filters
+                 </Text>
+               </TouchableOpacity>
+             )}
+
             <TouchableOpacity
               style={{ paddingTop: 10 }}
-              onPress={()=> navigation.navigate("CurrentHistory")}
+              onPress={handleExportTransactions}
               activeOpacity={0.8}
+              disabled={isLoading}
             >
               <LinearGradient
                 colors={["#1AA5FF", "#6B22E7", "#6B22E7", "#6B22E7"]}
@@ -464,19 +733,38 @@ const TransactionManagement = ({ navigation }) => {
                 end={{ x: 1.5, y: 0.5 }}
                 style={styles.gradientButton}
               >
-                <Text
-                  style={[
-                    styles.createAccountText,
-                    {
-                      fontFamily: theme.typography.fontFamily,
-                      fontSize: theme.typography.sizes.md,
-                      fontWeight: theme.typography.weights.medium,
-                      color: "#fff",
-                    },
-                  ]}
-                >
-                  Export Transactions
-                </Text>
+                {isLoading ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                    <Text
+                      style={[
+                        styles.createAccountText,
+                        {
+                          fontFamily: theme.typography.fontFamily,
+                          fontSize: theme.typography.sizes.md,
+                          fontWeight: theme.typography.weights.medium,
+                          color: "#fff",
+                        },
+                      ]}
+                    >
+                      Exporting...
+                    </Text>
+                  </View>
+                ) : (
+                  <Text
+                    style={[
+                      styles.createAccountText,
+                      {
+                        fontFamily: theme.typography.fontFamily,
+                        fontSize: theme.typography.sizes.md,
+                        fontWeight: theme.typography.weights.medium,
+                        color: "#fff",
+                      },
+                    ]}
+                  >
+                    Export Transactions
+                  </Text>
+                )}
               </LinearGradient>
             </TouchableOpacity>
             <View style={{ paddingVertical: 15 }}>
@@ -490,6 +778,35 @@ const TransactionManagement = ({ navigation }) => {
 
             {show && <AnalyticsCard />}
 
+            {/* Transaction List */}
+            <View style={styles.transactionListSection}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                Recent Transactions
+              </Text>
+              
+              {isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color={theme.colors.primary} />
+                  <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
+                    Loading transactions...
+                  </Text>
+                </View>
+              ) : filteredTransactions.length > 0 ? (
+                filteredTransactions.map((transaction, index) => (
+                  <TransactionItem key={transaction._id || index} transaction={transaction} />
+                ))
+              ) : (
+                <View style={styles.emptyState}>
+                  <Ionicons name="receipt-outline" size={64} color={theme.colors.textSecondary} />
+                  <Text style={[styles.emptyStateTitle, { color: theme.colors.text }]}>
+                    No Transactions Found
+                  </Text>
+                  <Text style={[styles.emptyStateSubtitle, { color: theme.colors.textSecondary }]}>
+                    {searchQuery ? 'Try adjusting your search criteria' : 'Your transaction history will appear here'}
+                  </Text>
+                </View>
+              )}
+            </View>
 
           </View>
         </View>
@@ -524,43 +841,178 @@ const TransactionManagement = ({ navigation }) => {
 
       {/* Date Pickers */}
       {showFromDatePicker && (
-        <View style={Platform.OS === 'ios' ? styles.iosPickerContainer : null}>
-          {Platform.OS === 'ios' && (
-            <View style={styles.iosPickerHeader}>
-              <TouchableOpacity onPress={() => setShowFromDatePicker(false)}>
-                <Text style={[styles.iosPickerButton, { color: theme.colors.primary }]}>Done</Text>
-              </TouchableOpacity>
+        <Modal
+          visible={showFromDatePicker}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowFromDatePicker(false)}
+        >
+          <View style={styles.datePickerModalOverlay}>
+            <View style={[styles.datePickerModal, { backgroundColor: theme.colors.background }]}>
+              <View style={[styles.datePickerHeader, { backgroundColor: theme.colors.surface }]}>
+                <Text style={[styles.datePickerTitle, { color: theme.colors.text }]}>
+                  Select From Date
+                </Text>
+                <TouchableOpacity 
+                  onPress={() => setShowFromDatePicker(false)}
+                  style={styles.datePickerCloseButton}
+                >
+                  <Ionicons name="close" size={24} color={theme.colors.text} />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.datePickerContent}>
+                <DateTimePicker
+                  value={fromDateValue}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleFromDateChange}
+                  maximumDate={toDateValue || new Date()}
+                  minimumDate={new Date(2020, 0, 1)}
+                />
+              </View>
+              
+              <View style={[styles.datePickerActions, { backgroundColor: theme.colors.surface }]}>
+                <TouchableOpacity
+                  style={[styles.datePickerButton, styles.datePickerCancelButton]}
+                  onPress={() => setShowFromDatePicker(false)}
+                >
+                  <Text style={[styles.datePickerButtonText, { color: theme.colors.text }]}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.datePickerButton, styles.datePickerConfirmButton]}
+                  onPress={() => setShowFromDatePicker(false)}
+                >
+                  <Text style={styles.datePickerConfirmText}>
+                    Select
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          )}
-          <DateTimePicker
-            value={fromDateValue}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'compact' : 'default'}
-            onChange={handleFromDateChange}
-            maximumDate={new Date()}
-            style={Platform.OS === 'ios' ? styles.iosDatePicker : null}
-          />
-        </View>
+          </View>
+        </Modal>
       )}
+      
       {showToDatePicker && (
-        <View style={Platform.OS === 'ios' ? styles.iosPickerContainer : null}>
-          {Platform.OS === 'ios' && (
-            <View style={styles.iosPickerHeader}>
-              <TouchableOpacity onPress={() => setShowToDatePicker(false)}>
-                <Text style={[styles.iosPickerButton, { color: theme.colors.primary }]}>Done</Text>
+        <Modal
+          visible={showToDatePicker}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setShowToDatePicker(false)}
+        >
+          <View style={styles.datePickerModalOverlay}>
+            <View style={[styles.datePickerModal, { backgroundColor: theme.colors.background }]}>
+              <View style={[styles.datePickerHeader, { backgroundColor: theme.colors.surface }]}>
+                <Text style={[styles.datePickerTitle, { color: theme.colors.text }]}>
+                  Select To Date
+                </Text>
+                <TouchableOpacity 
+                  onPress={() => setShowToDatePicker(false)}
+                  style={styles.datePickerCloseButton}
+                >
+                  <Ionicons name="close" size={24} color={theme.colors.text} />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.datePickerContent}>
+                <DateTimePicker
+                  value={toDateValue}
+                  mode="date"
+                  display="spinner"
+                  onChange={handleToDateChange}
+                  maximumDate={new Date()}
+                  minimumDate={fromDateValue || new Date(2020, 0, 1)}
+                />
+              </View>
+              
+              <View style={[styles.datePickerActions, { backgroundColor: theme.colors.surface }]}>
+                <TouchableOpacity
+                  style={[styles.datePickerButton, styles.datePickerCancelButton]}
+                  onPress={() => setShowToDatePicker(false)}
+                >
+                  <Text style={[styles.datePickerButtonText, { color: theme.colors.text }]}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.datePickerButton, styles.datePickerConfirmButton]}
+                  onPress={() => setShowToDatePicker(false)}
+                >
+                  <Text style={styles.datePickerConfirmText}>
+                    Select
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Share Modal */}
+      <Modal
+        visible={showShareModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        transparent={true}
+      >
+        <View style={styles.shareModalOverlay}>
+          <View style={[styles.shareModalContainer, { backgroundColor: theme.colors.background }]}>
+            <View style={[styles.shareModalHeader, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.shareModalTitle, { color: theme.colors.text }]}>
+                Export Transactions
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowShareModal(false)}
+                style={styles.shareModalCloseButton}
+              >
+                <Ionicons name="close" size={24} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
-          )}
-          <DateTimePicker
-            value={toDateValue}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'compact' : 'default'}
-            onChange={handleToDateChange}
-            maximumDate={new Date()}
-            style={Platform.OS === 'ios' ? styles.iosDatePicker : null}
-          />
+            
+            <View style={styles.shareModalContent}>
+              <Text style={[styles.shareModalDescription, { color: theme.colors.text }]}>
+                Your transaction data has been formatted and is ready to share. 
+                You can share it via email, messaging apps, or save it to your device.
+              </Text>
+              
+              <View style={[styles.exportPreview, { backgroundColor: theme.colors.surface }]}>
+                <Text style={[styles.exportPreviewText, { color: theme.colors.text }]}>
+                  {exportData.substring(0, 200)}...
+                </Text>
+              </View>
+              
+              <Text style={[styles.exportStats, { color: theme.colors.textSecondary }]}>
+                {transactions.length} transactions exported
+              </Text>
+            </View>
+            
+            <View style={[styles.shareModalActions, { backgroundColor: theme.colors.surface }]}>
+              <TouchableOpacity
+                style={[styles.shareModalButton, styles.cancelButton]}
+                onPress={() => setShowShareModal(false)}
+              >
+                <Text style={[styles.shareModalButtonText, { color: theme.colors.text }]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.shareModalButton, styles.shareButton]}
+                onPress={handleShare}
+              >
+                <Ionicons name="share-outline" size={20} color="white" style={{ marginRight: 8 }} />
+                <Text style={styles.shareButtonText}>
+                  Share
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-      )}
+      </Modal>
     </View>
   );
 };
@@ -635,20 +1087,49 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 16,
   },
-  dateInput: {
+  dateInputContainer: {
     flex: 1,
+    marginHorizontal: 6,
+  },
+  dateInput: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderRadius: 12,
-    marginHorizontal: 6,
     borderWidth: 1,
     borderColor: 'transparent',
   },
+  dateInputContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
   dateText: {
     fontSize: 16,
+    fontFamily: 'System',
+    flex: 1,
+  },
+  clearDateButton: {
+    padding: 4,
+    marginLeft: 8,
+  },
+  clearFiltersButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  clearFiltersText: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
     fontFamily: 'System',
   },
   exportButton: {
@@ -896,6 +1377,177 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
+  },
+  shareModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  shareModalContainer: {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  shareModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  shareModalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  shareModalCloseButton: {
+    padding: 4,
+  },
+  shareModalContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+  },
+  shareModalDescription: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 16,
+  },
+  exportPreview: {
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  exportPreviewText: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    lineHeight: 16,
+  },
+  exportStats: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  shareModalActions: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  shareModalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+  },
+  cancelButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  shareButton: {
+    backgroundColor: '#1AA5FF',
+  },
+  shareModalButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  shareButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  transactionListSection: {
+    marginTop: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+    fontFamily: 'System',
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    fontFamily: 'System',
+  },
+  transactionDate: {
+    fontSize: 12,
+    marginTop: 8,
+    fontFamily: 'System',
+  },
+  datePickerModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  datePickerModal: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  datePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  datePickerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    fontFamily: 'System',
+  },
+  datePickerCloseButton: {
+    padding: 4,
+  },
+  datePickerContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  datePickerActions: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  datePickerButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  datePickerCancelButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  datePickerConfirmButton: {
+    backgroundColor: '#1AA5FF',
+  },
+  datePickerButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    fontFamily: 'System',
+  },
+  datePickerConfirmText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'System',
   },
 });
 

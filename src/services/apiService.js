@@ -80,11 +80,11 @@ export const authService = {
   signup: async (signupData) => {
     try {
       console.log('Calling signup API with data:', signupData);
-      
+
       const response = await apiClient.post(ApiConfig.signup, signupData);
-      
+
       console.log('Signup API response:', response.data);
-      
+
       return {
         success: true,
         data: response.data.data,
@@ -92,7 +92,7 @@ export const authService = {
       };
     } catch (error) {
       console.error('Signup API Error:', error);
-      
+
       // Handle different types of errors
       if (error.response) {
         // Server responded with error status
@@ -122,11 +122,11 @@ export const authService = {
   resendOTP: async (identity) => {
     try {
       console.log('Calling resend OTP API with identity:', identity);
-      
+
       const response = await apiClient.put(ApiConfig.resendOTP, { identity });
-      
+
       console.log('Resend OTP API response:', response.data);
-      
+
       return {
         success: true,
         data: response.data.data,
@@ -134,7 +134,7 @@ export const authService = {
       };
     } catch (error) {
       console.error('Resend OTP API Error:', error);
-      
+
       // Handle different types of errors
       if (error.response) {
         // Server responded with error status
@@ -164,24 +164,24 @@ export const authService = {
   verifyOTP: async (identity, otp, otpType = null) => {
     try {
       console.log('Calling verify OTP API with identity:', identity, 'OTP:', otp, 'and otpType:', otpType);
-      
-      const requestData = { 
-        identity, 
-        otp 
+
+      const requestData = {
+        identity,
+        otp
       };
-      
+
       // Add otpType if provided
       if (otpType) {
         requestData.otpType = otpType;
       }
-      console.log("Sdagasdg",requestData);
-      
-      
+      console.log("Sdagasdg", requestData);
+
+
       const response = await apiClient.post(ApiConfig.verifyOTP, requestData);
 
-      
+
       console.log('Verify OTP API response:', response);
-      
+
       return {
         success: true,
         data: response.data.data,
@@ -189,7 +189,7 @@ export const authService = {
       };
     } catch (error) {
       console.error('Verify OTP API Error:', error);
-      
+
       // Handle different types of errors
       if (error.response) {
         // Server responded with error status
@@ -219,15 +219,15 @@ export const authService = {
   updateProfile: async (profileData, token) => {
     try {
       console.log('Calling update profile API with data:', profileData);
-      
+
       const response = await apiClient.put(ApiConfig.updateProfile, profileData, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       console.log('Update profile API response:', response.data);
-      
+
       return {
         success: true,
         data: response.data.data,
@@ -235,7 +235,7 @@ export const authService = {
       };
     } catch (error) {
       console.error('Update profile API Error:', error?.response);
-      
+
       // Handle different types of errors
       if (error.response) {
         // Server responded with error status
@@ -635,6 +635,51 @@ export const authService = {
     }
   },
 
+  // Cancel Subscription API call
+  cancelSubscription: async (subscriptionId, cancelReason, token) => {
+    try {
+      console.log('Calling cancel subscription API with subscriptionId:', subscriptionId, 'reason:', cancelReason);
+
+      const response = await apiClient.post(ApiConfig.cancelSubscription, {
+        subscriptionId: subscriptionId,
+        cancelReason: cancelReason
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      console.log('Cancel subscription API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Cancel Subscription API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to cancel subscription';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
   // Get Wallet List API call
   getWalletList: async (token) => {
     try {
@@ -868,11 +913,11 @@ export const authService = {
   },
 
   // Get Transaction List API call
-  getTransactionList: async (token, fromDate = null, toDate = null) => {
+  getTransactionList: async (token, fromDate = null, toDate = null, type = 'all') => {
     try {
-      console.log('Calling get transaction list API with dates:', { 
-        fromDate, 
-        toDate, 
+      console.log('Calling get transaction list API with dates:', {
+        fromDate,
+        toDate,
         fromDateType: typeof fromDate,
         toDateType: typeof toDate,
         fromDateIsDate: fromDate instanceof Date,
@@ -882,7 +927,13 @@ export const authService = {
       // Build query parameters
       let queryParams = '';
       const params = [];
-      
+
+      // Add type parameter
+      if (type && type !== 'all') {
+        params.push(`type=${encodeURIComponent(type)}`);
+        console.log('Added type parameter:', type);
+      }
+
       if (fromDate) {
         let formattedFromDate;
         if (fromDate instanceof Date) {
@@ -894,13 +945,13 @@ export const authService = {
             formattedFromDate = dateObj.toISOString().split('T')[0];
           }
         }
-        
+
         if (formattedFromDate) {
           params.push(`fromDate=${encodeURIComponent(formattedFromDate)}`);
           console.log('Added fromDate parameter:', formattedFromDate);
         }
       }
-      
+
       if (toDate) {
         let formattedToDate;
         if (toDate instanceof Date) {
@@ -912,13 +963,13 @@ export const authService = {
             formattedToDate = dateObj.toISOString().split('T')[0];
           }
         }
-        
+
         if (formattedToDate) {
           params.push(`toDate=${encodeURIComponent(formattedToDate)}`);
           console.log('Added toDate parameter:', formattedToDate);
         }
       }
-      
+
       if (params.length > 0) {
         queryParams = '?' + params.join('&');
       }
@@ -970,15 +1021,15 @@ export const chatService = {
   createGroup: async (groupData, token) => {
     try {
       console.log('Calling create group API with data:', groupData);
-      
+
       const response = await apiClient.post('https://1f9dq437-8000.inc1.devtunnels.ms/api/v1/chat/create/group', groupData, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       console.log('Create group API response:', response.data);
-      
+
       return {
         success: true,
         data: response.data.data,
@@ -986,9 +1037,53 @@ export const chatService = {
       };
     } catch (error) {
       console.error('Create Group API Error:', error);
-      
+
       if (error.response) {
         const errorMessage = error.response.data?.message || 'Group creation failed';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Create Individual Chat API call
+  createIndividualChat: async (participantId, token) => {
+    try {
+      console.log('Calling create individual chat API with participantId:', participantId);
+
+      const response = await apiClient.post(ApiConfig.createIndividualChat, {
+        participantId: participantId
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      console.log('Create individual chat API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Create Individual Chat API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Individual chat creation failed';
         return {
           success: false,
           error: errorMessage,
@@ -1012,30 +1107,30 @@ export const chatService = {
   getChatList: async (chatType, token, searchQuery = null) => {
     try {
       console.log('Calling get chat list API with type:', chatType, 'and search:', searchQuery);
-      
-      let url = 'https://1f9dq437-8000.inc1.devtunnels.ms/api/v1/chat/list';
+
+      let url = ApiConfig.getChatList;
       const params = [];
-      
+
       if (chatType && chatType !== 'all') {
         params.push(`chatType=${chatType}`);
       }
-      
+
       if (searchQuery && searchQuery.trim()) {
         params.push(`search=${encodeURIComponent(searchQuery.trim())}`);
       }
-      
+
       if (params.length > 0) {
         url += `?${params.join('&')}`;
       }
-      
+
       const response = await apiClient.get(url, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       console.log('Get chat list API response:', response.data);
-      
+
       return {
         success: true,
         data: response.data.data?.docs || [],
@@ -1044,7 +1139,7 @@ export const chatService = {
       };
     } catch (error) {
       console.error('Get Chat List API Error:', error);
-      
+
       if (error.response) {
         const errorMessage = error.response.data?.message || 'Failed to fetch chat list';
         return {
@@ -1070,15 +1165,15 @@ export const chatService = {
   sendMessage: async (messageData, token) => {
     try {
       console.log('Calling send message API with data:', messageData);
-      
+
       const response = await apiClient.post(ApiConfig.sendMessage, messageData, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       console.log('Send message API response:', response.data);
-      
+
       return {
         success: true,
         data: response.data.data,
@@ -1086,7 +1181,7 @@ export const chatService = {
       };
     } catch (error) {
       console.error('Send Message API Error:', error);
-      
+
       if (error.response) {
         const errorMessage = error.response.data?.message || 'Failed to send message';
         return {
@@ -1110,11 +1205,11 @@ export const chatService = {
 
   // Get Message List API call
   getMessageList: async (chatId, token) => {
-    console.log("sdagsadgsad",chatId);
-    
+    console.log("sdagsadgsad", chatId);
+
     try {
       console.log('Calling get message list API with chatId:', chatId);
-      
+
       const response = await apiClient.get(
         `${ApiConfig.getMessageList}?chatId=${chatId}`,
         {
@@ -1123,9 +1218,9 @@ export const chatService = {
           },
         }
       );
-      
+
       console.log('Get message list API response:', response.data);
-      
+
       return {
         success: true,
         data: response.data.data?.docs || [],
@@ -1136,7 +1231,7 @@ export const chatService = {
       };
     } catch (error) {
       console.error('Get Message List API Error:', error);
-      
+
       if (error.response) {
         const errorMessage = error.response.data?.message || 'Failed to fetch messages';
         return {
@@ -1162,15 +1257,15 @@ export const chatService = {
   sendPaymentSplit: async (paymentData, token) => {
     try {
       console.log('Calling send payment split API with data:', paymentData);
-      
+
       const response = await apiClient.post(ApiConfig.sendPaymentSplit, paymentData, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       console.log('Send payment split API response:', response.data);
-      
+
       return {
         success: true,
         data: response.data.data,
@@ -1178,7 +1273,50 @@ export const chatService = {
       };
     } catch (error) {
       console.error('Send Payment Split API Error:', error);
-      
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to send payment split';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  //Seperate function 
+
+  seprarentPayment: async (paymentData, token) => {
+    try {
+      console.log('Calling send payment split API with data:', paymentData);
+
+      const response = await apiClient.post(ApiConfig.sepratPyament, paymentData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      console.log('Send payment split API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Send Payment Split API Error:', error);
+
       if (error.response) {
         const errorMessage = error.response.data?.message || 'Failed to send payment split';
         return {
@@ -1204,15 +1342,15 @@ export const chatService = {
   acceptPayment: async (paymentId, token) => {
     try {
       console.log('Calling accept payment API with paymentId:', paymentId);
-      
+
       const response = await apiClient.post(ApiConfig.acceptPayment, { paymentId }, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       console.log('Accept payment API response:', response.data);
-      
+
       return {
         success: true,
         data: response.data.data,
@@ -1220,9 +1358,54 @@ export const chatService = {
       };
     } catch (error) {
       console.error('Accept Payment API Error:', error);
-      
+
       if (error.response) {
         const errorMessage = error.response.data?.message || 'Failed to accept payment';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Decline Payment API call
+  declinePayment: async (paymentId, reason, token) => {
+    try {
+      console.log('Calling decline payment API with paymentId:', paymentId, 'reason:', reason);
+
+      const response = await apiClient.post(ApiConfig.declinePayment, {
+        paymentId,
+        reason
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      console.log('Decline payment API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Decline Payment API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to decline payment';
         return {
           success: false,
           error: errorMessage,

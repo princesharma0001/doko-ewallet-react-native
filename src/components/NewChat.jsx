@@ -23,6 +23,7 @@ import { useNavigation } from '@react-navigation/native';
 import TransferModal from "./TransferModal";
 import { chatService } from '../services/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppSelector } from '../hooks/redux';
 
 const NewChat = ({ onBackPress, onCreateChannel }) => {
     const { theme, isDarkMode } = useTheme();
@@ -31,7 +32,8 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
     const navigation = useNavigation();
     const [searchQuery, setSearchQuery] = useState('');
     const [showTransferModal, setShowTransferModal] = useState(false);
-    
+    const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
+
     // Chat list states
     const [chatList, setChatList] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -98,14 +100,14 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
 
     const loadChatList = async (searchQuery = null) => {
         if (!authToken) return;
-        
+
         setIsLoading(true);
         setError(null);
 
         try {
             const chatType = activeTab === 'all' ? null : activeTab;
             const response = await chatService.getChatList(chatType, authToken, searchQuery);
-            
+
             if (response.success) {
                 if (searchQuery) {
                     setSearchResults(response.data || []);
@@ -128,7 +130,7 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
             setSearchResults([]);
             return;
         }
-        
+
         setIsSearching(true);
         setError(null);
 
@@ -175,12 +177,12 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
         }
     };
 
-    const handleChatPress = (chat) => {
+    const handleChatPress = (chat,otherUser) => {
         console.log('Chat pressed:', chat);
-        
+
         // Check if it's a group chat
         if (chat.chatType === 'group') {
-            navigation.navigate('GroupSeperateChat', { 
+            navigation.navigate('GroupSeperateChat', {
                 groupData: {
                     id: chat.chatId || chat.chatId,
                     name: chat.name,
@@ -189,6 +191,15 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                 }
             });
         } else {
+
+            navigation.navigate('InvidusalGroup', {
+               groupData: {
+                    id: chat.chatId || chat.chatId,
+                    name: otherUser?.firstName,
+                    recipientId: otherUser?.id || otherUser._id,
+                    chatType: chat.chatType
+                }
+            });
             // Handle individual chat navigation
             // navigation.navigate('IndividualChat', { chatData: chat });
             console.log('Individual chat navigation not implemented yet');
@@ -197,30 +208,48 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
 
     const renderChatItem = ({ item }) => {
         const isGroup = item.chatType === 'group';
+        const individual = item.chatType === "individual";
         const participantCount = item.participantCount || item.participants?.length || 0;
-        console.log("sdagasdg",item);
-        
+        console.log("sdagasdg", item);
+
+        let otherUser = null;
+        if (individual) {
+            otherUser = item.participants?.find(
+                (p) => p.userId?.id !== currentUser?.id // exclude yourself
+            )?.userId;
+        }
+
         return (
             <TouchableOpacity
                 style={[styles.chatItem, { backgroundColor: theme.colors.surface }]}
-                onPress={() => handleChatPress(item)}
+                onPress={() => handleChatPress(item,otherUser)}
                 activeOpacity={0.7}
             >
                 <View style={styles.chatItemContent}>
                     <View style={[styles.chatAvatar, { backgroundColor: theme.colors.primary }]}>
-                        <Text style={[styles.chatAvatarText, { color: '#FFFFFF' }]}>
+                        {individual ?
+                            <Text style={[styles.chatAvatarText, { color: '#FFFFFF' }]}>
+                                {otherUser?.firstName?.charAt(0)?.toUpperCase() || '?'}
+                            </Text>
+                            :
+                            <Text style={[styles.chatAvatarText, { color: '#FFFFFF' }]}>
+                                {isGroup ? 'G' : item.name?.charAt(0)?.toUpperCase() || '?'}
+                            </Text>
+                        }
+                        {/* <Text style={[styles.chatAvatarText, { color: '#FFFFFF' }]}>
                             {isGroup ? 'G' : item.name?.charAt(0)?.toUpperCase() || '?'}
-                        </Text>
+                        </Text> */}
                     </View>
                     <View style={styles.chatDetails}>
                         <Text style={[styles.chatName, { color: theme.colors.text }]}>
-                            {item.name || 'Unknown Chat'}
+                            {individual
+                                ? otherUser?.firstName || otherUser?.email // show other user's firstName
+                                : item.name || item?.userId?.email}
                         </Text>
                         <Text style={[styles.chatDescription, { color: theme.colors.textSecondary }]}>
-                            {isGroup 
-                                ? `${participantCount} members` 
-                                : item.description || 'No description'
-                            }
+                            {isGroup
+                                ? `${participantCount} members`
+                                : item.description || 'members'}
                         </Text>
                     </View>
                     <View style={styles.chatStatus}>
@@ -584,10 +613,10 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                     ) : (() => {
                         const displayData = searchQuery.trim() ? searchResults : chatList;
                         const isEmpty = displayData.length === 0;
-                        const emptyMessage = searchQuery.trim() 
-                            ? `No chats found for "${searchQuery}"` 
+                        const emptyMessage = searchQuery.trim()
+                            ? `No chats found for "${searchQuery}"`
                             : 'No chats found';
-                        
+
                         return isEmpty ? (
                             <View style={styles.emptyChatContainer}>
                                 <Text style={[styles.emptyChatText, { color: theme.colors.textSecondary }]}>
@@ -622,7 +651,7 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                         </Text>
                         <TouchableOpacity
                             style={styles.createChannelButton}
-                            onPress={()=> handleTransferPress()}
+                            onPress={() => handleTransferPress()}
                             activeOpacity={0.8}
                         >
                             <LinearGradient

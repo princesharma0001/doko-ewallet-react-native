@@ -14,7 +14,8 @@ import {
     Alert,
     Modal,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    ActivityIndicator
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
@@ -30,7 +31,7 @@ import Toast from 'react-native-toast-message';
 
 const { width, height } = Dimensions.get('window');
 
-const GroupSeperateChat = () => {
+const InvidusalGroup = () => {
     const { theme, isDarkMode } = useTheme();
     const navigation = useNavigation();
     const route = useRoute();
@@ -41,11 +42,12 @@ const GroupSeperateChat = () => {
 
     // Get group data from route params
     const { groupData } = route.params || {};
-    console.log("asdgsadg", groupData);
+    console.log("asdgsgsadgdsa", groupData);
 
     // State management
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
+    const [isSendingMessage, setIsSendingMessage] = useState(false);
     console.log("Sadgasdg", messages);
 
     const [isLoading, setIsLoading] = useState(false);
@@ -115,10 +117,10 @@ const GroupSeperateChat = () => {
 
         try {
             const response = await chatService.getMessageList(groupData?.id, token);
-            console.log("Sdagasdgasdgsadgsadgasdgads", response);
+            console.log("sddssddssdd", response);
 
             if (response.success) {
-                console.log("API Response Success:", response);
+                console.log("inidifis", response);
                 console.log("Messages Data:", response.data);
 
                 // Check if data exists and is an array
@@ -129,16 +131,16 @@ const GroupSeperateChat = () => {
                 }
 
                 // Transform API data to match our message format
-                const transformedMessages = response.data.map((msg, index) => {
+                const transformedMessages = response.data?.map((msg, index) => {
                     console.log(`Processing message ${index}:`, msg);
 
                     return {
-                        id: msg.id || msg._id || `msg_${index}`,
-                        messageId: msg.messageId,
-                        chatId: msg.chatId,
-                        senderId: msg.senderId,
-                        messageType: msg.messageType,
-                        content: msg.content,
+                        id: msg?.id || msg._id || `msg_${index}`,
+                        messageId: msg?.messageId,
+                        chatId: msg?.chatId,
+                        senderId: msg?.senderId,
+                        messageType: msg?.messageType,
+                        content: msg?.content,
                         status: msg.status,
                         isEdited: msg.isEdited,
                         isDeleted: msg.isDeleted,
@@ -147,11 +149,13 @@ const GroupSeperateChat = () => {
                         createdAt: new Date(msg.createdAt),
                         formattedTime: msg.formattedTime,
                         // For backward compatibility with existing UI
-                        text: msg.messageType === 'group_payment'
+                        text: (msg.messageType === 'group_payment' || msg.messageType === 'payment')
                             ? `Payment: $${msg.content?.paymentData?.amount || 0} - ${msg.content?.paymentData?.description || 'No description'}`
-                            : msg.content?.text || msg.content || 'Message',
-                        sender: msg.senderId?.email || msg.senderId?.name || 'Unknown',
-                        isOwn: msg.senderId?.id === currentUser?.id ? true : false, // You can determine this based on current user ID
+                            : getMessageText(msg),
+                        sender: msg.senderId?.firstName && msg.senderId?.lastName 
+                            ? `${msg.senderId.firstName} ${msg.senderId.lastName}`.trim()
+                            : msg.senderId?.email || msg.senderId?.username || 'Unknown',
+                        isOwn: (msg.senderId?.id === currentUser?.id || msg.senderId?._id === currentUser?.id) ? true : false, // You can determine this based on current user ID
                         timestamp: new Date(msg.createdAt)
                     };
                 });
@@ -172,21 +176,78 @@ const GroupSeperateChat = () => {
     };
 
     const handleSendMessage = async () => {
-        if (!message.trim()) return;
+        if (!message.trim() || isSendingMessage) return;
 
-        const newMessage = {
-            id: Date.now().toString(),
-            text: message.trim(),
-            sender: 'You',
-            timestamp: new Date(),
-            isOwn: true
-        };
+        setIsSendingMessage(true);
 
-        setMessages(prev => [...prev, newMessage]);
-        setMessage('');
+        try {
+            // Get auth token
+            const authToken = await AsyncStorage.getItem('dokoToken');
+            if (!authToken) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'Authentication required',
+                });
+                return;
+            }
 
-        // TODO: Implement API call to send message
-        console.log('Sending message:', newMessage);
+            // Prepare message data for API
+            const messageData = {
+                chatId: groupData?.id,
+                content: message.trim(),
+                messageType: 'text',
+            };
+
+            console.log('Sending message with data:', messageData);
+
+            // Call send message API
+            const response = await chatService.sendMessage(messageData, authToken);
+
+            if (response.success) {
+                // Create new message object from API response
+                const newMessage = {
+                    id: response.data._id || response.data.id,
+                    text: message.trim(),
+                    sender: currentUser?.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim() : currentUser?.email || 'You',
+                    timestamp: new Date(response.data.createdAt),
+                    isOwn: true,
+                    messageType: response.data.messageType,
+                    status: response.data.status,
+                    messageId: response.data.messageId
+                };
+
+                // Add message to local state
+                setMessages(prev => [...prev, newMessage]);
+                setMessage('');
+
+                // Scroll to bottom
+                setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+
+                Toast.show({
+                    type: 'success',
+                    text1: 'Success',
+                    text2: 'Message sent successfully',
+                });
+            } else {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: response.error || 'Failed to send message',
+                });
+            }
+        } catch (error) {
+            console.error('Send message error:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'An unexpected error occurred',
+            });
+        } finally {
+            setIsSendingMessage(false);
+        }
     };
 
     const handleSendMoney = () => {
@@ -194,31 +255,38 @@ const GroupSeperateChat = () => {
     };
 
     const handleSendPayment = async () => {
-        if (!amount.trim() || !description.trim()) {
-            Alert.alert('Error', 'Please enter both amount and description');
-            return;
-        }
-
-        if (!authToken || !groupData?.id) {
-            Alert.alert('Error', 'Missing authentication or group data');
-            return;
-        }
-
-        setIsSendingPayment(true);
-
         try {
+            if (!amount.trim() || !description.trim()) {
+                Alert.alert('Error', 'Please enter both amount and description');
+                return;
+            }
+
+            if (!authToken || !groupData?.id) {
+                Alert.alert('Error', 'Missing authentication or group data');
+                return;
+            }
+
+            // Validate amount is a valid number
+            const amountValue = parseFloat(amount);
+            if (isNaN(amountValue) || amountValue <= 0) {
+                Alert.alert('Error', 'Please enter a valid amount');
+                return;
+            }
+
+            setIsSendingPayment(true);
+
             const paymentData = {
                 chatId: groupData.id,
-                totalAmount: parseFloat(amount),
+                amount: amountValue,
                 currency: "NPR", // You can make this dynamic
                 description: description.trim(),
-                splitType: "equal",
-                participants: participants.map(p => p.userId?._id).filter(Boolean)
+                recipientId: groupData?.recipientId
             };
 
-            const response = await chatService.sendPaymentSplit(paymentData, authToken);
+            console.log('Sending payment with data:', paymentData);
+            const response = await chatService.seprarentPayment(paymentData, authToken);
 
-            if (response.success) {
+            if (response && response.success) {
                 await loadMessages();
                 setShowSendMoney(false);
                 setAmount('');
@@ -226,7 +294,7 @@ const GroupSeperateChat = () => {
                 Toast.show({
                     type: 'success',
                     text1: 'Success',
-                    text2: response?.message ?? "Payment split sent successfully!",
+                    text2: response?.message ?? "Payment sent successfully!",
                     position: 'top',
                     visibilityTime: 4000,
                 });
@@ -234,14 +302,20 @@ const GroupSeperateChat = () => {
                 Toast.show({
                     type: 'error',
                     text1: 'Error',
-                    text2: response.error ?? 'Failed to send payment split',
+                    text2: response?.error ?? 'Failed to send payment',
                     position: 'top',
                     visibilityTime: 4000,
                 });
             }
         } catch (error) {
             console.error('Error sending payment:', error);
-            Alert.alert('Error', 'Failed to send payment split');
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'Failed to send payment. Please try again.',
+                position: 'top',
+                visibilityTime: 4000,
+            });
         } finally {
             setIsSendingPayment(false);
         }
@@ -380,12 +454,41 @@ const GroupSeperateChat = () => {
         setCurrentRejectPaymentId(null);
     };
 
-    const renderMessage = ({ item }) => {
-        console.log("Rendering message:", item);
-        const isPaymentMessage = item.messageType === 'group_payment';
-        console.log("Is payment message:", isPaymentMessage);
+    // Helper function to safely extract text content from messages
+    const getMessageText = (message) => {
+        if (typeof message === 'string') {
+            return message;
+        }
+        if (typeof message === 'object' && message !== null) {
+            if (message.text) {
+                return typeof message.text === 'string' ? message.text : 'Message';
+            }
+            if (message.content) {
+                if (typeof message.content === 'string') {
+                    return message.content;
+                }
+                if (typeof message.content === 'object' && message.content.text) {
+                    return typeof message.content.text === 'string' ? message.content.text : 'Message';
+                }
+            }
+        }
+        return 'Message';
+    };
 
-        return (
+    const renderMessage = ({ item }) => {
+        try {
+            console.log("Rendering message:", item);
+            
+            // Add null safety checks
+            if (!item) {
+                console.warn("Item is null or undefined");
+                return null;
+            }
+            
+            const isPaymentMessage = item.messageType === 'group_payment' || item.messageType === 'payment';
+            console.log("Is payment message:", isPaymentMessage);
+
+            return (
             <View style={[
                 styles.messageContainer,
                 item.isOwn ? styles.ownMessage : styles.otherMessage
@@ -414,18 +517,18 @@ const GroupSeperateChat = () => {
                                 styles.paymentAmount,
                                 { color: item.isOwn ? '#FFFFFF' : theme.colors.text }
                             ]}>
-                                ${item.content.paymentData?.amount} {item.content.paymentData?.currency}
+                                ${item.content?.paymentData?.amount || 0} {item.content?.paymentData?.currency || 'USD'}
                             </Text>
                             <Text style={[
                                 styles.paymentDescription,
                                 { color: item.isOwn ? '#FFFFFF' : theme.colors.textSecondary }
                             ]}>
-                                {item.content.paymentData?.description}
+                                {item.content?.paymentData?.description || 'No description'}
                             </Text>
 
                             <View style={styles.paymentStatus}>
-                                {item?.senderId?.id === currentUser?.id && (
-                                    item.content.paymentData?.recipients?.map((recipient, index) => (
+                                {(item?.senderId?.id === currentUser?.id || item?.senderId?._id === currentUser?.id) && item.content?.paymentData?.recipients && (
+                                    item.content.paymentData.recipients.map((recipient, index) => (
                                         <Text
                                             key={index}
                                             style={[
@@ -433,45 +536,25 @@ const GroupSeperateChat = () => {
                                                 { color: item.isOwn ? '#FFFFFF' : theme.colors.textSecondary }
                                             ]}
                                         >
-                                            {recipient.userId?.username}: {recipient.status}
+                                            {recipient?.userId?.firstName || 'Unknown'}: {recipient?.status || 'Unknown'}
                                         </Text>
                                     ))
                                 )}
 
-                                <Text style={[
-                                    styles.paymentStatusText,
-                                    { color: item.isOwn ? '#FFFFFF' : theme.colors.textSecondary, paddingVertical: 6 }
-                                ]}>
-                                    {(() => {
-                                        const recipients = item.content.paymentData?.recipients || [];
-                                        const currentUserRecipient = recipients.find(
-                                            r => r?.userId?._id === currentUser?.id
-                                        );
-
-                                        if (currentUserRecipient) {
-
-                                            return `Your share: ${Number(currentUserRecipient.amount).toFixed(2)}`;
-                                        } else {
-                                            return `Split among ${recipients.length} people`;
-                                        }
-
-                                    })()}
-                                </Text>
+                                
 
                                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                                     {(() => {
-                                        const recipients = item.content.paymentData?.recipients || [];
+                                        const recipients = item.content?.paymentData?.recipients || [];
                                         const currentUserRecipient = recipients.find(
-                                            r => r?.userId?._id === currentUser?.id
+                                            r => r?.userId?._id === currentUser?.id || r?.userId?.id === currentUser?.id
                                         );
+                                        
                                         if (currentUserRecipient) {
-                                            const paymentId = item.content.paymentData?.paymentId;
+                                            const paymentId = item.content?.paymentData?.paymentId;
                                             const isProcessing = processingPayments.has(paymentId);
                                             const isApproving = approvingPayments.has(paymentId);
                                             const isRejecting = rejectingPayments.has(paymentId);
-
-                                            console.log("sdagasdgads",currentUserRecipient);
-                                            
 
                                             if (currentUserRecipient.status === "pending") {
                                                 return (
@@ -521,10 +604,12 @@ const GroupSeperateChat = () => {
                                                     </View>
                                                 );
                                             }
-
-
                                         } else {
-                                            return `Split among ${recipients.length} people`;
+                                            // return (
+                                            //     <Text style={{ color: theme.colors.textSecondary, paddingVertical: 5 }}>
+                                            //         Split among {recipients.length} people
+                                            //     </Text>
+                                            // );
                                         }
                                     })()}
                                 </View>
@@ -547,7 +632,7 @@ const GroupSeperateChat = () => {
                             styles.messageText,
                             { color: item.isOwn ? '#FFFFFF' : theme.colors.text }
                         ]}>
-                            {item.text}
+                            {getMessageText(item)}
                         </Text>
                         <Text style={[
                             styles.messageTime,
@@ -558,7 +643,17 @@ const GroupSeperateChat = () => {
                     </View>
                 )}
             </View>
-        );
+            );
+        } catch (error) {
+            console.error("Error rendering message:", error);
+            return (
+                <View style={styles.messageContainer}>
+                    <Text style={{ color: 'red', padding: 10 }}>
+                        Error rendering message
+                    </Text>
+                </View>
+            );
+        }
     };
 
 
@@ -670,11 +765,21 @@ const GroupSeperateChat = () => {
                         maxLength={1000}
                     />
                     <TouchableOpacity
-                        style={[styles.sendButton, { backgroundColor: theme.colors.primary }]}
+                        style={[
+                            styles.sendButton, 
+                            { 
+                                backgroundColor: (!message.trim() || isSendingMessage) ? theme.colors.textSecondary : theme.colors.primary,
+                                opacity: (!message.trim() || isSendingMessage) ? 0.6 : 1
+                            }
+                        ]}
                         onPress={handleSendMessage}
-                        disabled={!message.trim()}
+                        disabled={!message.trim() || isSendingMessage}
                     >
-                        <MaterialIcons name="arrow-upward" size={20} color={"#fff"} />
+                        {isSendingMessage ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <MaterialIcons name="arrow-upward" size={20} color={"#fff"} />
+                        )}
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
@@ -1230,4 +1335,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default GroupSeperateChat;
+export default InvidusalGroup;

@@ -30,6 +30,7 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
   const [activeItem, setActiveItem] = useState('Dashboard');
   const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
   const { activeSubscription, isSubscriptionLoading, subscriptionError } = useAppSelector((state) => state.subscription);
+console.log("");
 
   const dispatch = useAppDispatch();
 
@@ -159,7 +160,7 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
               >
                 <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>
                   {isSubscriptionLoading ? '' :
-                    activeSubscription?.planId?.name || 'Standard'} Plan
+                    activeSubscription?.planId?.name || 'Get'} Plan
                 </Text>
               </TouchableOpacity>
             </View>
