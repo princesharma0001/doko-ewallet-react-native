@@ -114,50 +114,12 @@ const TransferModal = ({ visible, onClose, onSelectRecipient }) => {
     }
   };
 
-  const recentRecipients = [
-    {
-      id: 'sami',
-      name: 'Sami',
-      initials: 'S',
-      avatarColor: '#4CAF50',
-      lastTransaction: 'You sent $25',
-      emoji: '🌸',
-      date: 'Thu',
-    },
-    {
-      id: 'housen-soufan',
-      name: 'Housen Soufan',
-      initials: 'HS',
-      avatarColor: '#E91E63',
-      lastTransaction: 'Sent you $40',
-      emoji: '💰',
-      date: 'Thu',
-    },
-    {
-      id: 'swati',
-      name: 'Swati',
-      initials: 'KB',
-      avatarColor: '#2196F3',
-      lastTransaction: 'You sent $26',
-      emoji: '🌸',
-      date: 'Mon',
-    },
-    {
-      id: 'david-o',
-      name: 'David O',
-      initials: 'DO',
-      avatarColor: '#FF9800',
-      lastTransaction: 'You sent $5.98',
-      emoji: '🌸',
-      date: 'Mon',
-    },
-  ];
 
   const handleRecipientTypePress = (type) => {
     console.log('Selected recipient type:', type.title);
     if (type.id === 'doko-user') {
       setShowAddDokoFriendModal(true);
-    } else if(type.id === "send-international"){
+    } else if (type.id === "send-international") {
       onClose()
       navigation.navigate("SendInternational")
 
@@ -174,7 +136,7 @@ const TransferModal = ({ visible, onClose, onSelectRecipient }) => {
 
   const handleRecentRecipientPress = async (recipient) => {
     console.log('Selected recent recipient:', recipient.name);
-    
+
     // If it's a search result type, create individual chat
     if (recipient.type === 'search-result') {
       await createIndividualChat(recipient.id, recipient.id);
@@ -187,7 +149,8 @@ const TransferModal = ({ visible, onClose, onSelectRecipient }) => {
   const handleSearchResultPress = async (user) => {
     console.log('Selected search result:', user);
     const userId = user._id || user.id;
-    
+    const userName = user.firstName || user.firstName;
+
     // Transform API user data to match expected recipient format
     const recipient = {
       id: userId,
@@ -199,11 +162,11 @@ const TransferModal = ({ visible, onClose, onSelectRecipient }) => {
       username: user.username,
       type: 'search-result'
     };
-    
-    await createIndividualChat(userId, userId);
+
+    await createIndividualChat(userId, userId,userName);
   };
 
-  const createIndividualChat = async (participantId, userId) => {
+  const createIndividualChat = async (participantId, userId,userName) => {
     if (!authToken) {
       Toast.show({
         type: 'error',
@@ -216,26 +179,36 @@ const TransferModal = ({ visible, onClose, onSelectRecipient }) => {
     }
 
     setCreatingChatForUser(userId);
-    
+
     try {
       const response = await chatService.createIndividualChat(participantId, authToken);
-      
+
       if (response.success) {
-        Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: response?.message ?? 'Individual chat created successfully!',
-          position: 'top',
-          visibilityTime: 3000,
+        const data = response?.data;
+
+        navigation.navigate('InvidusalGroup', {
+          groupData: {
+            id: data.chatId || data.chatId,
+            name: userName ?? "",
+            recipientId: data?.id || data._id,
+            chatType: data.chatType
+          }
         });
-        
+        // Toast.show({
+        //   type: 'success',
+        //   text1: 'Success',
+        //   text2: response?.message ?? 'Individual chat created successfully!',
+        //   position: 'top',
+        //   visibilityTime: 3000,
+        // });
+
         // Close the modal
         onClose();
-        
+
         // Navigate to the chat or handle the response
         // You can add navigation logic here if needed
         console.log('Chat created:', response.data);
-        
+
       } else {
         Toast.show({
           type: 'error',
@@ -262,7 +235,7 @@ const TransferModal = ({ visible, onClose, onSelectRecipient }) => {
   const getIconComponent = (iconName) => {
     switch (iconName) {
       case 'R':
-        return <Text style={[styles.iconText, { color: "#169BFF",fontSize:32,fontWeight:'700' }]}>R</Text>;
+        return <Text style={[styles.iconText, { color: "#169BFF", fontSize: 32, fontWeight: '700' }]}>R</Text>;
       case 'bank':
         return <Ionicons name="business" size={24} color={theme.colors.primary} />;
       case 'globe':
@@ -274,27 +247,27 @@ const TransferModal = ({ visible, onClose, onSelectRecipient }) => {
     }
   };
 
-const RecipientTypeItem = ({ type }) => (
-  <TouchableHighlight
-    onPress={() => handleRecipientTypePress(type)}
-    underlayColor={theme.colors.surface} // highlight color when pressed
-    style={{ borderRadius: 8 }} // optional: to clip highlight to rounded corners
-  >
-    <View
-      style={[
-        styles.recipientTypeItem,
-        // { backgroundColor: theme.colors.surface },
-      ]}
+  const RecipientTypeItem = ({ type }) => (
+    <TouchableHighlight
+      onPress={() => handleRecipientTypePress(type)}
+      underlayColor={theme.colors.surface} // highlight color when pressed
+      style={{ borderRadius: 8 }} // optional: to clip highlight to rounded corners
     >
-      <View style={styles.typeIconContainer}>
-        {getIconComponent(type.icon)}
+      <View
+        style={[
+          styles.recipientTypeItem,
+          // { backgroundColor: theme.colors.surface },
+        ]}
+      >
+        <View style={styles.typeIconContainer}>
+          {getIconComponent(type.icon)}
+        </View>
+        <Text style={[styles.typeTitle, { color: theme.colors.text }]}>
+          {type.title}
+        </Text>
       </View>
-      <Text style={[styles.typeTitle, { color: theme.colors.text }]}>
-        {type.title}
-      </Text>
-    </View>
-  </TouchableHighlight>
-);
+    </TouchableHighlight>
+  );
   const RecentRecipientItem = ({ recipient }) => (
     <TouchableOpacity
       style={styles.recentRecipientItem}
@@ -323,7 +296,7 @@ const RecipientTypeItem = ({ type }) => (
     const initials = `${(user.firstName || '').charAt(0)}${(user.lastName || '').charAt(0)}`.toUpperCase() || 'U';
     const userId = user._id || user.id;
     const isThisUserCreating = creatingChatForUser === userId;
-    
+
     return (
       <TouchableOpacity
         style={[styles.recentRecipientItem, isThisUserCreating && styles.disabledItem]}
@@ -341,12 +314,12 @@ const RecipientTypeItem = ({ type }) => (
           <Text style={[styles.lastTransaction, { color: theme.colors.textSecondary }]}>
             {user.email}
           </Text>
-         
+
         </View>
         {isThisUserCreating ? (
           <ActivityIndicator size="small" color={theme.colors.primary} />
         ) : (
-          <Ionicons name="person-add" size={20} color={theme.colors.textSecondary} />
+          <Ionicons name="chatbubble-outline" size={20} color={theme.colors.textSecondary} />
         )}
       </TouchableOpacity>
     );
@@ -386,7 +359,7 @@ const RecipientTypeItem = ({ type }) => (
             <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
             <TextInput
               style={[styles.searchInput, { color: theme.colors.text }]}
-              placeholder="Search"
+              placeholder="Search users"
               placeholderTextColor={theme.colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -400,7 +373,7 @@ const RecipientTypeItem = ({ type }) => (
                 Add New
               </Text>
               <View style={styles.recipientTypesContainer}>
-                {recipientTypes.map((type) => (
+                {recipientTypes?.map((type) => (
                   <RecipientTypeItem key={type.id} type={type} />
                 ))}
               </View>
@@ -443,6 +416,8 @@ const RecipientTypeItem = ({ type }) => (
         visible={showAddDokoFriendModal}
         onClose={() => setShowAddDokoFriendModal(false)}
         onSelectOption={handleAddDokoFriendOption}
+        onClose1={onClose}
+
       />
     </Modal>
   );

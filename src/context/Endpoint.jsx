@@ -32,5 +32,11 @@ const ApiConfig = {
     sendTransfer: `${url}api/v1/transfer/send`,
     getTransactionList: `${url}api/v1/transaction/list`,
     getChatList: `${url}api/v1/chat/list`,
+    getBankDetails: `${url}api/v1/bankDetails/list`,
+    friendRequest: `${url}api/v1/friend/request`,
+    friendAccept: `${url}api/v1/friend/accept`,
+    friendReject: `${url}api/v1/friend/reject`,
+    getNotificationList: `${url}api/v1/notification/list`,
+    clearNotifications: `${url}api/v1/notification/clear`,
 };
 export default ApiConfig;

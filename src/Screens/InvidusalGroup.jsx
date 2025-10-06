@@ -28,6 +28,7 @@ import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { chatService } from '../services/apiService';
 import { useAppSelector } from '../hooks/redux';
 import Toast from 'react-native-toast-message';
+import UserProfileModal from '../components/UserProfileModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -43,6 +44,9 @@ const InvidusalGroup = () => {
     // Get group data from route params
     const { groupData } = route.params || {};
     console.log("asdgsgsadgdsa", groupData);
+    const [showUserProfileModal, setShowUserProfileModal] = useState("");
+    console.log("sdgsdagdsa",showUserProfileModal);
+    
 
     // State management
     const [message, setMessage] = useState('');
@@ -152,7 +156,7 @@ const InvidusalGroup = () => {
                         text: (msg.messageType === 'group_payment' || msg.messageType === 'payment')
                             ? `Payment: $${msg.content?.paymentData?.amount || 0} - ${msg.content?.paymentData?.description || 'No description'}`
                             : getMessageText(msg),
-                        sender: msg.senderId?.firstName && msg.senderId?.lastName 
+                        sender: msg.senderId?.firstName && msg.senderId?.lastName
                             ? `${msg.senderId.firstName} ${msg.senderId.lastName}`.trim()
                             : msg.senderId?.email || msg.senderId?.username || 'Unknown',
                         isOwn: (msg.senderId?.id === currentUser?.id || msg.senderId?._id === currentUser?.id) ? true : false, // You can determine this based on current user ID
@@ -478,171 +482,171 @@ const InvidusalGroup = () => {
     const renderMessage = ({ item }) => {
         try {
             console.log("Rendering message:", item);
-            
+
             // Add null safety checks
             if (!item) {
                 console.warn("Item is null or undefined");
                 return null;
             }
-            
+
             const isPaymentMessage = item.messageType === 'group_payment' || item.messageType === 'payment';
             console.log("Is payment message:", isPaymentMessage);
 
             return (
-            <View style={[
-                styles.messageContainer,
-                item.isOwn ? styles.ownMessage : styles.otherMessage
-            ]}>
-                {isPaymentMessage ? (
-                    <View style={[
-                        styles.paymentBubble,
-                        { backgroundColor: item.isOwn ? theme.colors.primary : theme.colors.surface }
-                    ]}>
-                        <View style={styles.paymentHeader}>
-                            <Ionicons
-                                name="cash"
-                                size={20}
-                                color={item.isOwn ? '#FFFFFF' : theme.colors.primary}
-                            />
-                            <Text style={[
-                                styles.paymentTitle,
-                                { color: item.isOwn ? '#FFFFFF' : theme.colors.text }
-                            ]}>
-                                Payment Request
-                            </Text>
-                        </View>
+                <View style={[
+                    styles.messageContainer,
+                    item.isOwn ? styles.ownMessage : styles.otherMessage
+                ]}>
+                    {isPaymentMessage ? (
+                        <View style={[
+                            styles.paymentBubble,
+                            { backgroundColor: item.isOwn ? theme.colors.primary : theme.colors.surface }
+                        ]}>
+                            <View style={styles.paymentHeader}>
+                                <Ionicons
+                                    name="cash"
+                                    size={20}
+                                    color={item.isOwn ? '#FFFFFF' : theme.colors.primary}
+                                />
+                                <Text style={[
+                                    styles.paymentTitle,
+                                    { color: item.isOwn ? '#FFFFFF' : theme.colors.text }
+                                ]}>
+                                    Payment Request
+                                </Text>
+                            </View>
 
-                        <View style={styles.paymentContent}>
-                            <Text style={[
-                                styles.paymentAmount,
-                                { color: item.isOwn ? '#FFFFFF' : theme.colors.text }
-                            ]}>
-                                ${item.content?.paymentData?.amount || 0} {item.content?.paymentData?.currency || 'USD'}
-                            </Text>
-                            <Text style={[
-                                styles.paymentDescription,
-                                { color: item.isOwn ? '#FFFFFF' : theme.colors.textSecondary }
-                            ]}>
-                                {item.content?.paymentData?.description || 'No description'}
-                            </Text>
+                            <View style={styles.paymentContent}>
+                                <Text style={[
+                                    styles.paymentAmount,
+                                    { color: item.isOwn ? '#FFFFFF' : theme.colors.text }
+                                ]}>
+                                    ${item.content?.paymentData?.amount || 0} {item.content?.paymentData?.currency || 'USD'}
+                                </Text>
+                                <Text style={[
+                                    styles.paymentDescription,
+                                    { color: item.isOwn ? '#FFFFFF' : theme.colors.textSecondary }
+                                ]}>
+                                    {item.content?.paymentData?.description || 'No description'}
+                                </Text>
 
-                            <View style={styles.paymentStatus}>
-                                {(item?.senderId?.id === currentUser?.id || item?.senderId?._id === currentUser?.id) && item.content?.paymentData?.recipients && (
-                                    item.content.paymentData.recipients.map((recipient, index) => (
-                                        <Text
-                                            key={index}
-                                            style={[
-                                                styles.paymentStatusText,
-                                                { color: item.isOwn ? '#FFFFFF' : theme.colors.textSecondary }
-                                            ]}
-                                        >
-                                            {recipient?.userId?.firstName || 'Unknown'}: {recipient?.status || 'Unknown'}
-                                        </Text>
-                                    ))
-                                )}
+                                <View style={styles.paymentStatus}>
+                                    {(item?.senderId?.id === currentUser?.id || item?.senderId?._id === currentUser?.id) && item.content?.paymentData?.recipients && (
+                                        item.content.paymentData.recipients.map((recipient, index) => (
+                                            <Text
+                                                key={index}
+                                                style={[
+                                                    styles.paymentStatusText,
+                                                    { color: item.isOwn ? '#FFFFFF' : theme.colors.textSecondary }
+                                                ]}
+                                            >
+                                                {recipient?.userId?.firstName || 'Unknown'}: {recipient?.status || 'Unknown'}
+                                            </Text>
+                                        ))
+                                    )}
 
-                                
 
-                                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                                    {(() => {
-                                        const recipients = item.content?.paymentData?.recipients || [];
-                                        const currentUserRecipient = recipients.find(
-                                            r => r?.userId?._id === currentUser?.id || r?.userId?.id === currentUser?.id
-                                        );
-                                        
-                                        if (currentUserRecipient) {
-                                            const paymentId = item.content?.paymentData?.paymentId;
-                                            const isProcessing = processingPayments.has(paymentId);
-                                            const isApproving = approvingPayments.has(paymentId);
-                                            const isRejecting = rejectingPayments.has(paymentId);
 
-                                            if (currentUserRecipient.status === "pending") {
-                                                return (
-                                                    <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 5 }}>
-                                                        <TouchableOpacity
-                                                            style={{
-                                                                marginRight: 10,
-                                                                paddingHorizontal: 12,
-                                                                paddingVertical: 6,
-                                                                borderRadius: 6,
-                                                                backgroundColor: (isProcessing || isApproving) ? '#ccc' : '#4CAF50'
-                                                            }}
-                                                            onPress={() => handleApprovePayment(paymentId)}
-                                                            disabled={isProcessing || isApproving}
-                                                        >
-                                                            {(isProcessing || isApproving) ? (
-                                                                <Text style={{ color: "white", fontWeight: "bold" }}>
-                                                                    Processing...
-                                                                </Text>
-                                                            ) : (
-                                                                <Text style={{ color: "white", fontWeight: "bold" }}>
-                                                                    ✔ Approve
-                                                                </Text>
-                                                            )}
-                                                        </TouchableOpacity>
+                                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                                        {(() => {
+                                            const recipients = item.content?.paymentData?.recipients || [];
+                                            const currentUserRecipient = recipients.find(
+                                                r => r?.userId?._id === currentUser?.id || r?.userId?.id === currentUser?.id
+                                            );
 
-                                                        <TouchableOpacity
-                                                            style={{
-                                                                paddingHorizontal: 12,
-                                                                paddingVertical: 6,
-                                                                borderRadius: 6,
-                                                                backgroundColor: (isProcessing || isRejecting) ? '#ccc' : '#F44336'
-                                                            }}
-                                                            onPress={() => handleRejectPayment(paymentId)}
-                                                            disabled={isProcessing || isRejecting}
-                                                        >
-                                                            {isRejecting ? (
-                                                                <Text style={{ color: "white", fontWeight: "bold" }}>
-                                                                    Processing...
-                                                                </Text>
-                                                            ) : (
-                                                                <Text style={{ color: "white", fontWeight: "bold" }}>
-                                                                    ✖ Reject
-                                                                </Text>
-                                                            )}
-                                                        </TouchableOpacity>
-                                                    </View>
-                                                );
+                                            if (currentUserRecipient) {
+                                                const paymentId = item.content?.paymentData?.paymentId;
+                                                const isProcessing = processingPayments.has(paymentId);
+                                                const isApproving = approvingPayments.has(paymentId);
+                                                const isRejecting = rejectingPayments.has(paymentId);
+
+                                                if (currentUserRecipient.status === "pending") {
+                                                    return (
+                                                        <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 5 }}>
+                                                            <TouchableOpacity
+                                                                style={{
+                                                                    marginRight: 10,
+                                                                    paddingHorizontal: 12,
+                                                                    paddingVertical: 6,
+                                                                    borderRadius: 6,
+                                                                    backgroundColor: (isProcessing || isApproving) ? '#ccc' : '#4CAF50'
+                                                                }}
+                                                                onPress={() => handleApprovePayment(paymentId)}
+                                                                disabled={isProcessing || isApproving}
+                                                            >
+                                                                {(isProcessing || isApproving) ? (
+                                                                    <Text style={{ color: "white", fontWeight: "bold" }}>
+                                                                        Processing...
+                                                                    </Text>
+                                                                ) : (
+                                                                    <Text style={{ color: "white", fontWeight: "bold" }}>
+                                                                        ✔ Approve
+                                                                    </Text>
+                                                                )}
+                                                            </TouchableOpacity>
+
+                                                            <TouchableOpacity
+                                                                style={{
+                                                                    paddingHorizontal: 12,
+                                                                    paddingVertical: 6,
+                                                                    borderRadius: 6,
+                                                                    backgroundColor: (isProcessing || isRejecting) ? '#ccc' : '#F44336'
+                                                                }}
+                                                                onPress={() => handleRejectPayment(paymentId)}
+                                                                disabled={isProcessing || isRejecting}
+                                                            >
+                                                                {isRejecting ? (
+                                                                    <Text style={{ color: "white", fontWeight: "bold" }}>
+                                                                        Processing...
+                                                                    </Text>
+                                                                ) : (
+                                                                    <Text style={{ color: "white", fontWeight: "bold" }}>
+                                                                        ✖ Reject
+                                                                    </Text>
+                                                                )}
+                                                            </TouchableOpacity>
+                                                        </View>
+                                                    );
+                                                }
+                                            } else {
+                                                // return (
+                                                //     <Text style={{ color: theme.colors.textSecondary, paddingVertical: 5 }}>
+                                                //         Split among {recipients.length} people
+                                                //     </Text>
+                                                // );
                                             }
-                                        } else {
-                                            // return (
-                                            //     <Text style={{ color: theme.colors.textSecondary, paddingVertical: 5 }}>
-                                            //         Split among {recipients.length} people
-                                            //     </Text>
-                                            // );
-                                        }
-                                    })()}
+                                        })()}
+                                    </View>
                                 </View>
                             </View>
-                        </View>
 
-                        <Text style={[
-                            styles.messageTime,
-                            { color: item.isOwn ? '#FFFFFF' : theme.colors.textSecondary }
+                            <Text style={[
+                                styles.messageTime,
+                                { color: item.isOwn ? '#FFFFFF' : theme.colors.textSecondary }
+                            ]}>
+                                {item.formattedTime || item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </Text>
+                        </View>
+                    ) : (
+                        <View style={[
+                            styles.messageBubble,
+                            { backgroundColor: item.isOwn ? theme.colors.primary : theme.colors.surface }
                         ]}>
-                            {item.formattedTime || item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </Text>
-                    </View>
-                ) : (
-                    <View style={[
-                        styles.messageBubble,
-                        { backgroundColor: item.isOwn ? theme.colors.primary : theme.colors.surface }
-                    ]}>
-                        <Text style={[
-                            styles.messageText,
-                            { color: item.isOwn ? '#FFFFFF' : theme.colors.text }
-                        ]}>
-                            {getMessageText(item)}
-                        </Text>
-                        <Text style={[
-                            styles.messageTime,
-                            { color: item.isOwn ? '#FFFFFF' : theme.colors.textSecondary }
-                        ]}>
-                            {item.formattedTime || item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </Text>
-                    </View>
-                )}
-            </View>
+                            <Text style={[
+                                styles.messageText,
+                                { color: item.isOwn ? '#FFFFFF' : theme.colors.text }
+                            ]}>
+                                {getMessageText(item)}
+                            </Text>
+                            <Text style={[
+                                styles.messageTime,
+                                { color: item.isOwn ? '#FFFFFF' : theme.colors.textSecondary }
+                            ]}>
+                                {item.formattedTime || item.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </Text>
+                        </View>
+                    )}
+                </View>
             );
         } catch (error) {
             console.error("Error rendering message:", error);
@@ -682,28 +686,16 @@ const InvidusalGroup = () => {
                         </Text>
                     </View>
                 </View>
-                {/* <View style={styles.headerRight}>
+                <View style={styles.headerRight}>
+
                     <TouchableOpacity
                         style={styles.headerButton}
-                        onPress={handleAddParticipant}
-                    >
-                        <Ionicons name="person-add" size={24} color={theme.colors.text} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={handleLeaveGroup}
+                        onPress={() => setShowUserProfileModal(true)}
 
                     >
-                        <Ionicons name="exit" size={24} color={theme.colors.text} />
+                        <Ionicons name="settings-sharp" size={24} color={theme.colors.text} />
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.headerButton}
-                        onPress={handleRemoveParticipant}
-
-                    >
-                        <Ionicons name="person-remove" size={24} color={theme.colors.text} />
-                    </TouchableOpacity>
-                </View> */}
+                </View>
             </View>
 
             {/* Messages */}
@@ -766,8 +758,8 @@ const InvidusalGroup = () => {
                     />
                     <TouchableOpacity
                         style={[
-                            styles.sendButton, 
-                            { 
+                            styles.sendButton,
+                            {
                                 backgroundColor: (!message.trim() || isSendingMessage) ? theme.colors.textSecondary : theme.colors.primary,
                                 opacity: (!message.trim() || isSendingMessage) ? 0.6 : 1
                             }
@@ -955,6 +947,13 @@ const InvidusalGroup = () => {
                     </View>
                 </View>
             </Modal>
+
+            <UserProfileModal
+                visible={showUserProfileModal}
+                onClose={() => setShowUserProfileModal(false)}
+                groupData={groupData}
+            // onActionPress={handleProfileAction}
+            />
         </SafeAreaView>
     );
 };

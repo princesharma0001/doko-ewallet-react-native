@@ -292,6 +292,8 @@ const TransactionManagement = ({ navigation }) => {
     switch (status) {
       case 'completed':
         return 'checkmark-circle';
+         case 'COMPLETED':
+        return 'checkmark-circle';
       case 'pending':
         return 'time';
       case 'failed':
@@ -1290,14 +1292,14 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    // shadowColor: '#000',
+    // shadowOffset: {
+    //   width: 0,
+    //   height: 2,
+    // },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 3.84,
+    // elevation: 5,
   },
   transactionHeader: {
     flexDirection: 'row',
@@ -1317,7 +1319,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   transactionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
     fontFamily: 'System',

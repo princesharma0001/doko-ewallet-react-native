@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -9,19 +9,30 @@ import {
     Dimensions,
     Alert,
     Clipboard,
+    ActivityIndicator,
+    Share,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
+import { bankService } from '../../services/apiService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
 const BankTransfer = ({ navigation }) => {
     const { theme, isDarkMode } = useTheme();
-    const [selectedTransferType, setSelectedTransferType] = useState('SWIFT');
+    const [selectedTransferType, setSelectedTransferType] = useState('swift');
+    const [bankDetails, setBankDetails] = useState({
+        swift: null,
+        sepa: null
+    });
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    const bankDetails = {
-        SWIFT: {
+    // Default fallback data
+    const defaultBankDetails = {
+        swift: {
             beneficiary: 'DOKO',
             bankName: '12345676565',
             ibanNumber: 'Sort Code',
@@ -30,7 +41,7 @@ const BankTransfer = ({ navigation }) => {
             address: '1234567898525',
             note: 'Swati Sri #5657'
         },
-        SEPA: {
+        sepa: {
             beneficiary: 'DOKO SEPA',
             bankName: 'SEPA Bank Ltd',
             ibanNumber: 'GB29 NWBK 6016 1331 9268 19',
@@ -38,6 +49,63 @@ const BankTransfer = ({ navigation }) => {
             accountNumber: 'SEPA123456',
             address: 'London, UK',
             note: 'SEPA Transfer #5657'
+        }
+    };
+
+    // Load bank details when transfer type changes
+    useEffect(() => {
+        loadBankDetails(selectedTransferType);
+    }, [selectedTransferType]);
+
+    const loadBankDetails = async (bankType) => {
+        console.log("bankTypebankType", bankType);
+
+        const token = await AsyncStorage.getItem('dokoToken');
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const response = await bankService.getBankDetails(bankType, token);
+            console.log("adFGADFGADS",response);
+
+
+            if (response.success && response.data && response.data.length > 0) {
+                const bankData = response.data[0]; // Get first bank detail
+console.log("sdagasdfgs",bankData);
+
+                // Map API response to component structure
+                const mappedData = {
+                    beneficiary: bankData.accountHolderName || 'N/A',
+                    bankName: bankData.bankName || 'N/A',
+                    ibanNumber: bankData.iban || bankData.maskedIban || 'N/A',
+                    swiftCode: bankData.swiftCode || 'N/A',
+                    accountNumber: bankData.accountNumber || bankData.accountNumber || 'N/A',
+                    address: bankData.bankAddress || 'N/A',
+                    note: `${bankData.description || 'Bank Transfer'}`
+                };
+
+                setBankDetails(prev => ({
+                    ...prev,
+                    [bankType]: mappedData
+                }));
+            } else {
+                // Use default data if API fails or returns empty
+                // setBankDetails(prev => ({
+                //     ...prev,
+                //     [bankType]: defaultBankDetails[bankType]
+                // }));
+            }
+        } catch (error) {
+            console.error('Error loading bank details:', error);
+            setError('Failed to load bank details');
+            // Use default data on error
+            setBankDetails(prev => ({
+                ...prev,
+                [bankType]: defaultBankDetails[bankType]
+            }));
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -50,20 +118,43 @@ const BankTransfer = ({ navigation }) => {
         }
     };
 
-    const handleShareDetails = () => {
-        const currentDetails = bankDetails[selectedTransferType];
-        const shareText = `Bank Transfer Details (${selectedTransferType}):
-Beneficiary: ${currentDetails.beneficiary}
-Bank Name: ${currentDetails.bankName}
-IBAN Number: ${currentDetails.ibanNumber}
-SWIFT Code: ${currentDetails.swiftCode}
-Account Number: ${currentDetails.accountNumber}
-Address: ${currentDetails.address}
-Note: ${currentDetails.note}`;
+    const handleShareDetails = async () => {
+        const currentDetails = bankDetails[selectedTransferType] || defaultBankDetails[selectedTransferType];
+        
+        if (!currentDetails) {
+            Alert.alert('Error', 'Bank details not available');
+            return;
+        }
 
-        // Here you would implement actual sharing functionality
-        console.log('Sharing details:', shareText);
-        Alert.alert('Share Details', 'Bank transfer details ready to share');
+        const shareText = `🏦 Bank Transfer Details (${selectedTransferType.toUpperCase()})
+
+👤 Beneficiary: ${currentDetails.beneficiary}
+🏛️ Bank Name: ${currentDetails.bankName}
+${selectedTransferType === 'sepa' ? '💳 IBAN Number' : '🔢 Sort Code'}: ${currentDetails.ibanNumber}
+🌐 SWIFT Code: ${currentDetails.swiftCode}
+📋 Account Number: ${currentDetails.accountNumber}
+📍 Address: ${currentDetails.address}
+📝 Note: ${currentDetails.note}
+
+⚠️ Important: Please include the note with your transfer to ensure proper processing.
+
+Powered by DOKO E-Wallet`;
+
+        try {
+            const result = await Share.share({
+                message: shareText,
+                title: `DOKO Bank Transfer Details - ${selectedTransferType.toUpperCase()}`,
+            });
+
+            if (result.action === Share.sharedAction) {
+                console.log('Bank details shared successfully');
+            } else if (result.action === Share.dismissedAction) {
+                console.log('Share dismissed');
+            }
+        } catch (error) {
+            console.error('Error sharing bank details:', error);
+            Alert.alert('Error', 'Failed to share bank details');
+        }
     };
 
     const renderHeader = () => (
@@ -95,17 +186,17 @@ Note: ${currentDetails.note}`;
                 style={[
                     styles.transferTypeButton,
                     {
-                        backgroundColor: selectedTransferType === 'SWIFT'
+                        backgroundColor: selectedTransferType === 'swift'
                             ? '#FFFFFF'
                             : theme.colors.surface,
                     }
                 ]}
-                onPress={() => setSelectedTransferType('SWIFT')}
+                onPress={() => setSelectedTransferType('swift')}
             >
                 <Text style={[
                     styles.transferTypeText,
                     {
-                        color: selectedTransferType === 'SWIFT'
+                        color: selectedTransferType === 'swift'
                             ? '#169BFF'
                             : theme.colors.text,
                     }
@@ -118,17 +209,17 @@ Note: ${currentDetails.note}`;
                 style={[
                     styles.transferTypeButton,
                     {
-                        backgroundColor: selectedTransferType === 'SEPA'
+                        backgroundColor: selectedTransferType === 'sepa'
                             ? '#FFFFFF'
                             : theme.colors.surface,
                     }
                 ]}
-                onPress={() => setSelectedTransferType('SEPA')}
+                onPress={() => setSelectedTransferType('sepa')}
             >
                 <Text style={[
                     styles.transferTypeText,
                     {
-                        color: selectedTransferType === 'SEPA'
+                        color: selectedTransferType === 'sepa'
                             ? '#169BFF'
                             : theme.colors.text,
                     }
@@ -140,16 +231,44 @@ Note: ${currentDetails.note}`;
     );
 
     const renderBankDetails = () => {
-        const currentDetails = bankDetails[selectedTransferType];
+        const currentDetails = bankDetails[selectedTransferType] || defaultBankDetails[selectedTransferType];
+
+        if (isLoading) {
+            return (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#169BFF" />
+                    <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+                        Loading bank details...
+                    </Text>
+                </View>
+            );
+        }
+
+        if (error) {
+            return (
+                <View style={styles.errorContainer}>
+                    <Ionicons name="warning-outline" size={24} color="#FF6B6B" />
+                    <Text style={[styles.errorText, { color: theme.colors.text }]}>
+                        {error}
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.retryButton}
+                        onPress={() => loadBankDetails(selectedTransferType)}
+                    >
+                        <Text style={styles.retryButtonText}>Retry</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
 
         const detailItems = [
-            { label: 'Beneficiary', value: currentDetails.beneficiary },
-            { label: 'Bank Name', value: currentDetails.bankName },
-            { label: 'IBAN Number', value: currentDetails.ibanNumber },
-            { label: 'SWIFT Code', value: currentDetails.swiftCode },
-            { label: 'Account Number', value: currentDetails.accountNumber },
-            { label: 'Address', value: currentDetails.address },
-            { label: 'Note', value: currentDetails.note },
+            { label: 'Beneficiary', value: currentDetails?.beneficiary },
+            { label: 'Bank Name', value: currentDetails?.bankName },
+            { label: selectedTransferType === 'sepa' ? 'IBAN Number' : 'Sort Code', value: currentDetails?.ibanNumber },
+            { label: 'SWIFT Code', value: currentDetails?.swiftCode },
+            { label: 'Account Number', value: currentDetails?.accountNumber },
+            { label: 'Address', value: currentDetails?.address },
+            { label: 'Note', value: currentDetails?.note },
         ];
 
         return (
@@ -198,7 +317,7 @@ Note: ${currentDetails.note}`;
                     end={{ x: 1.5, y: 0.5 }}
                     style={styles.gradientButton}
                 >
-                    <Text style={styles.shareButtonText}>Share Details</Text>
+                    <Text style={styles.shareButtonText}>Share Bank Details</Text>
                 </LinearGradient>
             </TouchableOpacity>
         </View>
@@ -350,6 +469,39 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '700',
         color: '#FFFFFF',
+    },
+    loadingContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 40,
+    },
+    loadingText: {
+        fontSize: 16,
+        marginTop: 12,
+        textAlign: 'center',
+    },
+    errorContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 20,
+        paddingHorizontal: 20,
+    },
+    errorText: {
+        fontSize: 14,
+        marginTop: 8,
+        marginBottom: 16,
+        textAlign: 'center',
+    },
+    retryButton: {
+        backgroundColor: '#169BFF',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: 8,
+    },
+    retryButtonText: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '600',
     },
 });
 

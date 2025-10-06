@@ -17,33 +17,37 @@ import { useTheme } from '../context/ThemeContext';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import UserProfileModal from './UserProfileModal';
-import { authService } from '../services/apiService';
+import { authService, chatService } from '../services/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
-const SearchUsernameModal = ({ visible, onClose, onSelectUser }) => {
+const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUser }) => {
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   const [showUserProfileModal, setShowUserProfileModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [creatingChatForUser, setCreatingChatForUser] = useState(null);
+
   const [searchError, setSearchError] = useState(null);
   const searchTimeoutRef = useRef(null);
-
+  const navigation = useNavigation();
   // Search function
   const searchUsers = async (query) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      setSearchError(null);
-      return;
-    }
+    // if (!query.trim()) {
+    //   setSearchResults([]);
+    //   setSearchError(null);
+    //   return;
+    // }
 
     try {
       setIsSearching(true);
       setSearchError(null);
-      
+
       const token = await AsyncStorage.getItem('dokoToken');
       if (!token) {
         setSearchError('Authentication required');
@@ -51,7 +55,7 @@ const SearchUsernameModal = ({ visible, onClose, onSelectUser }) => {
       }
 
       const result = await authService.searchUsers(query, token);
-      
+
       if (result.success) {
         setSearchResults(result.data || []);
       } else {
@@ -112,10 +116,141 @@ const SearchUsernameModal = ({ visible, onClose, onSelectUser }) => {
     return 'U';
   };
 
-  const handleUserSelect = (user) => {
-    console.log('Selected user:', user.username);
+  const handleUserSelect = async (user) => {
+    console.log("sdagasdgasdg", user);
+// setShowUserProfileModal(true)
+    const userId = user?._id || user?.id;
+    const userName = user?.firstName || user?.username;
     setSelectedUser(user);
-    setShowUserProfileModal(true);
+
+    await createIndividualChat(userId, userName);
+
+    console.log('Selected user:', user.username);
+    // setShowUserProfileModal(true);
+  };
+
+  const createIndividualChat = async (participantId, userName) => {
+    console.log("dgasdgasdg", userName);
+
+    const token = await AsyncStorage.getItem('dokoToken');
+    if (!token) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Authentication required',
+        position: 'top',
+        visibilityTime: 3000,
+      });
+      return;
+    }
+
+    setCreatingChatForUser(participantId);
+
+    try {
+      const response = await chatService.createIndividualChat(participantId, token);
+      console.log("asfsdaf", response);
+
+      if (response.success) {
+        console.log("asdgsdgsadg", response);
+        const data = response?.data;
+        // Close all local modals before navigating
+        setShowUserProfileModal(false);
+        onClose && onClose();
+        onClose1();
+        onClose2();
+        navigation.navigate('InvidusalGroup', {
+          groupData: {
+            id: data.chatId || data.chatId,
+            name: userName ?? "",
+            recipientId: data?.id || data._id,
+            chatType: data.chatType
+          }
+        });
+
+        // Navigate to the chat or handle the response
+        // You can add navigation logic here if needed
+        console.log('Chat created:', response.data);
+
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: response.error ?? 'Failed to create individual chat',
+          position: 'top',
+          visibilityTime: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('Error creating individual chat:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to create individual chat',
+        position: 'top',
+        visibilityTime: 3000,
+      });
+    } finally {
+      setCreatingChatForUser(null);
+    }
+  };
+  const sendFriendRequestHandleer = async (participantId) => {
+
+    const token = await AsyncStorage.getItem('dokoToken');
+    if (!token) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Authentication required',
+        position: 'top',
+        visibilityTime: 3000,
+      });
+      return;
+    }
+
+    setCreatingChatForUser(participantId);
+
+    try {
+
+      const response = await authService.sendFriendRequest(participantId, token);
+      console.log("asfsdaf", response);
+
+      if (response.success) {
+        setShowUserProfileModal(false);
+        onClose && onClose();
+        onClose1();
+        onClose2();
+        console.log("adfsadgasdgsdagsdagsda", response);
+        Toast.show({
+          type: 'success',
+          text1: 'success',
+          text2: response?.message,
+          position: 'top',
+          visibilityTime: 3000,
+        });
+
+        console.log('Chat created:', response.data);
+
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: response.error ?? 'Failed to create individual chat',
+          position: 'top',
+          visibilityTime: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('Error creating individual chat:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to create individual chat',
+        position: 'top',
+        visibilityTime: 3000,
+      });
+    } finally {
+      setCreatingChatForUser(null);
+    }
   };
 
   const handleProfileAction = (action) => {
@@ -124,27 +259,51 @@ const SearchUsernameModal = ({ visible, onClose, onSelectUser }) => {
     onSelectUser({ ...selectedUser, action });
   };
 
-  const UserItem = ({ user }) => (
-    <TouchableHighlight
-      style={[styles.userItem]}
-      onPress={() => handleUserSelect(user)}
-      underlayColor={theme.colors.surface}
-    >
-      <View style={styles.userContent}>
-        <View style={[styles.avatar, { backgroundColor: getAvatarColor(user) }]}>
-          <Text style={styles.avatarText}>{getAvatarText(user)}</Text>
+  // const UserItem = ({ user }) => (
+  const UserItem = ({ user }) => {
+    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown User';
+    const initials = `${(user.firstName || '').charAt(0)}${(user.lastName || '').charAt(0)}`.toUpperCase() || 'U';
+    const userId = user._id || user.id;
+    const isThisUserCreating = creatingChatForUser === userId;
+    console.log("sdagasdgasd", user);
+
+
+    return (
+      <TouchableHighlight
+        // style={[styles.userItem]}
+        style={[styles.userItem, isThisUserCreating && styles.disabledItem]}
+
+        onPress={() => handleUserSelect(user)}
+        underlayColor={theme.colors.surface}
+        disabled={isThisUserCreating}
+
+      >
+        <View style={styles.userContent}>
+          <View style={[styles.avatar, { backgroundColor: getAvatarColor(user) }]}>
+            <Text style={styles.avatarText}>{getAvatarText(user)}</Text>
+          </View>
+          <View style={styles.userInfo}>
+            <Text style={[styles.username, { color: theme.colors.text }]}>
+              {user.firstName} {user.lastName}
+            </Text>
+            <Text style={[styles.userPhone, { color: theme.colors.textSecondary }]}>
+              {user.countryCode} {user.phone}
+            </Text>
+          </View>
+          {user?.isFriend ? null :
+            <TouchableOpacity onPress={() => sendFriendRequestHandleer(user?._id)
+            }>
+
+              {isThisUserCreating ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <Ionicons name="person-add" size={20} color={theme.colors.textSecondary} />
+              )}
+            </TouchableOpacity>}
         </View>
-        <View style={styles.userInfo}>
-          <Text style={[styles.username, { color: theme.colors.text }]}>
-            {user.firstName} {user.lastName}
-          </Text>
-          <Text style={[styles.userPhone, { color: theme.colors.textSecondary }]}>
-            {user.countryCode} {user.phone}
-          </Text>
-        </View>
-      </View>
-    </TouchableHighlight>
-  );
+      </TouchableHighlight>
+    );
+  };
 
   // Skeleton loading component
   const SkeletonItem = () => (
@@ -233,7 +392,7 @@ const SearchUsernameModal = ({ visible, onClose, onSelectUser }) => {
               </View>
             ) : searchResults.length > 0 ? (
               // Show search results
-              searchResults.map((user) => (
+              searchResults?.map((user) => (
                 <UserItem key={user._id || user.id} user={user} />
               ))
             ) : searchQuery.trim() ? (
@@ -339,7 +498,7 @@ const styles = StyleSheet.create({
   userContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft:5
+    marginLeft: 5
   },
   avatar: {
     width: 40,
@@ -374,6 +533,9 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     flex: 1,
+  },
+  disabledItem: {
+    opacity: 0.6,
   },
   userPhone: {
     fontSize: 14,

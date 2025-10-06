@@ -83,13 +83,13 @@ const Notification = ({ navigation }) => {
         </View>
       </View>
       <Switch
-        value={item.isEnabled}
+        value={notifications[item.id]}
         onValueChange={() => handleToggle(item.id)}
         trackColor={{
           false: theme.colors.border,
           true: theme.colors.primary + '40',
         }}
-        thumbColor={item.isEnabled ? theme.colors.primary : theme.colors.textSecondary}
+        thumbColor={notifications[item.id] ? theme.colors.primary : theme.colors.textSecondary}
         ios_backgroundColor={theme.colors.border}
         style={styles.toggleSwitch}
       />

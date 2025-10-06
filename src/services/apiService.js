@@ -1013,7 +1013,266 @@ export const authService = {
       }
     }
   },
+
+  // Send Friend Request API call
+  sendFriendRequest: async (recipientId, token) => {
+    try {
+      console.log('Calling send friend request API with recipientId:', recipientId);
+
+      const response = await apiClient.post(
+        ApiConfig.friendRequest,
+        {
+          recipientId: recipientId
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log('Send friend request API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Send Friend Request API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to send friend request';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Get Notification List API call
+  getNotificationList: async (token, searchQuery = null, page = 1, limit = 10) => {
+    try {
+      console.log('Calling get notification list API with search:', searchQuery, 'page:', page);
+
+      // Build query parameters
+      let queryParams = '';
+      const params = [];
+
+      if (searchQuery && searchQuery.trim()) {
+        params.push(`search=${encodeURIComponent(searchQuery.trim())}`);
+      }
+
+      if (page && page > 1) {
+        params.push(`page=${page}`);
+      }
+
+      if (limit && limit !== 10) {
+        params.push(`limit=${limit}`);
+      }
+
+      if (params.length > 0) {
+        queryParams = '?' + params.join('&');
+      }
+
+      const response = await apiClient.get(
+        `${ApiConfig.getNotificationList}${queryParams}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log('Get notification list API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data?.docs || [],
+        message: response.data.message,
+        total: response.data.data?.total || 0,
+        page: response.data.data?.page || 1,
+        totalPages: response.data.data?.totalPages || 1,
+        limit: response.data.data?.limit || 10,
+      };
+    } catch (error) {
+      console.error('Get Notification List API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to fetch notifications';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+  
+  // Clear All Notifications API call
+  clearNotifications: async (token) => {
+    try {
+      console.log('Calling clear notifications API');
+
+      const response = await apiClient.get(
+        ApiConfig.clearNotifications,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log('Clear notifications API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Clear Notifications API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to clear notifications';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+  
+  // Accept Friend Request API call
+  acceptFriendRequest: async (requesterId, token) => {
+    try {
+      console.log('Calling accept friend request API with requesterId:', requesterId);
+
+      const response = await apiClient.put(
+        ApiConfig.friendAccept,
+        {
+          notificationId: requesterId,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log('Accept friend request API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Accept Friend Request API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to accept friend request';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Reject Friend Request API call
+  rejectFriendRequest: async (requesterId, token) => {
+    try {
+      console.log('Calling reject friend request API with requesterId:', requesterId);
+
+      const response = await apiClient.put(
+        ApiConfig.friendReject,
+        {
+          notificationId: requesterId,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log('Reject friend request API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Reject Friend Request API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to reject friend request';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
 };
+
 
 // Chat service functions
 export const chatService = {
@@ -1406,6 +1665,60 @@ export const chatService = {
 
       if (error.response) {
         const errorMessage = error.response.data?.message || 'Failed to decline payment';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+};
+
+// Bank service functions
+export const bankService = {
+  // Get Bank Details API call
+  getBankDetails: async (bankType, token) => {
+    try {
+      console.log('Calling get bank details API with bankType:', bankType);
+
+      // const response = await apiClient.get(
+      //   `${ApiConfig.getBankDetails}?bankType=${bankType.toLowerCase()}`,
+      // );
+
+      const response = await apiClient.get(
+        `${ApiConfig.getBankDetails}?bankType=${bankType.toLowerCase()}&currency=NPR`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+
+
+      console.log('Get bank details API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Get Bank Details API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to fetch bank details';
         return {
           success: false,
           error: errorMessage,

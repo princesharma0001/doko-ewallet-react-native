@@ -19,7 +19,9 @@ import ReportUserModal from './ReportUserModal';
 
 const { width, height } = Dimensions.get('window');
 
-const UserProfileModal = ({ visible, onClose, user, onActionPress }) => {
+const UserProfileModal = ({ visible, onClose, user,groupData, onActionPress }) => {
+  console.log("sfdghdsfghdfs",groupData);
+  
   const { theme } = useTheme();
   const navigation = useNavigation();
   const [showReportModal, setShowReportModal] = useState(false);
@@ -153,7 +155,7 @@ const UserProfileModal = ({ visible, onClose, user, onActionPress }) => {
 
                 </View>
                 <Text style={[styles.username, { color: theme.colors.text }]}>
-                  @{user?.username || user?.firstName || 'username'}
+                  @{groupData?.name || user?.firstName || 'username'}
                 </Text>
               </View>
             </View>
@@ -326,8 +328,10 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 12,
-    padding: 16,
-    margin: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 28, // extra space for absolute See all button
+    margin: 0,
     position: "relative",
   },
   seeAllBtn: {
@@ -343,22 +347,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 12,
+    paddingHorizontal: 4,
   },
   section: {
     flex: 1,
     alignItems: "center",
+    minWidth: 120,
   },
   label: {
-    fontSize: 14,
+    fontSize: 16,
     marginBottom: 4,
+    textAlign: 'center',
+    fontWeight:'600'
   },
   value: {
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 18,
+    fontWeight: "700",
+    textAlign: 'center',
   },
   divider: {
     width: 1,
+    height: 48,
     backgroundColor: "#444", // or theme.colors.border
     marginHorizontal: 10,
   },

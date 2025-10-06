@@ -177,7 +177,7 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
         }
     };
 
-    const handleChatPress = (chat,otherUser) => {
+    const handleChatPress = (chat, otherUser) => {
         console.log('Chat pressed:', chat);
 
         // Check if it's a group chat
@@ -193,7 +193,7 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
         } else {
 
             navigation.navigate('InvidusalGroup', {
-               groupData: {
+                groupData: {
                     id: chat.chatId || chat.chatId,
                     name: otherUser?.firstName,
                     recipientId: otherUser?.id || otherUser._id,
@@ -222,7 +222,7 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
         return (
             <TouchableOpacity
                 style={[styles.chatItem, { backgroundColor: theme.colors.surface }]}
-                onPress={() => handleChatPress(item,otherUser)}
+                onPress={() => handleChatPress(item, otherUser)}
                 activeOpacity={0.7}
             >
                 <View style={styles.chatItemContent}>
@@ -236,20 +236,18 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                                 {isGroup ? 'G' : item.name?.charAt(0)?.toUpperCase() || '?'}
                             </Text>
                         }
-                        {/* <Text style={[styles.chatAvatarText, { color: '#FFFFFF' }]}>
-                            {isGroup ? 'G' : item.name?.charAt(0)?.toUpperCase() || '?'}
-                        </Text> */}
+
                     </View>
                     <View style={styles.chatDetails}>
                         <Text style={[styles.chatName, { color: theme.colors.text }]}>
                             {individual
-                                ? otherUser?.firstName || otherUser?.email // show other user's firstName
+                                ? `${otherUser?.firstName || ''} ${otherUser?.lastName || ''}`.trim() || otherUser?.email
                                 : item.name || item?.userId?.email}
                         </Text>
                         <Text style={[styles.chatDescription, { color: theme.colors.textSecondary }]}>
                             {isGroup
                                 ? `${participantCount} members`
-                                : item.description || 'members'}
+                                : item.description || 'Individual'}
                         </Text>
                     </View>
                     <View style={styles.chatStatus}>

@@ -139,7 +139,7 @@ const MainHomeScreen = ({ navigation }) => {
             </View>
           </TouchableOpacity>)}
 
-        <TouchableOpacity onPress={()=> navigation.navigate("Notification")} style={[styles.profileButton, { marginLeft: 16 }]}>
+        <TouchableOpacity onPress={()=> navigation.navigate("NotificationList")} style={[styles.profileButton, { marginLeft: 16 }]}>
           <Image source={require("../assets/Images/Notificationicons.png")} resizeMode="contain" />
           {/* <View style={[styles.profileIcon, { backgroundColor: '#10B981' }]}>
             <Icon name="person" size={20} color="#fff" />

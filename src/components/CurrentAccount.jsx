@@ -13,6 +13,7 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Pressable,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -58,9 +59,9 @@ const CurrentAccount = ({ navigation }) => {
 
   const handleOptionPress = (option) => {
     console.log('Selected option:', option.title);
-   
-      setShowSearchUsernameModal(true);
-   
+
+    setShowSearchUsernameModal(true);
+
   };
   const handleUserSelect = (user) => {
     console.log('Selected user:', user.username);
@@ -389,18 +390,18 @@ const CurrentAccount = ({ navigation }) => {
       </TouchableOpacity>
 
       {/* Invest */}
-      <TouchableOpacity style={styles.actionButton}>
+      <TouchableOpacity style={styles.actionButton} onPress={()=> navigation.navigate("QrCodeSendRecive")}>
         {/* <View style={styles.iconWrapper}> */}
         <View style={{ paddingBottom: 10 }}>
 
           <Image
-            source={require("../assets/Images/Invest.png")}
+            source={require("../assets/Images/QRCode.png")}
             resizeMode="contain"
             style={[styles.iconImage, { tintColor: isDarkMode ? null : 'gray' }]}
           />
         </View>
         {/* </View> */}
-        <Text style={[styles.actionText, styles.activeText, { color: theme.colors.text }]}>Invest</Text>
+        <Text style={[styles.actionText, styles.activeText, { color: theme.colors.text }]}>QR Code</Text>
 
       </TouchableOpacity>
 
@@ -507,9 +508,20 @@ const CurrentAccount = ({ navigation }) => {
 
   const renderLatestTransactions = () => (
     <View style={[styles.transactionsContainer, { backgroundColor: theme.colors.surface }]}>
-      <Text style={[styles.transactionsTitle, { color: theme.colors.text }]}>
-        Latest Transactions
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={[styles.transactionsTitle, { color: theme.colors.text }]}>
+          Latest Transactions
+        </Text>
+        {transactions.length > 4 &&
+          <Pressable onPress={() => navigation.navigate('CurrentHistory')} >
+
+            <Text style={[styles.transactionsTitle, { color: "#169BFF", fontSize: 14 }]}>
+              See All
+            </Text>
+          </Pressable>}
+      </View>
+
+
 
       {isTransactionsLoading ? (
         // Show skeleton loading
@@ -523,7 +535,7 @@ const CurrentAccount = ({ navigation }) => {
           </Text>
         </View>
       ) : transactions.length > 0 ? (
-        transactions.slice(0, 5).map((transaction) => (
+        transactions?.slice(0, 5).map((transaction) => (
           <TouchableHighlight
             key={transaction._id}
             style={styles.activityItem}
@@ -644,7 +656,7 @@ const CurrentAccount = ({ navigation }) => {
             <View style={styles.sendOptionsContainer}>
               {/* Send to DOKO User */}
               <TouchableOpacity
-                onPress={() => { setIsSendModalVisible(false),setShowSearchUsernameModal(true)}}
+                onPress={() => { setIsSendModalVisible(false), setShowSearchUsernameModal(true) }}
 
                 style={[styles.sendOption, { backgroundColor: theme.colors.border }]}
                 // onPress={() => handleSendOption('Send to DOKO User')}

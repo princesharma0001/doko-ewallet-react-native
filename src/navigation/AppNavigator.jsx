@@ -13,6 +13,7 @@ import CardPassword from '../Screens/CardPassword';
 import AddMoney from '../Screens/AddMoney';
 import PhoneVerify from '../Screens/PhoneVerify';
 import AddingAmount from "../Screens/AddingAmount"
+import AddRecieveQr from "../Screens/AddRecieveQr"
 import EmailVerify from '../Screens/EmailVerify';
 import SearchUserChat from '../Screens/SearchUserChat';
 import EnterNameSign from '../Screens/EnterNameSign';
@@ -31,6 +32,7 @@ import ButtonExamples from '../components/ButtonExamples';
 import { useTheme } from '../context/ThemeContext';
 import Wallet from "../components/Wallet"
 import ReferralSection from "../components/ReferralSection"
+import NotificationList from "../components/NotificationList"
 import ReferralDetails from "../components/ReferralDetails"
 import ProfileSection from "../components/ProfileSection"
 import ProfileDetails from "../components/ProfileDetails"
@@ -45,6 +47,7 @@ import CreditCard from "../components/CreditCard"
 import CurrentHistory from "../Screens/History/CurrentHistory"
 import PhysicalCard from "../components/PhysicalCard"
 import NewChat from "../components/NewChat"
+import QrCodeSendRecive from "../components/QrCodeSendRecive"
 import NewGroup from "../Screens/NewGroup"
 import GroupSeperateChat from "../Screens/GroupSeperateChat"
 import InvidusalGroup from "../Screens/InvidusalGroup"
@@ -172,6 +175,13 @@ const MainApp = ({ navigation }) => {
             onPress={() => navigation.navigate('ReportUserModalTest')}
           />
           <Button
+            title="QR Send/Receive"
+            variant="gradient"
+            gradientColors={['#10B981', '#059669']}
+            onPress={() => navigation.navigate('QrCodeSendRecive')}
+          />
+        
+          <Button
             title="Logout"
             variant="danger"
             onPress={handleLogout}
@@ -285,6 +295,14 @@ const AppNavigator = () => {
         <Stack.Screen
           name="ProfileDetails"
           component={ProfileDetails}
+        />
+        <Stack.Screen
+          name="QrCodeSendRecive"
+          component={QrCodeSendRecive}
+        />
+        <Stack.Screen
+          name="NotificationList"
+          component={NotificationList}
         />
         <Stack.Screen
           name="MySubscription"
@@ -412,6 +430,7 @@ const AppNavigator = () => {
           name="Notification"
           component={Notification}
         />
+    
 
         <Stack.Screen
           name="ButtonExamples"
@@ -452,6 +471,10 @@ const AppNavigator = () => {
         <Stack.Screen
           name="AddingAmount"
           component={AddingAmount}
+        />
+        <Stack.Screen
+          name="AddRecieveQr"
+          component={AddRecieveQr}
         />
         <Stack.Screen
           name="ReportUserModalTest"

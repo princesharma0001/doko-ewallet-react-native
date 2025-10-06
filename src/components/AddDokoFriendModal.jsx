@@ -18,7 +18,7 @@ import SearchUsernameModal from './SearchUsernameModal';
 
 const { width, height } = Dimensions.get('window');
 
-const AddDokoFriendModal = ({ visible, onClose, onSelectOption }) => {
+const AddDokoFriendModal = ({ visible, onClose,onClose1, onSelectOption }) => {
   const { theme } = useTheme();
   const [showSearchUsernameModal, setShowSearchUsernameModal] = useState(false);
   console.log("Asdfsadg",showSearchUsernameModal);
@@ -172,6 +172,8 @@ const AddDokoFriendModal = ({ visible, onClose, onSelectOption }) => {
         visible={showSearchUsernameModal}
         onClose={() => setShowSearchUsernameModal(false)}
         onSelectUser={handleUserSelect}
+        onClose1={()=> onClose()}
+        onClose2={()=> onClose1()}
       />
     </Modal>
   );

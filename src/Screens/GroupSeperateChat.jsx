@@ -14,7 +14,8 @@ import {
     Alert,
     Modal,
     KeyboardAvoidingView,
-    Platform
+    Platform,
+    ActivityIndicator
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
@@ -37,6 +38,7 @@ const GroupSeperateChat = () => {
     const scrollViewRef = useRef(null);
     const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
     console.log("asdgasdgasd", currentUser);
+    const [isSendingMessage, setIsSendingMessage] = useState(false);
 
 
     // Get group data from route params
@@ -172,21 +174,78 @@ const GroupSeperateChat = () => {
     };
 
     const handleSendMessage = async () => {
-        if (!message.trim()) return;
+        if (!message.trim() || isSendingMessage) return;
 
-        const newMessage = {
-            id: Date.now().toString(),
-            text: message.trim(),
-            sender: 'You',
-            timestamp: new Date(),
-            isOwn: true
-        };
+        setIsSendingMessage(true);
 
-        setMessages(prev => [...prev, newMessage]);
-        setMessage('');
+        try {
+            // Get auth token
+            const authToken = await AsyncStorage.getItem('dokoToken');
+            if (!authToken) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'Authentication required',
+                });
+                return;
+            }
 
-        // TODO: Implement API call to send message
-        console.log('Sending message:', newMessage);
+            // Prepare message data for API
+            const messageData = {
+                chatId: groupData?.id,
+                content: message.trim(),
+                messageType: 'text',
+            };
+
+            console.log('Sending message with data:', messageData);
+
+            // Call send message API
+            const response = await chatService.sendMessage(messageData, authToken);
+
+            if (response.success) {
+                // Create new message object from API response
+                const newMessage = {
+                    id: response.data._id || response.data.id,
+                    text: message.trim(),
+                    sender: currentUser?.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim() : currentUser?.email || 'You',
+                    timestamp: new Date(response.data.createdAt),
+                    isOwn: true,
+                    messageType: response.data.messageType,
+                    status: response.data.status,
+                    messageId: response.data.messageId
+                };
+
+                // Add message to local state
+                setMessages(prev => [...prev, newMessage]);
+                setMessage('');
+
+                // Scroll to bottom
+                setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 100);
+
+                Toast.show({
+                    type: 'success',
+                    text1: 'Success',
+                    text2: 'Message sent successfully',
+                });
+            } else {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: response.error || 'Failed to send message',
+                });
+            }
+        } catch (error) {
+            console.error('Send message error:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'An unexpected error occurred',
+            });
+        } finally {
+            setIsSendingMessage(false);
+        }
     };
 
     const handleSendMoney = () => {
@@ -470,8 +529,8 @@ const GroupSeperateChat = () => {
                                             const isApproving = approvingPayments.has(paymentId);
                                             const isRejecting = rejectingPayments.has(paymentId);
 
-                                            console.log("sdagasdgads",currentUserRecipient);
-                                            
+                                            console.log("sdagasdgads", currentUserRecipient);
+
 
                                             if (currentUserRecipient.status === "pending") {
                                                 return (
@@ -670,11 +729,21 @@ const GroupSeperateChat = () => {
                         maxLength={1000}
                     />
                     <TouchableOpacity
-                        style={[styles.sendButton, { backgroundColor: theme.colors.primary }]}
+                        style={[
+                            styles.sendButton,
+                            {
+                                backgroundColor: (!message.trim() || isSendingMessage) ? theme.colors.textSecondary : theme.colors.primary,
+                                opacity: (!message.trim() || isSendingMessage) ? 0.6 : 1
+                            }
+                        ]}
                         onPress={handleSendMessage}
-                        disabled={!message.trim()}
+                        disabled={!message.trim() || isSendingMessage}
                     >
-                        <MaterialIcons name="arrow-upward" size={20} color={"#fff"} />
+                        {isSendingMessage ? (
+                            <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                            <MaterialIcons name="arrow-upward" size={20} color={"#fff"} />
+                        )}
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
