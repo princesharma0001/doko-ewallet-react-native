@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
   Dimensions,
   StatusBar,
   Image,
+  FlatList,
+  Animated,
+  PanResponder,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -16,16 +19,164 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import ReportUserModal from './ReportUserModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { transactionHistoryService } from '../services/apiService';
 
 const { width, height } = Dimensions.get('window');
 
-const UserProfileModal = ({ visible, onClose, user,groupData, onActionPress }) => {
-  console.log("sfdghdsfghdfs",groupData);
-  
+// Transaction Item Component
+const TransactionItem = ({ item, theme, isFirst }) => {
+  const getTransactionIcon = () => {
+    if (item.isBrand && item.title === 'Burger King') {
+      return (
+        <View style={[styles.transactionIconContainer, { backgroundColor: '#FF6B00' }]}>
+          <Text style={styles.brandText}>BK</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={[styles.transactionIconContainer, { backgroundColor: item.iconColor }]}>
+        <Ionicons name={item.icon} size={20} color="white" />
+      </View>
+    );
+  };
+
+  return (
+    <View style={[
+      styles.transactionItem,
+      {
+        backgroundColor: isFirst ? theme.colors.surface : theme.colors.background,
+        borderBottomColor: theme.colors.border
+      }
+    ]}>
+      <View style={styles.transactionLeft}>
+        {getTransactionIcon()}
+        <View style={styles.transactionDetails}>
+          <Text style={[styles.transactionTitle, { color: theme.colors.text }]}>
+            {item.title}
+          </Text>
+          <Text style={[styles.transactionSubtitle, { color: theme.colors.textSecondary }]}>
+            {item.subtitle}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.transactionRight}>
+        <Text style={[styles.transactionAmount, { color: theme.colors.text }]}>
+          {item.amount}
+        </Text>
+        <Text style={[styles.transactionStatus, { color: theme.colors.textSecondary }]}>
+          {item.type === 'send' ? 'Sent' : item.type === 'receive' ? "Received" : item.status}
+        </Text>
+      </View>
+    </View>
+  );
+};
+
+const UserProfileModal = ({ visible, onClose, user, groupData, onActionPress }) => {
+  console.log("sfdghdsfghdfs", groupData);
+
   const { theme } = useTheme();
   const navigation = useNavigation();
   const [showReportModal, setShowReportModal] = useState(false);
-  console.log("dasfdgsd", user);
+  const [showTransactionHistory, setShowTransactionHistory] = useState(false);
+  const [stats, setStats] = useState({ totalSent: 0, totalReceived: 0 });
+  const [historyItems, setHistoryItems] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const panY = useRef(new Animated.Value(0)).current;
+  const resetPositionAnim = () => Animated.timing(panY, { toValue: 0, duration: 200, useNativeDriver: true });
+  const closePositionAnim = () => Animated.timing(panY, { toValue: height, duration: 200, useNativeDriver: true });
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gesture) => gesture.dy > 5,
+      onPanResponderMove: (_, gesture) => {
+        if (gesture.dy > 0) {
+          panY.setValue(gesture.dy);
+        }
+      },
+      onPanResponderRelease: (_, gesture) => {
+        if (gesture.dy > 120) {
+          closePositionAnim().start(() => {
+            panY.setValue(0);
+            setShowTransactionHistory(false);
+          });
+        } else {
+          resetPositionAnim().start();
+        }
+      },
+    })
+  ).current;
+  console.log("historyItemshistoryItems", historyItems);
+
+
+
+
+  const mapDocToItem = (doc) => {
+    const isSend = doc.type?.toString().toLowerCase().includes('send');
+    const isReceive = doc.type?.toString().toLowerCase().includes('receive');
+    const title = isSend
+      ? `Send: ${doc.receiverId?.firstName || ''} ${doc.receiverId?.lastName || ''}`.trim()
+      : isReceive
+        ? `${doc.userId?.firstName || ''} ${doc.userId?.lastName || ''}`.trim()
+        : doc.description || 'Transaction';
+    return {
+      id: doc.id || doc._id,
+      type: isSend ? 'send' : isReceive ? 'receive' : 'other',
+      title,
+      subtitle: new Date(doc.createdAt || doc.processedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      amount: `${doc.isCredit ? '+' : ''}${doc.isDebit ? '-' : ''}${doc.formattedAmount || `${doc.currency} ${doc.amount}`}`,
+      status: (doc.transactionStatus || 'STATUS').toLowerCase() === 'completed' ? 'Sended' : (doc.transactionStatus || ''),
+      icon: isSend ? 'paper-plane-outline' : isReceive ? 'download-outline' : 'swap-horizontal',
+      iconColor: isSend ? '#169BFF' : isReceive ? '#4CAF50' : '#9E9E9E',
+    };
+  };
+
+  const fetchTransactionStats = async () => {
+    try {
+      const token = await AsyncStorage.getItem('dokoToken');
+      const filterUserId = (groupData?.recipientId || groupData?.recipientId || groupData?.recipientId || '').toString();
+      if (!filterUserId) return;
+      const result = await transactionHistoryService.getUserTransactionHistory(filterUserId, token);
+      if (result.success) {
+        const totals = result.stats || result.data?.stats || {};
+        setStats({
+          totalSent: totals.totalSent || 0,
+          totalReceived: totals.totalReceived || 0,
+        });
+      }
+    } catch (e) {
+      // silent fail
+    }
+  };
+
+  const openHistoryModal = async () => {
+    setShowTransactionHistory(true);
+    setIsLoadingHistory(true);
+    panY.setValue(0);
+    try {
+      const token = await AsyncStorage.getItem('dokoToken');
+      const filterUserId = (groupData?.recipientId || groupData?.recipientId || groupData?.recipientId || '').toString();
+      const result = await transactionHistoryService.getUserTransactionHistory(filterUserId, token);
+      if (result.success) {
+        const items = (result.docs || []).map(mapDocToItem);
+        setHistoryItems(items);
+      } else {
+        setHistoryItems(transactionHistory);
+      }
+    } catch (e) {
+      setHistoryItems(transactionHistory);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    if (visible) {
+      fetchTransactionStats();
+    }
+  }, [visible, user]);
 
 
   const handleActionPress = (action) => {
@@ -75,46 +226,29 @@ const UserProfileModal = ({ visible, onClose, user,groupData, onActionPress }) =
 
   const EmptySection = ({ title }) => (
     <View style={[styles.card, { backgroundColor: theme.colors.surface, }]}>
-      <TouchableOpacity style={styles.seeAllBtn} >
+      <TouchableOpacity
+        style={styles.seeAllBtn}
+        onPress={openHistoryModal}
+      >
         <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>See all</Text>
       </TouchableOpacity>
 
       <View style={styles.row}>
         <View style={styles.section}>
           <Text style={[styles.label, { color: theme.colors.textSecondary }]}>Total received</Text>
-          <Text style={[styles.value, { color: theme.colors.text }]}>100</Text>
+          <Text style={[styles.value, { color: theme.colors.text }]}>{stats.totalReceived}</Text>
         </View>
 
         <View style={styles.divider} />
 
         <View style={styles.section}>
           <Text style={[styles.label, { color: theme.colors.textSecondary }]}>Total sent</Text>
-          <Text style={[styles.value, { color: theme.colors.text }]}>2000</Text>
+          <Text style={[styles.value, { color: theme.colors.text }]}>{stats.totalSent}</Text>
         </View>
       </View>
     </View>
   );
 
-  const EmptySectionRequest = ({ title }) => (
-    <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-      {/* First row - Friend request sent */}
-      <View style={styles.row}>
-        <MaterialIcons name="person-add" size={25} color="#FF8C00" />
-        <Text style={[styles.rowText, { color: theme.colors.text }]}>
-          Friend request sent
-        </Text>
-      </View>
-
-      {/* Second row - Sent money request */}
-      <View style={[styles.row, { marginTop: 10 }]}>
-        <MaterialIcons name="lock-clock" size={25} color="#246BFD" />
-        <Text style={[styles.rowText, { color: theme.colors.text }]}>
-          Sent money request
-        </Text>
-        <Text style={[styles.amount, { color: theme.colors.text }]}>$30</Text>
-      </View>
-    </View>
-  );
 
   return (
     <Modal
@@ -150,18 +284,25 @@ const UserProfileModal = ({ visible, onClose, user,groupData, onActionPress }) =
             {/* User Profile Section */}
             <View style={styles.profileSection}>
               <View style={styles.avatarContainer}>
-                <View style={[styles.avatar,]}>
-                  <Image source={require("../assets/Images/userProfile.png")} style={{ width: 80, height: 160, resizeMode: "contain", borderRadius: 40 }} />
+                <View style={[styles.chatAvatar, { backgroundColor: theme.colors.primary }]}>
+
+                  <Text style={[styles.chatAvatarText, { color: '#FFFFFF' }]}>
+                    D
+                  </Text>
 
                 </View>
+                {/* <View style={[styles.avatar,]}>
+                  <Image source={require("../assets/Images/userProfile.png")} style={{ width: 80, height: 160, resizeMode: "contain", borderRadius: 40 }} />
+
+                </View> */}
                 <Text style={[styles.username, { color: theme.colors.text }]}>
-                  @{groupData?.name || user?.firstName || 'username'}
+                  {groupData?.name || user?.firstName || 'username'}
                 </Text>
               </View>
             </View>
 
             {/* Action Buttons */}
-            <View style={styles.actionButtonsContainer}>
+            {/* <View style={styles.actionButtonsContainer}>
               <ActionButton
                 icon="add"
                 iconColor="#169BFF"
@@ -181,8 +322,8 @@ const UserProfileModal = ({ visible, onClose, user,groupData, onActionPress }) =
                   });
                 }}
               />
-            </View>
-            <View style={{ marginBottom: 20, width: 220 }}>
+            </View> */}
+            {/* <View style={{ marginBottom: 20, width: 220 }}>
 
               <ActionButton
                 icon="person-add"
@@ -192,10 +333,10 @@ const UserProfileModal = ({ visible, onClose, user,groupData, onActionPress }) =
                 onPress={() => handleActionPress('send-friend-request')}
                 style={styles.fullWidthButton}
               />
-            </View>
+            </View> */}
 
             {/* Transactions Section */}
-            <View style={styles.section}>
+            <View style={[styles.section, { marginTop: 10 }]}>
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
                 Transactions
               </Text>
@@ -203,12 +344,12 @@ const UserProfileModal = ({ visible, onClose, user,groupData, onActionPress }) =
             </View>
 
             {/* Pending Request Section */}
-            <View style={styles.section}>
+            {/* <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
                 Pending request
               </Text>
               <EmptySectionRequest />
-            </View>
+            </View> */}
 
             {/* Report Section */}
             <View style={styles.section}>
@@ -238,6 +379,67 @@ const UserProfileModal = ({ visible, onClose, user,groupData, onActionPress }) =
         onClose={handleReportClose}
         onContinue={handleReportContinue}
       />
+
+      {/* Transaction History Modal */}
+      <Modal
+        visible={showTransactionHistory}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowTransactionHistory(false)}
+      >
+        <StatusBar
+          barStyle={theme.isDarkMode ? 'light-content' : 'dark-content'}
+          backgroundColor="transparent"
+          translucent
+        />
+        <View style={styles.transactionModalOverlay}>
+          <TouchableOpacity style={styles.transactionModalBackdrop} activeOpacity={1} onPress={() => setShowTransactionHistory(false)} />
+          <Animated.View
+            style={[
+              styles.transactionModalContainer,
+              { backgroundColor: theme.colors.background, transform: [{ translateY: panY }] },
+            ]}
+            {...panResponder.panHandlers}
+          > 
+            {/* Header */}
+            <View style={styles.transactionModalHeader}>
+              <TouchableOpacity
+                style={styles.transactionModalBackButton}
+                onPress={() => setShowTransactionHistory(false)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+              <Text style={[styles.transactionModalTitle, { color: theme.colors.text }]}>
+                All Transaction
+              </Text>
+              <View style={styles.transactionModalHeaderSpacer} />
+            </View>
+
+            {/* Transaction List */}
+            <FlatList
+              data={historyItems || []}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.transactionListContainer}
+              renderItem={({ item, index }) => (
+                <TransactionItem
+                  item={item}
+                  theme={theme}
+                  isFirst={index === 0}
+                />
+              )}
+              ListEmptyComponent={() => (
+                <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 40 }}>
+                  <Text style={{ color: theme.colors.textSecondary, fontSize: 16 }}>
+                    No transactions found
+                  </Text>
+                </View>
+              )}
+            />
+          </Animated.View>
+        </View>
+      </Modal>
     </Modal>
   );
 };
@@ -270,9 +472,21 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
+  chatAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 5,
+  },
+  chatAvatarText: {
+    fontSize: 28,
+    fontWeight: "700",
+  },
   profileSection: {
     // alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 15,
   },
   avatarContainer: {
     flexDirection: 'row',
@@ -359,7 +573,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 4,
     textAlign: 'center',
-    fontWeight:'600'
+    fontWeight: '600'
   },
   value: {
     fontSize: 18,
@@ -434,6 +648,97 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     fontFamily: 'System',
+  },
+  // Transaction History Modal Styles
+  transactionModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  transactionModalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  transactionModalContainer: {
+    height: height * 0.85,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  transactionModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  transactionModalBackButton: {
+    padding: 4,
+  },
+  transactionModalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+    marginRight: 28, // To center the title (accounting for back button width)
+  },
+  transactionModalHeaderSpacer: {
+    width: 28, // Same as back button width for centering
+  },
+  transactionListContainer: {
+    paddingBottom: 20,
+    marginTop: 15
+  },
+  transactionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    marginBottom: 5,
+    borderRadius: 15,
+    marginHorizontal: 10,
+    // borderBottomWidth: 1,
+  },
+  transactionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  transactionIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  brandText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  transactionDetails: {
+    flex: 1,
+  },
+  transactionTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  transactionSubtitle: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  transactionRight: {
+    alignItems: 'flex-end',
+  },
+  transactionAmount: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  transactionStatus: {
+    fontSize: 14,
+    opacity: 0.7,
   },
 });
 

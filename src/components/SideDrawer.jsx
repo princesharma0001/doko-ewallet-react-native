@@ -53,11 +53,11 @@ console.log("");
     { id: 'Profile', label: 'Profile', route: "ProfileSection", icon: <Ionicons name="person" size={20} color={theme.colors.text} /> },
     { id: 'Chat', label: 'Chat', route: "NewChat", icon: <Ionicons name="chatbubble-ellipses" size={20} color={theme.colors.text} /> },
     { id: 'Community', label: 'Community', route: "CommunitySection", icon: <Ionicons name="people" size={20} color={theme.colors.text} /> },
-    { id: 'Transaction', label: 'Transaction', route: "TransactionManagement", icon: <Feather name="repeat" size={20} color={theme.colors.text} /> },
-    { id: 'Finance', label: 'Finance', route: "HomeScreen", icon: <Ionicons name="cash" size={20} color={theme.colors.text} /> },
+    // { id: 'Transaction', label: 'Transaction', route: "TransactionManagement", icon: <Feather name="repeat" size={20} color={theme.colors.text} /> },
+    // { id: 'Finance', label: 'Finance', route: "HomeScreen", icon: <Ionicons name="cash" size={20} color={theme.colors.text} /> },
     { id: 'Card', label: 'Card', route: "PhysicalCard", icon: <Ionicons name="card" size={20} color={theme.colors.text} /> },
     { id: 'Notification', label: 'Notification', route: "Notification", icon: <Ionicons name="notifications" size={20} color={theme.colors.text} /> },
-    { id: 'Security', label: 'Security', route: "Login", icon: <Ionicons name="shield-checkmark" size={20} color={theme.colors.text} /> },
+    // { id: 'Security', label: 'Security', route: "Login", icon: <Ionicons name="shield-checkmark" size={20} color={theme.colors.text} /> },
     { id: 'Setting', label: 'Setting', route: 'Settings', icon: <Ionicons name="settings" size={20} color={theme.colors.text} /> },
 
   ];

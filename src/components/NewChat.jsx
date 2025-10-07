@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -11,7 +11,9 @@ import {
     Dimensions,
     TextInput,
     FlatList,
-    ActivityIndicator
+    ActivityIndicator,
+    Animated,
+    Keyboard
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
@@ -41,6 +43,17 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
     const [error, setError] = useState(null);
     const [isSearching, setIsSearching] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
+
+    // Skeleton pulse animation
+    const pulse = useRef(new Animated.Value(0.6)).current;
+    useEffect(() => {
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+                Animated.timing(pulse, { toValue: 0.6, duration: 700, useNativeDriver: true }),
+            ])
+        ).start();
+    }, [pulse]);
 
 
     const handleSelectRecipient = (recipient) => {
@@ -187,7 +200,7 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                     id: chat.chatId || chat.chatId,
                     name: chat.name,
                     participants: chat.participants || [],
-                    chatType: chat.chatType
+                    chatType: chat.chatType,
                 }
             });
         } else {
@@ -218,6 +231,8 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                 (p) => p.userId?.id !== currentUser?.id // exclude yourself
             )?.userId;
         }
+        console.log("Sdagsadgdas", otherUser);
+
 
         return (
             <TouchableOpacity
@@ -236,7 +251,6 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                                 {isGroup ? 'G' : item.name?.charAt(0)?.toUpperCase() || '?'}
                             </Text>
                         }
-
                     </View>
                     <View style={styles.chatDetails}>
                         <Text style={[styles.chatName, { color: theme.colors.text }]}>
@@ -259,6 +273,24 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
             </TouchableOpacity>
         );
     };
+
+    const SkeletonChatItem = () => (
+        <View style={[styles.chatItem, { backgroundColor: theme.colors.surface }]}> 
+            <View style={styles.chatItemContent}>
+                <Animated.View
+                    style={[styles.skeletonAvatar, { backgroundColor: theme.colors.border, opacity: pulse }]}
+                />
+                <View style={styles.chatDetails}>
+                    <Animated.View
+                        style={[styles.skeletonLineLg, { backgroundColor: theme.colors.border, opacity: pulse }]}
+                    />
+                    <Animated.View
+                        style={[styles.skeletonLineSm, { backgroundColor: theme.colors.border, opacity: pulse }]}
+                    />
+                </View>
+            </View>
+        </View>
+    );
 
 
     const styles = StyleSheet.create({
@@ -467,6 +499,23 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
         chatStatus: {
             alignItems: 'center',
         },
+        skeletonAvatar: {
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            marginRight: theme.spacing.md,
+        },
+        skeletonLineLg: {
+            height: 14,
+            borderRadius: 6,
+            marginBottom: 8,
+            width: width * 0.5,
+        },
+        skeletonLineSm: {
+            height: 12,
+            borderRadius: 6,
+            width: width * 0.3,
+        },
         loadingContainer: {
             padding: theme.spacing.md,
             alignItems: 'center',
@@ -527,6 +576,8 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
                 bounces={true}
+                keyboardDismissMode="on-drag"
+                onScrollBeginDrag={() => Keyboard.dismiss()}
             >
                 {/* Header */}
 
@@ -588,11 +639,10 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                 {/* Chat List outside the card */}
                 <View style={styles.chatListContainer}>
                     {isLoading || isSearching ? (
-                        <View style={styles.loadingContainer}>
-                            <ActivityIndicator size="small" color={theme.colors.primary} />
-                            <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-                                {isSearching ? 'Searching...' : 'Loading chats...'}
-                            </Text>
+                        <View>
+                            {Array.from({ length: 6 }).map((_, idx) => (
+                                <SkeletonChatItem key={idx} />
+                            ))}
                         </View>
                     ) : error ? (
                         <View style={styles.errorContainer}>
@@ -632,6 +682,8 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
                                 nestedScrollEnabled={true}
                                 bounces={true}
                                 alwaysBounceVertical={false}
+                                keyboardDismissMode="on-drag"
+                                onScrollBeginDrag={() => Keyboard.dismiss()}
                             />
                         );
                     })()}

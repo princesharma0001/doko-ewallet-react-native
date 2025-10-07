@@ -673,12 +673,12 @@ const TransactionManagement = ({ navigation }) => {
                 onPress={() => setShowStatusModal(true)}
                 placeholder="-Select Status-"
               />
-              <DropdownButton
+              {/* <DropdownButton
                 title="Network"
                 value={selectedNetwork}
                 onPress={() => setShowNetworkModal(true)}
                 placeholder="-Select Network-"
-              />
+              /> */}
             </View>
 
              {/* Date Inputs */}

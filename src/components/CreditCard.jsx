@@ -33,6 +33,7 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [cardDetails, setCardDetails] = useState(null);
     const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+    const [amountFontSize, setAmountFontSize] = useState(48);
 
     const currencies = [
         { code: 'NPR', symbol: '₨', name: 'Nepalese Rupee', flag: require('../assets/Images/USA.png') }, // TODO: Add Nepal.png flag
@@ -59,6 +60,14 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
                 setPaymentAmount(cleaned);
             }
         }
+
+        // Adjust font size based on length to avoid UI breaking
+        const len = cleaned.length;
+        if (len > 12) setAmountFontSize(26);
+        else if (len > 10) setAmountFontSize(30);
+        else if (len > 8) setAmountFontSize(34);
+        else if (len > 6) setAmountFontSize(40);
+        else setAmountFontSize(48);
     };
 
     const handlePayNow = async () => {
@@ -245,17 +254,17 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
     const renderAmountSection = () => (
         <View style={styles.amountSection}>
             <View style={[styles.amountInputContainer, {}]}>
-                <Text style={[styles.dollarSign, { color: theme.colors.text }]}>
+                <Text style={[styles.dollarSign, { color: theme.colors.text, fontSize: 30 }]}>
                     {currentCurrency?.symbol || '₨'}
                 </Text>
                 <TextInput
-                    style={[styles.amountInput, { color: theme.colors.text }]}
+                    style={[styles.amountInput, { color: theme.colors.text, fontSize: amountFontSize }]}
                     value={paymentAmount}
                     onChangeText={handleAmountChange}
                     keyboardType="numeric"
                     placeholder="100.0"
                     placeholderTextColor={theme.colors.text}
-                    maxLength={10}
+                    maxLength={6}
                 />
             </View>
             <TouchableOpacity
@@ -455,18 +464,19 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        paddingHorizontal: 20,
+        // paddingHorizontal: 20,
         paddingVertical: 16,
         borderRadius: 12,
         // borderWidth: 1,
         // borderColor: 'rgba(255, 255, 255, 0.1)',
         marginBottom: 16,
         minWidth: 200,
+        maxWidth: width - 40,
     },
     dollarSign: {
         fontSize: 48,
         fontWeight: '700',
-        marginRight: 8,
+        // marginRight: 8,
     },
     amountInput: {
         fontSize: 48,

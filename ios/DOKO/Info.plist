@@ -39,6 +39,8 @@
 	<string></string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Required for video capture</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Your message to user when the photo library is accessed for the first time</string>
 	<key>RCTNewArchEnabled</key>
 	<false/>
 	<key>UIAppFonts</key>

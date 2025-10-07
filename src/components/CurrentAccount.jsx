@@ -21,7 +21,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
 import { useAppDispatch, useAppSelector } from '../store';
 import { getWalletList } from '../store/slices/walletSlice';
-import { authService } from '../services/apiService';
+import { authService, transactionHistoryService } from '../services/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import SearchUsernameModal from './SearchUsernameModal';
@@ -152,10 +152,11 @@ const CurrentAccount = ({ navigation }) => {
         return;
       }
 
-      const result = await authService.getTransactionList(token);
+      // Use the new transaction history endpoint
+      const result = await transactionHistoryService.getUserTransactionHistory(undefined, token);
 
       if (result.success) {
-        setTransactions(result.data?.docs || []);
+        setTransactions(result.docs || result.data?.docs || []);
         console.log('Transactions fetched successfully:', result.data?.docs?.length || 0);
       } else {
         setTransactionsError(result.error || 'Failed to fetch transactions');
@@ -220,15 +221,16 @@ const CurrentAccount = ({ navigation }) => {
   };
 
   const getTransactionType = (transaction) => {
-    if (transaction.type === 'transfer') {
-      return transaction.subType === "sent"
-        ? `Sent amount to ${transaction?.receiver?.username ?? transaction?.receiver?.firstName}`
-        : `Received amount from ${transaction?.sender?.username ?? transaction?.sender?.firstName}`;
+    if (transaction.type === 'CHAT_PAYMENT_RECEIVE') {
+      const senderName = transaction?.userId?.firstName || transaction?.sender?.username || 'Unknown Sender';
+      const receiverName = transaction?.receiverId?.username || transaction?.receiverId?.firstName || 'Unknown Receiver';
+      return `Sent to ${receiverName}`;
     } else if (transaction.type === 'deposit') {
       return 'Wallet Deposit';
     }
     return transaction.description || 'Transaction';
   };
+
 
   const getTransactionAmount = (transaction) => {
     const amount = transaction.amount;
@@ -390,7 +392,7 @@ const CurrentAccount = ({ navigation }) => {
       </TouchableOpacity>
 
       {/* Invest */}
-      <TouchableOpacity style={styles.actionButton} onPress={()=> navigation.navigate("QrCodeSendRecive")}>
+      <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate("QrCodeSendRecive")}>
         {/* <View style={styles.iconWrapper}> */}
         <View style={{ paddingBottom: 10 }}>
 
@@ -534,7 +536,7 @@ const CurrentAccount = ({ navigation }) => {
             {transactionsError}
           </Text>
         </View>
-      ) : transactions.length > 0 ? (
+      ) : transactions?.length > 0 ? (
         transactions?.slice(0, 5).map((transaction) => (
           <TouchableHighlight
             key={transaction._id}
@@ -552,6 +554,7 @@ const CurrentAccount = ({ navigation }) => {
               </View>
               <View style={styles.activityContent}>
                 <Text style={[styles.activityType, { color: theme.colors.text, fontFamily: theme.typography.fontFamily, fontWeight: "600" }]}>
+                  {/* {transaction?.type} */}
                   {truncateText(getTransactionType(transaction), 40)}
                 </Text>
                 <Text style={[styles.activityTime, {
@@ -749,7 +752,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     backgroundColor: "#363443",
     borderRadius: 20,
-    marginHorizontal: 30,
+    marginHorizontal: 25,
+    marginRight: 28,
     // marginBottom: 20,
     borderWidth: 0.9,
     borderColor: "#3C3C56"

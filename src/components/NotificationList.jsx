@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -37,6 +38,17 @@ const NotificationList = ({ navigation }) => {
   useEffect(() => {
     loadNotifications();
   }, []);
+
+  // Simple pulse animation for skeletons
+  const pulse = useRef(new Animated.Value(0.6)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.6, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [pulse]);
 
   // Load notifications when search query changes
   useEffect(() => {
@@ -335,6 +347,32 @@ const NotificationList = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const SkeletonItem = () => (
+    <View
+      style={[
+        styles.notificationItem,
+        { backgroundColor: theme.colors.card, borderRadius: 12, marginBottom: 10 },
+      ]}
+    >
+      <View style={styles.itemLeft}>
+        <Animated.View
+          style={[styles.iconContainer, { backgroundColor: theme.colors.border, opacity: pulse }]}
+        />
+        <View style={styles.itemContent}>
+          <Animated.View
+            style={[styles.skeletonLineLg, { backgroundColor: theme.colors.border, opacity: pulse }]}
+          />
+          <Animated.View
+            style={[styles.skeletonLineSm, { backgroundColor: theme.colors.border, opacity: pulse }]}
+          />
+          <Animated.View
+            style={[styles.skeletonParagraph, { backgroundColor: theme.colors.border, opacity: pulse }]}
+          />
+        </View>
+      </View>
+    </View>
+  );
+
 
   // Show loading state only when initially loading and no data exists
   if (isLoading && notifications.length === 0) {
@@ -384,13 +422,12 @@ const NotificationList = ({ navigation }) => {
           />
         </View>
 
-        {/* Loading State */}
-        <View style={[styles.centerContent, { flex: 1 }]}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
-            Loading notifications...
-          </Text>
-        </View>
+        {/* Loading State - Skeletons */}
+        <ScrollView style={{ flex: 1, paddingHorizontal: 20 }}>
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <SkeletonItem key={idx} />
+          ))}
+        </ScrollView>
       </View>
     );
   }
@@ -451,12 +488,11 @@ const NotificationList = ({ navigation }) => {
         }
       >
         {isLoading ? (
-          <View style={[styles.centerContent, { paddingVertical: 40 }]}>
-            <ActivityIndicator size="small" color={theme.colors.primary} />
-            <Text style={[styles.loadingText, { color: theme.colors.textSecondary, marginTop: 8 }]}>
-              Loading...
-            </Text>
-          </View>
+          <>
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <SkeletonItem key={idx} />
+            ))}
+          </>
         ) : error ? (
           <View style={styles.emptyState}>
             <Ionicons name="alert-circle" size={64} color={theme.colors.textSecondary} />
@@ -534,6 +570,23 @@ const styles = StyleSheet.create({
   notificationsList: {
     flex: 1,
     paddingHorizontal: 20,
+  },
+  skeletonLineLg: {
+    height: 14,
+    borderRadius: 6,
+    marginBottom: 8,
+    width: width * 0.5,
+  },
+  skeletonLineSm: {
+    height: 12,
+    borderRadius: 6,
+    marginBottom: 12,
+    width: width * 0.3,
+  },
+  skeletonParagraph: {
+    height: 36,
+    borderRadius: 8,
+    width: '95%',
   },
   notificationsContainer: {
     borderRadius: 16,

@@ -1738,3 +1738,133 @@ export const bankService = {
     }
   },
 };
+
+// User settings service functions
+export const userSettingsService = {
+  // Get User Settings API call
+  getUserSettings: async (token) => {
+    try {
+      console.log('Calling get user settings API');
+
+      const response = await apiClient.get(ApiConfig.getUserSettings, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      console.log('Get user settings API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Get User Settings API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to fetch user settings';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // Update User Settings API call
+  updateUserSettings: async (settingsData, token) => {
+    try {
+      console.log('Calling update user settings API with data:', settingsData);
+
+      const response = await apiClient.put(ApiConfig.updateUserSettings, settingsData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      console.log('Update user settings API response:', response.data);
+
+      return {
+        success: true,
+        data: response.data.data,
+        message: response.data.message,
+      };
+    } catch (error) {
+      console.error('Update User Settings API Error:', error);
+
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to update user settings';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+};
+
+// Transaction history service
+export const transactionHistoryService = {
+  // GET /transactionHistory/list (optionally with ?filterUserId=...)
+  getUserTransactionHistory: async (filterUserId, token) => {
+    try {
+      const url = filterUserId
+        ? `${ApiConfig.getUserTransactionHistory}?filterUserId=${encodeURIComponent(filterUserId)}`
+        : ApiConfig.getUserTransactionHistory;
+      const response = await apiClient.get(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+
+      const data = response.data?.data || {};
+      return {
+        success: true,
+        data,
+        docs: data.docs || [],
+        stats: data.stats || {},
+        message: response.data?.message,
+      };
+    } catch (error) {
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'Failed to fetch transaction history';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+};

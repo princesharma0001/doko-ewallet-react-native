@@ -15,7 +15,8 @@ import {
     Modal,
     KeyboardAvoidingView,
     Platform,
-    ActivityIndicator
+    ActivityIndicator,
+    Keyboard
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
@@ -45,8 +46,8 @@ const InvidusalGroup = () => {
     const { groupData } = route.params || {};
     console.log("asdgsgsadgdsa", groupData);
     const [showUserProfileModal, setShowUserProfileModal] = useState("");
-    console.log("sdgsdagdsa",showUserProfileModal);
-    
+    console.log("sdgsdagdsa", showUserProfileModal);
+
 
     // State management
     const [message, setMessage] = useState('');
@@ -230,11 +231,11 @@ const InvidusalGroup = () => {
                     scrollViewRef.current?.scrollToEnd({ animated: true });
                 }, 100);
 
-                Toast.show({
-                    type: 'success',
-                    text1: 'Success',
-                    text2: 'Message sent successfully',
-                });
+                // Toast.show({
+                //     type: 'success',
+                //     text1: 'Success',
+                //     text2: 'Message sent successfully',
+                // });
             } else {
                 Toast.show({
                     type: 'error',
@@ -708,6 +709,7 @@ const InvidusalGroup = () => {
                     style={styles.messagesList}
                     contentContainerStyle={styles.messagesContent}
                     showsVerticalScrollIndicator={false}
+                    keyboardDismissMode="on-drag"
                 />
             ) : (
                 <View style={styles.emptyMessagesContainer}>
@@ -753,7 +755,7 @@ const InvidusalGroup = () => {
                         placeholderTextColor={theme.colors.textSecondary}
                         value={message}
                         onChangeText={setMessage}
-                        multiline
+                        // multiline
                         maxLength={1000}
                     />
                     <TouchableOpacity

@@ -38,5 +38,8 @@ const ApiConfig = {
     friendReject: `${url}api/v1/friend/reject`,
     getNotificationList: `${url}api/v1/notification/list`,
     clearNotifications: `${url}api/v1/notification/clear`,
+    updateUserSettings: `${url}api/v1/userSetting/update`,
+    getUserSettings: `${url}api/v1/userSetting/get`,
+    getUserTransactionHistory: `${url}api/v1/transactionHistory/list`,
 };
 export default ApiConfig;

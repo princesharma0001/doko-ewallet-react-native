@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -10,11 +10,14 @@ import {
     Platform,
     Modal,
     ActivityIndicator,
+    Share,
+    Linking,
+    Clipboard,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import { RNCamera } from 'react-native-camera';
+import QRCodeScanner from 'react-native-qrcode-scanner';
 import QRCode from 'react-native-qrcode-svg';
 import { useAppSelector } from '../hooks/redux';
 
@@ -27,7 +30,10 @@ const QrCodeSendRecive = ({ navigation }) => {
     const [scanned, setScanned] = useState(false);
     const [qrData, setQrData] = useState(''); // Replace with actual user data
     const [isLoading, setIsLoading] = useState(false);
+    const [isSharing, setIsSharing] = useState(false);
+    // const [flashMode, setFlashMode] = useState(QRCodeScanner.Constants.FlashMode.off);
     const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
+    const qrCodeRef = useRef(null);
     console.log("adfgadsgsa", currentUser);
 
     useEffect(() => {
@@ -85,35 +91,150 @@ const QrCodeSendRecive = ({ navigation }) => {
         generateQRData();
     };
 
+    // const toggleFlash = () => {
+    //     setFlashMode(
+    //         flashMode === QRCodeScanner.Constants.FlashMode.off
+    //             ? QRCodeScanner.Constants.FlashMode.torch
+    //             : QRCodeScanner.Constants.FlashMode.off
+    //     );
+    // };
+
     const generateQRData = () => {
-        // Replace with actual user data from your app state/API
+        // Create a more user-friendly QR data format
         const userData = {
-            userId: currentUser?.email, // Get from your user state
+            app: 'DOKO',
+            action: 'send_money',
+            userId: currentUser?.email,
+            username: currentUser?.username || currentUser?.firstName,
             timestamp: Date.now(),
-            type: 'receive',
-            name: currentUser?.firstName
+            version: '1.0'
         };
         setQrData(JSON.stringify(userData));
     };
 
-    const handleBarCodeScanned = ({ type, data }) => {
-        setScanned(true);
-        console.log('QR Code scanned:', data);
+    const shareQRCode = async () => {
+        if (!qrData) {
+            Alert.alert('Error', 'QR code data not available');
+            return;
+        }
 
+        setIsSharing(true);
         try {
-            const parsedData = JSON.parse(data);
-            console.log("Parsed data:", parsedData);
+            // Create a more user-friendly share message
+            const userName = currentUser?.firstName || currentUser?.username || 'DOKO User';
+            const shareMessage = `💰 Send me money via DOKO!\n\nScan this QR code to send money to ${userName}\n\nQR Code Data:\n${qrData}\n\nDownload DOKO app to send money easily!`;
 
-            // Assuming userID is available in parsedData.userID or parsedData.userId
-            const userID = parsedData.userId || parsedData.userId;
+            const shareOptions = {
+                message: shareMessage,
+                title: 'DOKO QR Code - Send Money',
+            };
 
-            if (parsedData) {
-                navigation.navigate("AddRecieveQr", { data: parsedData });
-            } else {
-                console.warn("userID not found in parsed data");
+            const result = await Share.share(shareOptions);
+
+            if (result.action === Share.sharedAction) {
+                console.log('QR code shared successfully');
+            } else if (result.action === Share.dismissedAction) {
+                console.log('Share dismissed');
             }
         } catch (error) {
-            console.error("Error parsing data:", error);
+            console.error('Error sharing QR code:', error);
+            Alert.alert('Error', 'Failed to share QR code');
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
+    const copyQRData = async () => {
+        if (!qrData) {
+            Alert.alert('Error', 'QR code data not available');
+            return;
+        }
+
+        try {
+            await Clipboard.setString(qrData);
+            Alert.alert('Copied', 'QR code data copied to clipboard');
+        } catch (error) {
+            console.error('Error copying QR data:', error);
+            Alert.alert('Error', 'Failed to copy QR code data');
+        }
+    };
+
+    const shareQRCodeAsImage = async () => {
+        if (!qrCodeRef.current) {
+            Alert.alert('Error', 'QR code not ready');
+            return;
+        }
+
+        setIsSharing(true);
+        try {
+            // Capture QR code as base64 image
+            const qrCodeImage = await qrCodeRef.current.toDataURL();
+
+            const shareOptions = {
+                message: `Scan this QR code to send me money via DOKO!\n\nUser: ${currentUser?.firstName || 'DOKO User'}`,
+                title: 'DOKO QR Code',
+                url: `data:image/png;base64,${qrCodeImage}`,
+            };
+
+            const result = await Share.share(shareOptions);
+
+            if (result.action === Share.sharedAction) {
+                console.log('QR code image shared successfully');
+            }
+        } catch (error) {
+            console.error('Error sharing QR code image:', error);
+            Alert.alert('Error', 'Failed to share QR code image');
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
+
+
+    const handleBarCodeScanned = (e) => {
+        setScanned(true);
+        console.log('QR Code scanned:', e.data);
+
+        try {
+            const parsedData = JSON.parse(e.data);
+            console.log("Parsed data:", parsedData);
+
+            // Check if it's a DOKO QR code
+            if (parsedData.app === 'DOKO' && parsedData.action === 'send_money') {
+                navigation.navigate("AddRecieveQr", { data: parsedData });
+            } else {
+                // Handle other QR codes or show error
+                Alert.alert(
+                    'Invalid QR Code',
+                    'This QR code is not a valid DOKO payment code. Please scan a DOKO QR code.',
+                    [
+                        {
+                            text: 'Try Again',
+                            onPress: () => setScanned(false),
+                        },
+                        {
+                            text: 'Cancel',
+                            onPress: () => setActiveMode(null),
+                        },
+                    ]
+                );
+            }
+        } catch (error) {
+            console.error("Error parsing QR data:", error);
+            Alert.alert(
+                'Invalid QR Code',
+                'This QR code is not a valid DOKO payment code. Please scan a DOKO QR code.',
+                [
+                    {
+                        text: 'Try Again',
+                        onPress: () => setScanned(false),
+                    },
+                    {
+                        text: 'Cancel',
+                        onPress: () => setActiveMode(null),
+                    },
+                ]
+            );
         }
     };
 
@@ -217,20 +338,43 @@ const QrCodeSendRecive = ({ navigation }) => {
                             </TouchableOpacity>
                         </View>
                     ) : (
-                        <RNCamera
-                            style={styles.camera}
-                            type={RNCamera.Constants.Type.back}
-                            captureAudio={false}
-                            onBarCodeRead={scanned ? undefined : handleBarCodeScanned}
-                            barCodeTypes={[RNCamera.Constants.BarCodeType.qr]}
-                        >
-                            <View style={styles.scannerOverlay}>
-                                <View style={styles.scannerFrame} />
-                                <Text style={styles.scannerInstruction}>
-                                    Position the QR code within the frame
-                                </Text>
-                            </View>
-                        </RNCamera>
+                        <View style={styles.scannerWrapper}>
+                            <QRCodeScanner
+                                onRead={scanned ? undefined : handleBarCodeScanned}
+                                // flashMode={flashMode}
+                                topContent={
+                                    <View style={styles.scannerOverlay}>
+                                        <Text style={styles.scannerInstruction}>
+                                            Position the QR code within the frame
+                                        </Text>
+                                    </View>
+                                }
+                                bottomContent={
+                                    <View style={styles.scannerBottomContent}>
+                                        <Text style={styles.scannerBottomText}>
+                                            Scan a QR code to send money
+                                        </Text>
+                                    </View>
+                                }
+                                cameraStyle={styles.camera}
+                                showMarker={true}
+                                markerStyle={styles.markerStyle}
+                                reactivate={!scanned}
+                                reactivateTimeout={2000}
+                            />
+                            
+                            {/* Flash Toggle Button */}
+                            {/* <TouchableOpacity
+                                style={styles.flashButton}
+                                onPress={toggleFlash}
+                            >
+                                <Ionicons
+                                    name={flashMode === QRCodeScanner.Constants.FlashMode.off ? "flash-off" : "flash"}
+                                    size={24}
+                                    color="#FFFFFF"
+                                />
+                            </TouchableOpacity> */}
+                        </View>
                     )}
                 </View>
             </View>
@@ -260,6 +404,7 @@ const QrCodeSendRecive = ({ navigation }) => {
                 <View style={styles.qrContent}>
                     <View style={[styles.qrCodeContainer, { backgroundColor: theme.colors.surface }]}>
                         <QRCode
+                            ref={qrCodeRef}
                             value={qrData}
                             size={250}
                             color={theme.colors.text}
@@ -271,21 +416,31 @@ const QrCodeSendRecive = ({ navigation }) => {
                         Show this QR code to receive money
                     </Text>
 
-                    <TouchableOpacity
-                        style={styles.shareButton}
-                        onPress={() => {
-                            // Implement share functionality
-                            Alert.alert('Share', 'QR code sharing functionality');
-                        }}
-                    >
-                        <LinearGradient
-                            colors={['#169BFF', '#0D7AE8']}
-                            style={styles.shareGradient}
+                    <View style={styles.buttonRow}>
+                        <TouchableOpacity
+                            style={[styles.shareButton, styles.quickShareButton]}
+                            onPress={shareQRCode}
+                            disabled={isSharing}
                         >
-                            <Ionicons name="share-outline" size={20} color="#FFFFFF" />
-                            <Text style={styles.shareButtonText}>Share QR Code</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
+                            <LinearGradient
+                                colors={["#1AA5FF", "#6B22E7", "#6B22E7", "#6B22E7"]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1.5, y: 0.5 }}
+                                style={[styles.shareGradient, { opacity: isSharing ? 0.7 : 1 }]}
+                            >
+                                {isSharing ? (
+                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                ) : (
+                                    <Ionicons name="send-outline" size={18} color="#FFFFFF" />
+                                )}
+                                <Text style={styles.shareButtonText}>
+                                    {isSharing ? 'Sharing...' : 'Quick Share'}
+                                </Text>
+                            </LinearGradient>
+                        </TouchableOpacity>
+
+
+                    </View>
                 </View>
             </View>
         </Modal>
@@ -404,28 +559,54 @@ const styles = StyleSheet.create({
     cameraContainer: {
         flex: 1,
     },
+    scannerWrapper: {
+        flex: 1,
+        position: 'relative',
+    },
     camera: {
         flex: 1,
     },
-    scannerOverlay: {
-        flex: 1,
+    flashButton: {
+        position: 'absolute',
+        top: 20,
+        right: 20,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        borderRadius: 25,
+        width: 50,
+        height: 50,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    scannerFrame: {
-        width: 250,
-        height: 250,
-        borderWidth: 2,
-        borderColor: '#169BFF',
-        borderRadius: 12,
-        backgroundColor: 'transparent',
+    scannerOverlay: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 20,
     },
     scannerInstruction: {
         color: '#FFFFFF',
         fontSize: 16,
-        marginTop: 30,
         textAlign: 'center',
         fontFamily: 'System',
+        marginTop: 10,
+    },
+    scannerBottomContent: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 20,
+        paddingBottom: 20,
+    },
+    scannerBottomText: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        textAlign: 'center',
+        fontFamily: 'System',
+        opacity: 0.8,
+    },
+    markerStyle: {
+        borderColor: '#169BFF',
+        borderWidth: 2,
+        borderRadius: 12,
     },
     permissionContainer: {
         flex: 1,
@@ -495,21 +676,34 @@ const styles = StyleSheet.create({
         marginBottom: 40,
         fontFamily: 'System',
     },
+    buttonRow: {
+        flexDirection: 'row',
+        gap: 12,
+        width: '100%',
+    },
     shareButton: {
         borderRadius: 12,
         overflow: 'hidden',
+        flex: 1,
+    },
+    quickShareButton: {
+        flex: 2,
+    },
+    moreOptionsButton: {
+        flex: 1,
     },
     shareGradient: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 24,
-        paddingVertical: 16,
+        justifyContent: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
     },
     shareButtonText: {
         color: '#FFFFFF',
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '600',
-        marginLeft: 8,
+        marginLeft: 6,
         fontFamily: 'System',
     },
 });

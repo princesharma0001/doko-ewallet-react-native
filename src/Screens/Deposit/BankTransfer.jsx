@@ -67,12 +67,12 @@ const BankTransfer = ({ navigation }) => {
 
         try {
             const response = await bankService.getBankDetails(bankType, token);
-            console.log("adFGADFGADS",response);
+            console.log("adFGADFGADS", response);
 
 
             if (response.success && response.data && response.data.length > 0) {
                 const bankData = response.data[0]; // Get first bank detail
-console.log("sdagasdfgs",bankData);
+                console.log("sdagasdfgs", bankData);
 
                 // Map API response to component structure
                 const mappedData = {
@@ -120,7 +120,7 @@ console.log("sdagasdfgs",bankData);
 
     const handleShareDetails = async () => {
         const currentDetails = bankDetails[selectedTransferType] || defaultBankDetails[selectedTransferType];
-        
+
         if (!currentDetails) {
             Alert.alert('Error', 'Bank details not available');
             return;

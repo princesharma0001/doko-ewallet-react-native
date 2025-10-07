@@ -15,7 +15,8 @@ import {
     Modal,
     KeyboardAvoidingView,
     Platform,
-    ActivityIndicator
+    ActivityIndicator,
+    Pressable
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
@@ -28,6 +29,7 @@ import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { chatService } from '../services/apiService';
 import { useAppSelector } from '../hooks/redux';
 import Toast from 'react-native-toast-message';
+import UserProfileModal from '../components/UserProfileModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -39,6 +41,7 @@ const GroupSeperateChat = () => {
     const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
     console.log("asdgasdgasd", currentUser);
     const [isSendingMessage, setIsSendingMessage] = useState(false);
+    const [partiUsers, setPartiUsers] = useState(false);
 
 
     // Get group data from route params
@@ -637,17 +640,22 @@ const GroupSeperateChat = () => {
                     >
                         <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
                     </TouchableOpacity>
-                    <View style={styles.groupInfo}>
+                    <Pressable onPress={() => setPartiUsers(true)} style={styles.groupInfo}>
                         <Text style={[styles.groupName, { color: theme.colors.text }]}>
                             {groupName}
                         </Text>
                         <Text style={[styles.participantCount, { color: theme.colors.textSecondary }]}>
-                            {participants.length} participants
+                            {participants?.length} participants
                         </Text>
-                    </View>
+                    </Pressable>
                 </View>
-                {/* <View style={styles.headerRight}>
+                <View style={styles.headerRight}>
                     <TouchableOpacity
+                        style={styles.headerButton}
+                        onPress={() => setPartiUsers(true)}>
+                        <Ionicons name="person" size={24} color={theme.colors.text} />
+                    </TouchableOpacity>
+                    {/* <TouchableOpacity
                         style={styles.headerButton}
                         onPress={handleAddParticipant}
                     >
@@ -666,8 +674,8 @@ const GroupSeperateChat = () => {
 
                     >
                         <Ionicons name="person-remove" size={24} color={theme.colors.text} />
-                    </TouchableOpacity>
-                </View> */}
+                    </TouchableOpacity> */}
+                </View>
             </View>
 
             {/* Messages */}
@@ -725,7 +733,7 @@ const GroupSeperateChat = () => {
                         placeholderTextColor={theme.colors.textSecondary}
                         value={message}
                         onChangeText={setMessage}
-                        multiline
+                        // multiline
                         maxLength={1000}
                     />
                     <TouchableOpacity
@@ -919,6 +927,58 @@ const GroupSeperateChat = () => {
                     </View>
                 </View>
             </Modal>
+
+            {/* Participants Modal */}
+            <Modal
+                visible={partiUsers}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setPartiUsers(false)}
+            >
+                <View style={styles.participantsOverlay}>
+                    <TouchableOpacity style={styles.participantsBackdrop} activeOpacity={1} onPress={() => setPartiUsers(false)} />
+                    <View style={[styles.participantsContainer, { backgroundColor: theme.colors.background }]}>
+                        <View style={[styles.participantsHeader, { borderBottomColor: theme.colors.border }]}>
+                            <Text style={[styles.participantsTitle, { color: theme.colors.text }]}>
+                                Group Participants ({participants?.length || 0})
+                            </Text>
+                            <TouchableOpacity onPress={() => setPartiUsers(false)} style={styles.participantsCloseBtn}>
+                                <Ionicons name="close" size={22} color={theme.colors.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <FlatList
+                            data={participants || []}
+                            keyExtractor={(item, index) => item._id || item.id || item.userId?._id || String(index)}
+                            contentContainerStyle={{ paddingVertical: 8 }}
+                            renderItem={({ item }) => {
+                                const u = item.userId || item;
+                                const initials = ((u?.firstName?.[0] || '') + (u?.lastName?.[0] || '')).toUpperCase() || (u?.email?.[0] || '?').toUpperCase();
+                                const name = `${u?.firstName || ''} ${u?.lastName || ''}`.trim() || u?.username || u?.email || 'User';
+                                return (
+                                    <View style={[styles.participantRow, { backgroundColor: theme.colors.surface }]}>
+                                        <View style={[styles.participantAvatarSm, { backgroundColor: theme.colors.primary }]}>
+                                            <Text style={[styles.participantAvatarSmText, { color: '#fff' }]}>{initials}</Text>
+                                        </View>
+                                        <View style={styles.participantRowDetails}>
+                                            <Text style={[styles.participantRowName, { color: theme.colors.text }]}>{name}</Text>
+                                            {u?.email ? (
+                                                <Text style={[styles.participantRowEmail, { color: theme.colors.textSecondary }]}>{u.email}</Text>
+                                            ) : null}
+                                        </View>
+                                    </View>
+                                );
+                            }}
+                            ListEmptyComponent={() => (
+                                <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+                                    <Text style={{ color: theme.colors.textSecondary }}>No participants</Text>
+                                </View>
+                            )}
+                        />
+                    </View>
+                </View>
+            </Modal>
+
         </SafeAreaView>
     );
 };
@@ -1296,6 +1356,67 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: 'white',
+    },
+    // Participants modal styles
+    participantsOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    participantsBackdrop: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    participantsContainer: {
+        maxHeight: height * 0.6,
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        paddingBottom: 12,
+    },
+    participantsHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+    },
+    participantsTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+    },
+    participantsCloseBtn: {
+        padding: 6,
+    },
+    participantRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 12,
+        marginVertical: 6,
+        padding: 12,
+        borderRadius: 12,
+    },
+    participantAvatarSm: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    participantAvatarSmText: {
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    participantRowDetails: {
+        flex: 1,
+    },
+    participantRowName: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    participantRowEmail: {
+        fontSize: 12,
+        marginTop: 2,
     },
 });
 

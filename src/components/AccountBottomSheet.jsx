@@ -101,12 +101,12 @@ const AccountBottomSheet = ({ isVisible, onClose, onSelectAccount, selectedAccou
       iconType: 'MaterialIcons',
     },
 
-    {
-      id: 'crypto',
-      title: 'Crypto Account',
-      icon: 'credit-card',
-      iconType: 'MaterialIcons',
-    },
+    // {
+    //   id: 'crypto',
+    //   title: 'Crypto Account',
+    //   icon: 'credit-card',
+    //   iconType: 'MaterialIcons',
+    // },
 
   ];
 
@@ -126,7 +126,7 @@ const AccountBottomSheet = ({ isVisible, onClose, onSelectAccount, selectedAccou
           styles.accountOption,
           {
             // backgroundColor: "red",
-            borderBottomColor: theme.colors.surface,
+            // borderBottomColor: theme.colors.surface,
           },
           isSelected && { backgroundColor: theme.colors.border }
         ]}
@@ -256,11 +256,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: 7,
     paddingHorizontal: 18,
     borderRadius: 12,
     marginBottom: 8,
-    borderBottomWidth: 1,
+    // borderBottomWidth: 1,
   },
   accountLeft: {
     flexDirection: 'row',

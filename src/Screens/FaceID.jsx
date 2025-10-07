@@ -132,21 +132,32 @@ const FaceID = ({ navigation, route }) => {
     };
 
     const handleSkip = () => {
-        Alert.alert(
-            'Skip Face ID',
-            'Are you sure you want to skip Face ID setup? You can enable it later in settings.',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Skip',
-                    onPress: () => navigation.navigate('Login', {
-                        userData: route.params?.userData,
-                        passcode: route.params?.passcode,
-                        faceIdEnabled: false
-                    })
-                }
-            ]
-        );
+       Alert.alert(
+  'Skip Face ID',
+  'Are you sure you want to skip Face ID setup? You can enable it later in settings.',
+  [
+    { text: 'Cancel', style: 'cancel' },
+    {
+      text: 'Skip',
+      onPress: () => {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'Login',
+              params: {
+                userData: route.params?.userData,
+                passcode: route.params?.passcode,
+                faceIdEnabled: false,
+              },
+            },
+          ],
+        });
+      },
+    },
+  ]
+);
+
     };
 
     const getBiometricIcon = () => {

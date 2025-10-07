@@ -80,8 +80,8 @@ const MainHomeScreen = ({ navigation }) => {
     switch (selectedAccount) {
       case 'current':
         return <CurrentAccount navigation={navigation} />;
-      case 'crypto':
-        return <CryptoAccount />;
+      // case 'crypto':
+      //   return <CryptoAccount />;
       case 'card':
         return <HomeScreen />;
       default:
