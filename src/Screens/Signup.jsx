@@ -84,14 +84,14 @@ const Signup = ({ navigation }) => {
         console.log('Signup successful:', signupResult.data);
         
         // Call resend OTP API with the email from signup response
-        const resendOTPResult = await authService.resendOTP(signupResult.data.phone);
+        const resendOTPResult = await authService.resendOTP(signupResult?.data?.phone);
         
         if (resendOTPResult.success) {
-          console.log('OTP sent successfully');
+          console.log('OTP sent successfully',resendOTPResult);
           Toast.show({
             type: 'success',
             text1: 'Success',
-            text2: 'Account created successfully! OTP has been sent to your phone.',
+            text2: `Account created successfully! ${resendOTPResult.data?.otp} OTP has been sent to your phone.`,
             position: 'top',
             visibilityTime: 4000,
           });
@@ -104,11 +104,11 @@ const Signup = ({ navigation }) => {
             phone: signupResult.data.phone
           });
         } else {
-          console.error('Resend OTP failed:', resendOTPResult.error);
+          console.error('Resend OTP failed:', resendOTPResult);
           Toast.show({
-            type: 'warning',
-            text1: 'Warning',
-            text2: 'Account created but failed to send OTP. Please try again.',
+            type: 'error',
+            text1: 'Error',
+            text2: resendOTPResult.error,
             position: 'top',
             visibilityTime: 4000,
           });

@@ -184,7 +184,9 @@ const UserProfileModal = ({ visible, onClose, user, groupData, onActionPress }) 
     if (action === 'report-user') {
       setShowReportModal(true);
     } else {
-      onActionPress(action);
+      console.log("");
+      
+      // onActionPress(action);
     }
   };
 

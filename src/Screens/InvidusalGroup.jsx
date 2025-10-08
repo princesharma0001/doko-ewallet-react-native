@@ -62,7 +62,7 @@ const InvidusalGroup = () => {
     const [showRemoveParticipant, setShowRemoveParticipant] = useState(false);
     const [showSendMoney, setShowSendMoney] = useState(false);
     const [participants, setParticipants] = useState(groupData?.participants || []);
-    console.log("ADsgasgasd", participants);
+    console.log("groupDatagroupData", groupData);
 
     const [groupName, setGroupName] = useState(groupData?.name || 'Group Chat');
 
@@ -682,9 +682,9 @@ const InvidusalGroup = () => {
                         <Text style={[styles.groupName, { color: theme.colors.text }]}>
                             {groupName}
                         </Text>
-                        <Text style={[styles.participantCount, { color: theme.colors.textSecondary }]}>
+                        {/* <Text style={[styles.participantCount, { color: theme.colors.textSecondary }]}>
                             {participants.length} participants
-                        </Text>
+                        </Text> */}
                     </View>
                 </View>
                 <View style={styles.headerRight}>
@@ -700,10 +700,10 @@ const InvidusalGroup = () => {
             </View>
 
             {/* Messages */}
-            {messages.length > 0 ? (
+            {messages?.length > 0 ? (
                 <FlatList
                     ref={scrollViewRef}
-                    data={messages}
+                    data={messages || []}
                     renderItem={renderMessage}
                     keyExtractor={(item, index) => item.id || index.toString()}
                     style={styles.messagesList}

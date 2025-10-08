@@ -191,7 +191,9 @@ const PhoneVerify = ({ navigation, route }) => {
         Toast.show({
           type: 'success',
           text1: 'Success',
-          text2: 'OTP has been sent Successfully.',
+          text2: `OTP has been sent Successfully. ${resendResult.data?.otp}`,
+
+          // text2: 'OTP has been sent Successfully.',
           position: 'top',
           visibilityTime: 4000,
         });

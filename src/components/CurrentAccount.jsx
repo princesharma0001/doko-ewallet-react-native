@@ -39,6 +39,7 @@ const CurrentAccount = ({ navigation }) => {
   const [transactions, setTransactions] = useState([]);
   console.log("sdagasdgasd", transactions);
   const [showSearchUsernameModal, setShowSearchUsernameModal] = useState(false);
+  const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
 
   const [isTransactionsLoading, setIsTransactionsLoading] = useState(false);
   const [transactionsError, setTransactionsError] = useState(null);
@@ -221,14 +222,35 @@ const CurrentAccount = ({ navigation }) => {
   };
 
   const getTransactionType = (transaction) => {
-    if (transaction.type === 'CHAT_PAYMENT_RECEIVE') {
-      const senderName = transaction?.userId?.firstName || transaction?.sender?.username || 'Unknown Sender';
-      const receiverName = transaction?.receiverId?.username || transaction?.receiverId?.firstName || 'Unknown Receiver';
+    console.log("sdfsdafsda", transaction);
+
+    // if (transaction.type === 'CHAT_PAYMENT_SEND') {
+    const senderName =
+      transaction?.userId?.username ||
+      transaction?.userId?.firstName ||
+      transaction?.userId?.firstName ||
+      'Unknown Sender';
+
+    const receiverName =
+      transaction?.receiverId?.username ||
+      transaction?.receiverId?.firstName ||
+      transaction?.receiverId?.username ||
+      transaction?.receiverId?.firstName ||
+      'Unknown Receiver';
+
+    if (transaction?.category === "TRANSFER" && transaction?.type !== "DEPOSIT") {
       return `Sent to ${receiverName}`;
-    } else if (transaction.type === 'deposit') {
-      return 'Wallet Deposit';
+
+    } else if (transaction?.category === "INCOME" && transaction?.type !== "DEPOSIT") {
+      return `Received from ${receiverName}`;
+    } else if (transaction?.type === "DEPOSIT") {
+
+      return `Wallet Deposit`;
     }
-    return transaction.description || 'Transaction';
+    return `Transaction with`;
+
+
+
   };
 
 
@@ -237,7 +259,7 @@ const CurrentAccount = ({ navigation }) => {
     const currency = transaction.currency;
     const symbol = currency === 'NPR' ? '₨' : '$';
 
-    if (transaction.type === 'transfer' && transaction.subType === 'sent') {
+    if (transaction.category === "TRANSFER") {
       return `-${symbol}${amount}`;
     } else {
       return `+${symbol}${amount}`;

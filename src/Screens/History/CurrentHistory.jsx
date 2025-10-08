@@ -19,7 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import LinearGradient from 'react-native-linear-gradient';
-import { authService } from '../../services/apiService';
+import { authService, transactionHistoryService } from '../../services/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CurrentHistory = () => {
@@ -41,14 +41,7 @@ const CurrentHistory = () => {
     // Fetch transactions from API
     const fetchTransactions = async (fromDateParam = null, toDateParam = null) => {
         try {
-            console.log('fetchTransactions called with:', {
-                fromDateParam,
-                toDateParam,
-                fromDateType: typeof fromDateParam,
-                toDateType: typeof toDateParam,
-                fromDateIsDate: fromDateParam instanceof Date,
-                toDateIsDate: toDateParam instanceof Date
-            });
+      
             
             setIsLoading(true);
             setError(null);
@@ -59,10 +52,10 @@ const CurrentHistory = () => {
                 return;
             }
 
-            const result = await authService.getTransactionList(token, fromDateParam, toDateParam);
+      const result = await transactionHistoryService.getUserTransactionHistory(undefined, token);
             
             if (result.success) {
-                setTransactions(result.data?.docs || []);
+        setTransactions(result.docs || result.data?.docs || []);
                 console.log('Transactions fetched successfully:', result.data?.docs?.length || 0);
             } else {
                 setError(result.error || 'Failed to fetch transactions');
@@ -83,15 +76,15 @@ const CurrentHistory = () => {
             return transactions;
         } else if (selectedFilter === 'Pending') {
             return transactions.filter(transaction => 
-                transaction.status === 'PENDING' || 
-                transaction.status === 'pending' ||
-                transaction.status === 'INITIATED'
+                transaction.transactionStatus === 'PENDING' || 
+                transaction.transactionStatus === 'pending' ||
+                transaction.transactionStatus === 'INITIATED'
             );
         } else if (selectedFilter === 'Completed') {
             return transactions.filter(transaction => 
-                transaction.status === 'COMPLETED' || 
-                transaction.status === 'completed' ||
-                transaction.status === 'SUCCESS'
+                transaction.transactionStatus === 'COMPLETED' || 
+                transaction.transactionStatus === 'completed' ||
+                transaction.transactionStatus === 'SUCCESS'
             );
         }
         return transactions;
@@ -120,15 +113,28 @@ const CurrentHistory = () => {
     const filters = ['All', 'Pending', 'Completed'];
 
     // Helper functions for transaction formatting
-    const getTransactionType = (transaction) => {
-        if (transaction.type === 'transfer') {
-            return transaction.subType === 'sent' ? 'Transfer Sent' : 'Transfer Received';
-        } else if (transaction.type === 'deposit') {
-            return 'Wallet Deposit';
-        }
-        return transaction.description || 'Transaction';
-    };
+  const getTransactionType = (transaction) => {
+    const receiverName =
+      transaction?.receiverId?.username ||
+      transaction?.receiverId?.firstName ||
+      transaction?.receiverId?.username ||
+      transaction?.receiverId?.firstName ||
+      'Unknown Receiver';
 
+    if (transaction?.category === "TRANSFER" && transaction?.type !== "DEPOSIT") {
+      return `Sent to ${receiverName}`;
+
+    } else if (transaction?.category === "INCOME" && transaction?.type !== "DEPOSIT") {
+      return `Received from ${receiverName}`;
+    } else if (transaction?.type === "DEPOSIT") {
+
+      return `Wallet Deposit`;
+    }
+    return `Transaction with`;
+
+
+
+  };
     const getTransactionAmount = (transaction) => {
         const amount = transaction.amount;
         const currency = transaction.currency;
@@ -163,6 +169,11 @@ const CurrentHistory = () => {
         }
         return transaction.description || 'Transaction';
     };
+      const truncateText = (text, maxLength = 50) => {
+    if (!text) return "";
+    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+  };
+
 
     const getStatusColor = (status) => {
         switch (status?.toLowerCase()) {
@@ -410,7 +421,7 @@ const CurrentHistory = () => {
             marginBottom: theme.spacing.sm,
         },
         transactionTitle: {
-            fontSize: theme.typography.sizes.lg,
+            fontSize: theme.typography.sizes.md,
             fontWeight: theme.typography.weights.bold,
             flex: 1,
         },
@@ -620,7 +631,8 @@ const CurrentHistory = () => {
         <View key={transaction._id} style={[styles.transactionCard, { backgroundColor: theme.colors.card }]}>
             <View style={styles.cardHeader}>
                 <Text style={[styles.transactionTitle, { color: theme.colors.text }]}>
-                    {getTransactionType(transaction)}
+                    {transaction?.category}
+                  {/* {truncateText(getTransactionType(transaction), 40)} */}
                 </Text>
                 <Text style={[styles.transactionDate, { color: theme.colors.textSecondary }]}>
                     {formatTransactionDate(transaction.createdAt)}
@@ -628,7 +640,7 @@ const CurrentHistory = () => {
             </View>
 
             <Text style={[styles.recipientText, { color: theme.colors.text }]}>
-                {getTransactionDescription(transaction)}
+             {truncateText(getTransactionType(transaction), 40)}
             </Text>
 
             <View style={styles.transactionDetails}>
@@ -646,8 +658,8 @@ const CurrentHistory = () => {
                 </View>
                 <View style={styles.detailRow}>
                     <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Status</Text>
-                    <Text style={[styles.detailValue, { color: getStatusColor(transaction.status) }]}>
-                        {transaction.status}
+                    <Text style={[styles.detailValue, { color: getStatusColor(transaction.transactionStatus) }]}>
+                        {transaction.transactionStatus}
                     </Text>
                 </View>
                 {transaction.metadata?.fee && (
@@ -762,7 +774,7 @@ const CurrentHistory = () => {
                         </TouchableOpacity>
                     </View>
                 ) : getFilteredTransactions().length > 0 ? (
-                    getFilteredTransactions().map(renderTransactionCard)
+                    getFilteredTransactions()?.map(renderTransactionCard)
                 ) : (
                     <View style={styles.emptyContainer}>
                         <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
