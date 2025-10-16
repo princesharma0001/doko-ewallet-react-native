@@ -257,7 +257,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
                     style={styles.gradientButton}
                 >
                     <Text style={[styles.trialButtonText, { color: "#fff" }]}>
-                        Pay {planData?.formattedPrice || '$0.00'}/Month and Open Account
+                        Pay NPR {planData?.price || 0}/Month and Open Account
                     </Text>
                 </LinearGradient>
             </TouchableOpacity>
@@ -313,21 +313,21 @@ const SubscriptionDetails = ({ navigation, route }) => {
                                 {planData?.name || 'Plan'} Subscription
                             </Text>
                             <Text style={[styles.paymentItemAmount, { color: theme.colors.text }]}>
-                                {planData?.formattedPrice || '$0.00'}
+                                NPR {planData?.price || '$0.00'}
                             </Text>
                         </View>
 
-                        <View style={styles.paymentItem}>
+                        {/* <View style={styles.paymentItem}>
                             <Text style={[styles.paymentItemText, { color: theme.colors.text }]}>Opening Account Deposit</Text>
                             <Text style={[styles.paymentItemAmount, { color: theme.colors.text }]}>30.00$</Text>
-                        </View>
+                        </View> */}
 
                         <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
                         <View style={styles.totalPayment}>
                             <Text style={[styles.totalText, { color: theme.colors.text }]}>Total Payment</Text>
                             <Text style={[styles.totalAmount, { color: theme.colors.text }]}>
-                                ${(planData?.price || 0 + 30).toFixed(2)}
+                                NPR {(planData?.price || 0 + 30).toFixed(2)}
                             </Text>
                         </View>
                     </View>

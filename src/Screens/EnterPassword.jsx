@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import TouchID from 'react-native-touch-id';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authService } from '../services/apiService';
 import Toast from 'react-native-toast-message';
@@ -22,6 +23,7 @@ const { width, height } = Dimensions.get('window');
 
 const EnterPassword = ({ navigation, route }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
   const [passcode, setPasscode] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const { currentUser } = useAppSelector((state) => state.user);
@@ -48,13 +50,13 @@ const EnterPassword = ({ navigation, route }) => {
       if (biometryType) {
         // Authenticate with Face ID
         const result = await TouchID.authenticate(
-          'Use Face ID to unlock',
+          t('useFaceIdToUnlock'),
           {
-            title: 'Face ID Authentication',
-            subTitle: 'Use your face to unlock the app',
-            description: 'Place your face in front of the camera',
-            fallbackLabel: 'Use Passcode',
-            cancelLabel: 'Cancel',
+            title: t('faceIdAuthentication'),
+            subTitle: t('useFaceToUnlock'),
+            description: t('placeFaceInCamera'),
+            fallbackLabel: t('usePasscode'),
+            cancelLabel: t('cancel'),
           }
         );
 
@@ -70,9 +72,9 @@ const EnterPassword = ({ navigation, route }) => {
       console.log('Face ID authentication failed:', error);
       if (error.code !== 'UserCancel') {
         Alert.alert(
-          'Authentication Failed',
-          'Face ID authentication failed. Please try again or use passcode.',
-          [{ text: 'OK' }]
+          t('authenticationFailed'),
+          t('faceIdFailed'),
+          [{ text: t('ok') }]
         );
       }
     } finally {
@@ -82,12 +84,12 @@ const EnterPassword = ({ navigation, route }) => {
 
   const handleForgotPasscode = async () => {
     Alert.alert(
-      'Forgot Passcode?',
-      'We will send you a verification code to reset your passcode.',
+      t('forgotPasscodeTitle'),
+      t('sendVerificationCode'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Send Code',
+          text: t('sendCode'),
           style: 'default',
           onPress: async () => {
             try {
@@ -96,8 +98,8 @@ const EnterPassword = ({ navigation, route }) => {
               if (!identity) {
                 Toast.show({
                   type: 'error',
-                  text1: 'Error',
-                  text2: 'Identity not found. Please try again.',
+                  text1: t('error'),
+                  text2: t('identityNotFound'),
                   position: 'top',
                   visibilityTime: 3000,
                 });
@@ -112,8 +114,8 @@ const EnterPassword = ({ navigation, route }) => {
               if (result.success) {
                 Toast.show({
                   type: 'success',
-                  text1: 'Code Sent',
-                  text2: 'Verification code sent successfully',
+                  text1: t('codeSent'),
+                  text2: t('verificationCodeSent'),
                   position: 'top',
                   visibilityTime: 2000,
                 });
@@ -126,8 +128,8 @@ const EnterPassword = ({ navigation, route }) => {
               } else {
                 Toast.show({
                   type: 'error',
-                  text1: 'Failed',
-                  text2: result.error || 'Failed to send verification code',
+                  text1: t('failed'),
+                  text2: result.error || t('failedToSendCode'),
                   position: 'top',
                   visibilityTime: 3000,
                 });
@@ -136,8 +138,8 @@ const EnterPassword = ({ navigation, route }) => {
               console.error('Forgot passcode error:', error);
               Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: 'An unexpected error occurred',
+                text1: t('error'),
+                text2: t('unexpectedError'),
                 position: 'top',
                 visibilityTime: 3000,
               });
@@ -224,8 +226,8 @@ const EnterPassword = ({ navigation, route }) => {
           if (!identity) {
             Toast.show({
               type: 'error',
-              text1: 'Error',
-              text2: 'Identity not found. Please go back and enter your email/phone/username.',
+              text1: t('error'),
+              text2: t('identityNotFoundGoBack'),
               position: 'top',
               visibilityTime: 4000,
             });
@@ -243,8 +245,8 @@ const EnterPassword = ({ navigation, route }) => {
             }
             Toast.show({
               type: 'success',
-              text1: 'Success',
-              text2: 'Logged in successfully!',
+              text1: t('success'),
+              text2: t('loggedInSuccessfully'),
               position: 'top',
               visibilityTime: 2000,
             });
@@ -255,8 +257,8 @@ const EnterPassword = ({ navigation, route }) => {
           } else {
             Toast.show({
               type: 'error',
-              text1: 'Login failed',
-              text2: result.error || 'Invalid credentials. Please try again.',
+              text1: t('loginFailed'),
+              text2: result.error || t('invalidCredentials'),
               position: 'top',
               visibilityTime: 4000,
             });
@@ -267,8 +269,8 @@ const EnterPassword = ({ navigation, route }) => {
 
           Toast.show({
             type: 'error',
-            text1: 'Error',
-            text2: 'An unexpected error occurred. Please try again.',
+            text1: t('error'),
+            text2: t('unexpectedError'),
             position: 'top',
             visibilityTime: 4000,
           });
@@ -291,10 +293,10 @@ const EnterPassword = ({ navigation, route }) => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.welcomeText, { color: theme.colors.text }]}>
-            Welcome Back {currentUser?.firstName ?? route.params?.userData?.firstName ?? "User"}!
+            {t('welcomeBack')} {currentUser?.firstName ?? route.params?.userData?.firstName ?? t('user')}!
           </Text>
 
-          <Text style={[styles.title, { color: theme.colors.text }]}>Enter Passcode</Text>
+          <Text style={[styles.title, { color: theme.colors.text }]}>{t('enterPasscode')}</Text>
         </View>
 
         {/* Passcode Dots */}
@@ -313,7 +315,7 @@ const EnterPassword = ({ navigation, route }) => {
           onPress={handleForgotPasscode}
           activeOpacity={0.7}
         >
-          <Text style={styles.forgotPasscodeText}>Forgot your passcode?</Text>
+          <Text style={styles.forgotPasscodeText}>{t('forgotPasscode')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

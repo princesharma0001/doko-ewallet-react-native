@@ -10,6 +10,7 @@ import {
   Dimensions,
   TouchableHighlight,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -163,10 +164,10 @@ const TransferModal = ({ visible, onClose, onSelectRecipient }) => {
       type: 'search-result'
     };
 
-    await createIndividualChat(userId, userId,userName);
+    await createIndividualChat(userId, userId, userName);
   };
 
-  const createIndividualChat = async (participantId, userId,userName) => {
+  const createIndividualChat = async (participantId, userId, userName) => {
     if (!authToken) {
       Toast.show({
         type: 'error',
@@ -459,7 +460,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 20,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: Platform.OS === 'android' ? 0 : 12,
     borderRadius: 50,
   },
   searchInput: {

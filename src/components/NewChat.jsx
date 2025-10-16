@@ -13,7 +13,8 @@ import {
     FlatList,
     ActivityIndicator,
     Animated,
-    Keyboard
+    Keyboard,
+    Platform
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
@@ -275,7 +276,7 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
     };
 
     const SkeletonChatItem = () => (
-        <View style={[styles.chatItem, { backgroundColor: theme.colors.surface }]}> 
+        <View style={[styles.chatItem, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.chatItemContent}>
                 <Animated.View
                     style={[styles.skeletonAvatar, { backgroundColor: theme.colors.border, opacity: pulse }]}
@@ -297,6 +298,9 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
         container: {
             flex: 1,
             backgroundColor: theme.colors.background,
+            paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+
+            // paddingTop: Platform.OS === 'ios' ? 0 : 60,
         },
         statusBar: {
             backgroundColor: theme.colors.background,
@@ -417,7 +421,7 @@ const NewChat = ({ onBackPress, onCreateChannel }) => {
             flexDirection: 'row',
             alignItems: 'center',
             paddingHorizontal: 16,
-            paddingVertical: 12,
+            paddingVertical: Platform.OS === "android" ? 0 : 12,
             borderRadius: 50,
             marginBottom: 16,
             marginHorizontal: 20

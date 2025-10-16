@@ -15,6 +15,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Toast from 'react-native-toast-message';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { authService } from '../services/apiService';
@@ -24,6 +25,7 @@ const { width, height } = Dimensions.get('window');
 
 const PhoneVerify = ({ navigation, route }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { userPhoneNumber, selectedCountry, userData, phone } = route.params || {};
   const [otp, setOtp] = useState(['', '', '', '']);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -82,7 +84,7 @@ const PhoneVerify = ({ navigation, route }) => {
 
     // Only show error if OTP is empty or incomplete
     if (!completeOtp || completeOtp.length !== 4) {
-      setErrorMessage('Please enter OTP');
+      setErrorMessage(t('pleaseEnterOtp'));
       return;
     }
 
@@ -100,8 +102,8 @@ const PhoneVerify = ({ navigation, route }) => {
       if (!identity) {
         Toast.show({
           type: 'error',
-          text1: 'Error',
-          text2: 'User identity not found. Please try signing up again.',
+          text1: t('error'),
+          text2: t('userIdentityNotFound'),
           position: 'top',
           visibilityTime: 4000,
         });
@@ -117,8 +119,8 @@ const PhoneVerify = ({ navigation, route }) => {
 
         Toast.show({
           type: 'success',
-          text1: 'Success',
-          text2: 'Phone number verified successfully!',
+          text1: t('success'),
+          text2: t('phoneNumberVerified'),
           position: 'top',
           visibilityTime: 3000,
         });
@@ -138,8 +140,8 @@ const PhoneVerify = ({ navigation, route }) => {
 
         Toast.show({
           type: 'error',
-          text1: 'Error',
-          text2: verifyResult.error || 'Invalid OTP. Please try again.',
+          text1: t('error'),
+          text2: verifyResult.error || t('invalidOtp'),
           position: 'top',
           visibilityTime: 4000,
         });
@@ -154,8 +156,8 @@ const PhoneVerify = ({ navigation, route }) => {
 
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'An unexpected error occurred. Please try again.',
+        text1: t('error'),
+        text2: t('unexpectedError'),
         position: 'top',
         visibilityTime: 4000,
       });
@@ -176,8 +178,8 @@ const PhoneVerify = ({ navigation, route }) => {
       if (!identity) {
         Toast.show({
           type: 'error',
-          text1: 'Error',
-          text2: 'User identity not found. Please try signing up again.',
+          text1: t('error'),
+          text2: t('userIdentityNotFound'),
           position: 'top',
           visibilityTime: 4000,
         });
@@ -190,8 +192,8 @@ const PhoneVerify = ({ navigation, route }) => {
       if (resendResult.success) {
         Toast.show({
           type: 'success',
-          text1: 'Success',
-          text2: `OTP has been sent Successfully. ${resendResult.data?.otp}`,
+          text1: t('success'),
+          text2: `${t('otpSentSuccessfully')} ${resendResult.data?.otp}`,
 
           // text2: 'OTP has been sent Successfully.',
           position: 'top',
@@ -200,8 +202,8 @@ const PhoneVerify = ({ navigation, route }) => {
       } else {
         Toast.show({
           type: 'error',
-          text1: 'Error',
-          text2: resendResult.error || 'Failed to resend code. Please try again.',
+          text1: t('error'),
+          text2: resendResult.error || t('failedToResendCode'),
           position: 'top',
           visibilityTime: 4000,
         });
@@ -210,8 +212,8 @@ const PhoneVerify = ({ navigation, route }) => {
       console.error('Error resending OTP:', error);
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'An unexpected error occurred. Please try again.',
+        text1: t('error'),
+        text2: t('unexpectedError'),
         position: 'top',
         visibilityTime: 4000,
       });
@@ -282,7 +284,7 @@ const PhoneVerify = ({ navigation, route }) => {
                 },
               ]}
             >
-              Phone Verification
+{t('phoneVerification')}
             </Text>
 
             {/* Description */}
@@ -297,7 +299,7 @@ const PhoneVerify = ({ navigation, route }) => {
                 },
               ]}
             >
-              Please enter 4-digit verification code sent to {userPhoneNumber || '+91XXXXXXXX22'}
+{t('enterVerificationCode')} {userPhoneNumber || '+91XXXXXXXX22'}
             </Text>
 
             {/* OTP Input Fields */}
@@ -347,7 +349,7 @@ const PhoneVerify = ({ navigation, route }) => {
                   },
                 ]}
               >
-                Didn't receive the code?
+{t('didntReceiveCode')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -376,7 +378,7 @@ const PhoneVerify = ({ navigation, route }) => {
                         },
                       ]}
                     >
-                      Verifying...
+{t('verifying')}
                     </Text>
                   </View>
                 ) : (
@@ -390,7 +392,7 @@ const PhoneVerify = ({ navigation, route }) => {
                       },
                     ]}
                   >
-                    Submit
+{t('submit')}
                   </Text>
                 )}
               </LinearGradient>

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 
@@ -18,6 +19,7 @@ const { width } = Dimensions.get('window');
 
 const Settings = ({ navigation }) => {
   const { theme, isDarkMode, setTheme } = useTheme();
+  const { language, changeLanguage, t } = useLanguage();
   const [fontSize, setFontSize] = useState(75);
   const [fontWeight, setFontWeight] = useState(60);
 
@@ -36,11 +38,11 @@ const Settings = ({ navigation }) => {
       <TouchableOpacity onPress={handleBack} style={styles.backButton}>
         <AntDesign name="arrowleft" size={24} color={theme.colors.text} />
       </TouchableOpacity>
-      <Text style={[styles.headerTitle, { 
+      <Text style={[styles.headerTitle, {
         fontFamily: theme.typography.fontFamily,
-        color: theme.colors.text 
+        color: theme.colors.text
       }]}>
-        Setting
+        {t('settings')}
       </Text>
     </View>
   );
@@ -50,11 +52,11 @@ const Settings = ({ navigation }) => {
       <View style={[styles.searchBar, { backgroundColor: theme.colors.surface }]}>
         <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
         <TextInput
-          style={[styles.searchInput, { 
+          style={[styles.searchInput, {
             fontFamily: theme.typography.fontFamily,
-            color: theme.colors.text 
+            color: theme.colors.text
           }]}
-          placeholder="Search"
+          placeholder={t('search')}
           placeholderTextColor={theme.colors.textSecondary}
         />
       </View>
@@ -63,11 +65,11 @@ const Settings = ({ navigation }) => {
 
   const renderDisplaySection = () => (
     <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { 
+      <Text style={[styles.sectionTitle, {
         fontFamily: theme.typography.fontFamily,
-        color: theme.colors.text 
+        color: theme.colors.text
       }]}>
-        Display
+        {t('display')}
       </Text>
       <View style={styles.modeContainer}>
         <TouchableOpacity
@@ -78,19 +80,19 @@ const Settings = ({ navigation }) => {
           ]}
           onPress={() => setTheme('light')}
         >
-          <Ionicons 
-            name="sunny" 
-            size={24} 
-            color={!isDarkMode ? theme.colors.primary : theme.colors.text} 
+          <Ionicons
+            name="sunny"
+            size={24}
+            color={!isDarkMode ? theme.colors.primary : theme.colors.text}
           />
           <Text style={[
             styles.modeText,
-            { 
+            {
               fontFamily: theme.typography.fontFamily,
               color: !isDarkMode ? theme.colors.primary : theme.colors.text
             }
           ]}>
-            Light Mode
+            {t('lightMode')}
           </Text>
           <View style={[
             styles.radioButton,
@@ -111,19 +113,19 @@ const Settings = ({ navigation }) => {
           ]}
           onPress={() => setTheme('dark')}
         >
-          <Ionicons 
-            name="moon" 
-            size={24} 
-            color={isDarkMode ? theme.colors.primary : theme.colors.text} 
+          <Ionicons
+            name="moon"
+            size={24}
+            color={isDarkMode ? theme.colors.primary : theme.colors.text}
           />
           <Text style={[
             styles.modeText,
-            { 
+            {
               fontFamily: theme.typography.fontFamily,
               color: isDarkMode ? theme.colors.primary : theme.colors.text
             }
           ]}>
-            Dark Mode
+            {t('darkMode')}
           </Text>
           <View style={[
             styles.radioButton,
@@ -139,31 +141,109 @@ const Settings = ({ navigation }) => {
     </View>
   );
 
+  const renderLanguageSection = () => (
+    <View style={styles.section}>
+      <Text style={[styles.sectionTitle, {
+        fontFamily: theme.typography.fontFamily,
+        color: theme.colors.text
+      }]}>
+        {t('language')}
+      </Text>
+      <View style={styles.modeContainer}>
+        <TouchableOpacity
+          style={[
+            styles.modeCard,
+            { backgroundColor: theme.colors.surface },
+            language === 'en' && styles.selectedModeCard
+          ]}
+          onPress={() => changeLanguage('en')}
+        >
+          <Ionicons
+            name="globe"
+            size={24}
+            color={language === 'en' ? theme.colors.primary : theme.colors.text}
+          />
+          <Text style={[
+            styles.modeText,
+            {
+              fontFamily: theme.typography.fontFamily,
+              color: language === 'en' ? theme.colors.primary : theme.colors.text
+            }
+          ]}>
+            {t('english')}
+          </Text>
+          <View style={[
+            styles.radioButton,
+            { borderColor: theme.colors.border },
+            language === 'en' && styles.selectedRadioButton
+          ]}>
+            {language === 'en' && (
+              <View style={[styles.radioButtonInner, { backgroundColor: theme.colors.primary }]} />
+            )}
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.modeCard,
+            { backgroundColor: theme.colors.surface },
+            language === 'ne' && styles.selectedModeCard
+          ]}
+          onPress={() => changeLanguage('ne')}
+        >
+          <Ionicons
+            name="globe"
+            size={24}
+            color={language === 'ne' ? theme.colors.primary : theme.colors.text}
+          />
+          <Text style={[
+            styles.modeText,
+            {
+              fontFamily: theme.typography.fontFamily,
+              color: language === 'ne' ? theme.colors.primary : theme.colors.text
+            }
+          ]}>
+            {t('nepali')}
+          </Text>
+          <View style={[
+            styles.radioButton,
+            { borderColor: theme.colors.border },
+            language === 'ne' && styles.selectedRadioButton
+          ]}>
+            {language === 'ne' && (
+              <View style={[styles.radioButtonInner, { backgroundColor: theme.colors.primary }]} />
+            )}
+          </View>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   const renderFontSizeSection = () => (
     <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { 
+      <Text style={[styles.sectionTitle, {
         fontFamily: theme.typography.fontFamily,
-        color: theme.colors.text 
+        color: theme.colors.text
       }]}>
         Font Size
       </Text>
       <View style={styles.sliderContainer}>
         <View style={[styles.sliderTrack, { backgroundColor: theme.colors.border }]}>
-          <View style={[styles.sliderProgress, { 
+          <View style={[styles.sliderProgress, {
             width: `${fontSize}%`,
-            backgroundColor: theme.colors.primary 
+            backgroundColor: theme.colors.primary
           }]} />
-          <TouchableOpacity 
-            style={[styles.sliderThumb, { 
+          <TouchableOpacity
+            style={[styles.sliderThumb, {
               left: `${fontSize}%`,
-              backgroundColor: theme.colors.primary 
+              backgroundColor: theme.colors.primary
             }]}
             onPress={() => setFontSize(Math.min(100, fontSize + 10))}
           />
         </View>
-        <Text style={[styles.sliderValue, { 
+        <Text style={[styles.sliderValue, {
           fontFamily: theme.typography.fontFamily,
-          color: theme.colors.primary 
+          color: theme.colors.primary
         }]}>{fontSize}%</Text>
       </View>
     </View>
@@ -171,34 +251,34 @@ const Settings = ({ navigation }) => {
 
   const renderFontWeightSection = () => (
     <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { 
+      <Text style={[styles.sectionTitle, {
         fontFamily: theme.typography.fontFamily,
-        color: theme.colors.text 
+        color: theme.colors.text
       }]}>
         Font Weight
       </Text>
       <View style={styles.sliderContainer}>
         <View style={[styles.sliderTrack, { backgroundColor: theme.colors.border }]}>
-          <View style={[styles.sliderProgress, { 
+          <View style={[styles.sliderProgress, {
             width: `${fontWeight}%`,
-            backgroundColor: theme.colors.primary 
+            backgroundColor: theme.colors.primary
           }]} />
-          <TouchableOpacity 
-            style={[styles.sliderThumb, { 
+          <TouchableOpacity
+            style={[styles.sliderThumb, {
               left: `${fontWeight}%`,
-              backgroundColor: theme.colors.primary 
+              backgroundColor: theme.colors.primary
             }]}
             onPress={() => setFontWeight(Math.min(100, fontWeight + 10))}
           />
         </View>
-        <Text style={[styles.sliderValue, { 
+        <Text style={[styles.sliderValue, {
           fontFamily: theme.typography.fontFamily,
-          color: theme.colors.primary 
+          color: theme.colors.primary
         }]}>{fontWeight}%</Text>
       </View>
-      <Text style={[styles.exampleText, { 
+      <Text style={[styles.exampleText, {
         fontFamily: theme.typography.fontFamily,
-        color: theme.colors.textSecondary 
+        color: theme.colors.textSecondary
       }]}>
         E.g., Lorem ipsum is a dummy Text.
       </Text>
@@ -208,11 +288,11 @@ const Settings = ({ navigation }) => {
   const renderApplyButton = () => (
     <View style={styles.applyButtonContainer}>
       <TouchableOpacity style={[styles.applyButton, { backgroundColor: theme.colors.primary }]} onPress={handleApply}>
-        <Text style={[styles.applyButtonText, { 
+        <Text style={[styles.applyButtonText, {
           fontFamily: theme.typography.fontFamily,
-          color: '#FFFFFF' 
+          color: '#FFFFFF'
         }]}>
-          Apply
+          {t('apply')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -220,24 +300,25 @@ const Settings = ({ navigation }) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <StatusBar 
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'} 
-        backgroundColor={theme.colors.background} 
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={theme.colors.background}
       />
-      
+
       {renderHeader()}
       {renderSearchBar()}
-      
-      <ScrollView 
+
+      <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {renderDisplaySection()}
+        {renderLanguageSection()}
         {/* {renderFontSizeSection()} */}
         {/* {renderFontWeightSection()} */}
       </ScrollView>
-      
+
       {renderApplyButton()}
     </SafeAreaView>
   );

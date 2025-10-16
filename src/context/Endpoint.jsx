@@ -1,4 +1,4 @@
-const url = "https://1f9dq437-8000.inc1.devtunnels.ms/"; //  url
+const url = "https://backend.dokowallet.com/"; //  url
 
 
 const ApiConfig = {

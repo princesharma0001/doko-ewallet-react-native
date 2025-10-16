@@ -11,6 +11,7 @@ import { Provider } from 'react-redux';
 import Toast from 'react-native-toast-message';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { LanguageProvider } from './src/context/LanguageContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { store } from './src/store';
 
@@ -42,7 +43,9 @@ function App() {
           urlScheme="doko-ewallet" // Replace with your URL scheme
         >
           <ThemeProvider>
-            <AppContent />
+            <LanguageProvider>
+              <AppContent />
+            </LanguageProvider>
           </ThemeProvider>
         </StripeProvider>
       </SafeAreaProvider>

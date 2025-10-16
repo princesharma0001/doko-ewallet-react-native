@@ -411,7 +411,7 @@ const NotificationList = ({ navigation }) => {
         </View>
 
         {/* Search Bar */}
-        <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}>
+        {/* <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}>
           <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
           <TextInput
             style={[styles.searchInput, { color: theme.colors.text }]}
@@ -420,7 +420,7 @@ const NotificationList = ({ navigation }) => {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
-        </View>
+        </View> */}
 
         {/* Loading State - Skeletons */}
         <ScrollView style={{ flex: 1, paddingHorizontal: 20 }}>

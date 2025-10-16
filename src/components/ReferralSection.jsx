@@ -18,7 +18,7 @@ const { width, height } = Dimensions.get('window');
 
 const ReferralSection = ({ onBackPress, onSendLink }) => {
   const { theme, isDarkMode } = useTheme();
-const navigation = useNavigation();
+  const navigation = useNavigation();
   // Mock data - replace with actual data from props or state
   const referralData = {
     timeLeft: '100 days',
@@ -41,6 +41,8 @@ const navigation = useNavigation();
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,
+      paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+
     },
     statusBar: {
       backgroundColor: theme.colors.background,
@@ -210,7 +212,7 @@ const navigation = useNavigation();
           <View style={styles.headerContent}>
             <TouchableOpacity
               style={styles.backButton}
-              onPress={()=> navigation.goBack()}
+              onPress={() => navigation.goBack()}
               activeOpacity={0.7}
             >
               <Icon
@@ -263,7 +265,7 @@ const navigation = useNavigation();
 
           <View style={styles.friendsContainer}>
             {referralData.friends.map((friend) => (
-              <TouchableOpacity key={friend.id} onPress={()=> navigation.navigate("ReferralDetails")} style={{ alignItems: 'center' }}>
+              <TouchableOpacity key={friend.id} onPress={() => navigation.navigate("ReferralDetails")} style={{ alignItems: 'center' }}>
                 <View style={styles.friendAvatar}>
                   <Text style={styles.friendInitials}>{friend.initials}</Text>
                 </View>

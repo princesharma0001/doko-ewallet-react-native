@@ -351,6 +351,11 @@ const styles = StyleSheet.create({
     footer: {
         paddingHorizontal: 20,
         paddingBottom: 20,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
     },
     footerText: {
         fontSize: 12,

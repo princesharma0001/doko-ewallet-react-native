@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Toast from 'react-native-toast-message';
@@ -22,6 +23,7 @@ const { width, height } = Dimensions.get('window');
 
 const Login = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const [phoneNumber, setPhoneNumber] = useState('');
     const [error, setError] = useState('');
     const [isChecking, setIsChecking] = useState(false);
@@ -32,7 +34,7 @@ const Login = ({ navigation }) => {
     const handleCreateAccount = async () => {
         const identity = phoneNumber.trim();
         if (!identity) {
-            setError('Please enter your phone number, email, or username');
+            setError(t('pleaseEnterPhoneNumber'));
             return;
         }
         setError('');
@@ -42,8 +44,8 @@ const Login = ({ navigation }) => {
             console.log("Sdgsadgsad", result);
 
             if (result.success) {
-                console.log("adfgadsgsad",result);
-                
+                console.log("adfgadsgsad", result);
+
                 navigation.replace('EnterPassword', {
                     identity: identity,
                     userData: result?.data
@@ -53,8 +55,8 @@ const Login = ({ navigation }) => {
             } else {
                 Toast.show({
                     type: 'error',
-                    text1: 'Error',
-                    text2: result.error || 'User not found.',
+                    text1: t('error'),
+                    text2: result.error || t('userNotFound'),
                     position: 'top',
                     visibilityTime: 4000,
                 });
@@ -62,8 +64,8 @@ const Login = ({ navigation }) => {
         } catch (e) {
             Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: 'An unexpected error occurred. Please try again.',
+                text1: t('error'),
+                text2: t('unexpectedError'),
                 position: 'top',
                 visibilityTime: 4000,
             });
@@ -110,7 +112,7 @@ const Login = ({ navigation }) => {
                             },
                         ]}
                     >
-                        Sign in to your Account
+                        {t('signInToAccount')}
                     </Text>
 
                     {/* Input Section */}
@@ -126,7 +128,7 @@ const Login = ({ navigation }) => {
                                         fontSize: theme.typography.sizes.md,
                                     },
                                 ]}
-                                placeholder="Enter phone or email or username"
+                                placeholder={t('enterPhoneEmailUsername')}
                                 placeholderTextColor="#9E9E9E"
                                 value={phoneNumber}
                                 onChangeText={(text) => {
@@ -163,7 +165,7 @@ const Login = ({ navigation }) => {
                                         },
                                     ]}
                                 >
-                                    {isChecking ? 'Checking...' : 'Next'}
+                                    {t(isChecking ? 'checking' : 'next')}
                                 </Text>
                             </LinearGradient>
                         </TouchableOpacity>
@@ -180,7 +182,7 @@ const Login = ({ navigation }) => {
                                     },
                                 ]}
                             >
-                                Don’t have an account?{' '}
+                                {t('dontHaveAccount')}{' '}
                             </Text>
                             <TouchableOpacity onPress={handleSignIn}>
                                 <Text
@@ -194,7 +196,7 @@ const Login = ({ navigation }) => {
                                         },
                                     ]}
                                 >
-                                    Sign up
+                                    {t('signUp')}
                                 </Text>
                             </TouchableOpacity>
                         </View>

@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Toast from 'react-native-toast-message';
@@ -24,6 +25,7 @@ const { width, height } = Dimensions.get('window');
 
 const EmailVerify = ({ navigation, route }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const [verificationCode, setVerificationCode] = useState(['', '', '', '',]);
     const [isResending, setIsResending] = useState(false);
     const [isVerifying, setIsVerifying] = useState(false);
@@ -59,15 +61,15 @@ const EmailVerify = ({ navigation, route }) => {
         const code = verificationCode.join('');
 
         if (code.length !== 4) {
-            setErrorMessage('Please enter the complete verification code');
+            setErrorMessage(t('pleaseEnterCompleteCode'));
             return;
         }
 
         if (!email) {
             Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: 'Email not found. Please go back and try again.',
+                text1: t('error'),
+                text2: t('emailNotFound'),
                 position: 'top',
                 visibilityTime: 4000,
             });
@@ -82,8 +84,8 @@ const EmailVerify = ({ navigation, route }) => {
             if (result.success) {
                 Toast.show({
                     type: 'success',
-                    text1: 'Success',
-                    text2: 'Email verified successfully!',
+                    text1: t('success'),
+                    text2: t('emailVerifiedSuccessfully'),
                     position: 'top',
                     visibilityTime: 3000,
                 });
@@ -96,8 +98,8 @@ const EmailVerify = ({ navigation, route }) => {
             } else {
                 Toast.show({
                     type: 'error',
-                    text1: 'Error',
-                    text2: result.error || 'Invalid OTP. Please try again.',
+                    text1: t('error'),
+                    text2: result.error || t('invalidOtp'),
                     position: 'top',
                     visibilityTime: 4000,
                 });
@@ -106,8 +108,8 @@ const EmailVerify = ({ navigation, route }) => {
         } catch (err) {
             Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: 'An unexpected error occurred. Please try again.',
+                text1: t('error'),
+                text2: t('unexpectedError'),
                 position: 'top',
                 visibilityTime: 4000,
             });
@@ -121,8 +123,8 @@ const EmailVerify = ({ navigation, route }) => {
         if (!email) {
             Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: 'Email not found. Please go back and try again.',
+                text1: t('error'),
+                text2: t('emailNotFound'),
                 position: 'top',
                 visibilityTime: 4000,
             });
@@ -135,8 +137,8 @@ const EmailVerify = ({ navigation, route }) => {
             if (result.success) {
                 Toast.show({
                     type: 'success',
-                    text1: 'Success',
-                    text2: `OTP has been sent Successfully. ${result.data?.otp}`,
+                    text1: t('success'),
+                    text2: `${t('otpSentSuccessfully')} ${result.data?.otp}`,
 
                     // text2: 'OTP has been sent Successfully.',
                     position: 'top',
@@ -145,8 +147,8 @@ const EmailVerify = ({ navigation, route }) => {
             } else {
                 Toast.show({
                     type: 'error',
-                    text1: 'Error',
-                    text2: result.error || 'Failed to resend code. Please try again.',
+                    text1: t('error'),
+                    text2: result.error || t('failedToResendCode'),
                     position: 'top',
                     visibilityTime: 4000,
                 });
@@ -154,8 +156,8 @@ const EmailVerify = ({ navigation, route }) => {
         } catch (err) {
             Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: 'An unexpected error occurred. Please try again.',
+                text1: t('error'),
+                text2: t('unexpectedError'),
                 position: 'top',
                 visibilityTime: 4000,
             });
@@ -207,7 +209,7 @@ const EmailVerify = ({ navigation, route }) => {
                                     },
                                 ]}
                             >
-                                Verify your email
+{t('verifyYourEmail')}
                             </Text>
 
                             {/* Description */}
@@ -222,7 +224,7 @@ const EmailVerify = ({ navigation, route }) => {
                                     },
                                 ]}
                             >
-                                We've sent a 6-digit verification code to your email address. Please enter it below.
+{t('sentVerificationCode')}
                             </Text>
 
                             {/* Verification Code Inputs */}
@@ -277,7 +279,7 @@ const EmailVerify = ({ navigation, route }) => {
                                     },
                                 ]}
                             >
-                                {isResending ? 'Resending...' : "Didn't receive the code?"}
+{t(isResending ? 'resending' : 'didntReceiveCode')}
                             </Text>
                         </TouchableOpacity>
                         {/* Verify Button */}
@@ -303,7 +305,7 @@ const EmailVerify = ({ navigation, route }) => {
                                         },
                                     ]}
                                 >
-                                    {isVerifying ? 'Verifying...' : 'Verify Email'}
+{t(isVerifying ? 'verifying' : 'verifyEmail')}
                                 </Text>
                             </LinearGradient>
                         </TouchableOpacity>

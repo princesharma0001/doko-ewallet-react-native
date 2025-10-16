@@ -17,7 +17,7 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
-import QRCodeScanner from 'react-native-qrcode-scanner';
+import { Camera, useCameraDevices, useCodeScanner } from 'react-native-vision-camera';
 import QRCode from 'react-native-qrcode-svg';
 import { useAppSelector } from '../hooks/redux';
 
@@ -31,9 +31,15 @@ const QrCodeSendRecive = ({ navigation }) => {
     const [qrData, setQrData] = useState(''); // Replace with actual user data
     const [isLoading, setIsLoading] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
-    // const [flashMode, setFlashMode] = useState(QRCodeScanner.Constants.FlashMode.off);
+    const [flashMode, setFlashMode] = useState('off');
     const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
     const qrCodeRef = useRef(null);
+    const cameraRef = useRef(null);
+    
+    // Get camera devices
+    const devices = useCameraDevices();
+    const device = devices.back;
+    
     console.log("adfgadsgsa", currentUser);
 
     useEffect(() => {
@@ -42,35 +48,28 @@ const QrCodeSendRecive = ({ navigation }) => {
     }, []);
 
     const getCameraPermissions = async () => {
-        if (Platform.OS === 'android') {
-            try {
-                const has = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.CAMERA);
-                if (has) {
-                    setHasPermission(true);
-                    return true;
-                }
-
-                const granted = await PermissionsAndroid.request(
-                    PermissionsAndroid.PERMISSIONS.CAMERA,
-                    {
-                        title: 'Camera Permission',
-                        message: 'DOKO needs access to your camera to scan QR codes',
-                        buttonNeutral: 'Ask Me Later',
-                        buttonNegative: 'Cancel',
-                        buttonPositive: 'OK',
-                    }
+        try {
+            const permission = await Camera.requestCameraPermission();
+            const isGranted = permission === 'authorized';
+            setHasPermission(isGranted);
+            
+            if (!isGranted) {
+                Alert.alert(
+                    'Permission Required',
+                    'Camera permission is required to scan QR codes. Please enable it in your device settings.',
+                    [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Open Settings', onPress: () => Linking.openSettings() }
+                    ]
                 );
-                const isGranted = granted === PermissionsAndroid.RESULTS.GRANTED;
-                setHasPermission(isGranted);
-                return isGranted;
-            } catch (err) {
-                console.warn(err);
-                setHasPermission(false);
-                return false;
             }
-        } else {
-            setHasPermission(true);
-            return true;
+            
+            return isGranted;
+        } catch (err) {
+            console.error('Camera permission error:', err);
+            setHasPermission(false);
+            Alert.alert('Error', 'Failed to request camera permission');
+            return false;
         }
     };
 
@@ -91,13 +90,21 @@ const QrCodeSendRecive = ({ navigation }) => {
         generateQRData();
     };
 
-    // const toggleFlash = () => {
-    //     setFlashMode(
-    //         flashMode === QRCodeScanner.Constants.FlashMode.off
-    //             ? QRCodeScanner.Constants.FlashMode.torch
-    //             : QRCodeScanner.Constants.FlashMode.off
-    //     );
-    // };
+    const toggleFlash = () => {
+        setFlashMode(flashMode === 'off' ? 'on' : 'off');
+    };
+
+    // Configure code scanner
+    const codeScanner = useCodeScanner({
+        codeTypes: ['qr', 'ean-13'],
+        onCodeScanned: (codes) => {
+            if (scanned) return; // Prevent multiple scans
+            const code = codes[0];
+            if (code) {
+                handleBarCodeScanned({ data: code.value });
+            }
+        }
+    });
 
     const generateQRData = () => {
         // Create a more user-friendly QR data format
@@ -192,16 +199,47 @@ const QrCodeSendRecive = ({ navigation }) => {
 
 
     const handleBarCodeScanned = (e) => {
+        if (scanned) return; // Prevent multiple scans
+        
         setScanned(true);
         console.log('QR Code scanned:', e.data);
 
         try {
-            const parsedData = JSON.parse(e.data);
+            // Check if the scanned data is valid JSON
+            let parsedData;
+            try {
+                parsedData = JSON.parse(e.data);
+            } catch (parseError) {
+                console.log("QR data is not JSON, treating as plain text:", e.data);
+                // Handle non-JSON QR codes
+                Alert.alert(
+                    'QR Code Detected',
+                    `Scanned: ${e.data}\n\nThis doesn't appear to be a DOKO payment QR code.`,
+                    [
+                        {
+                            text: 'Try Again',
+                            onPress: () => setScanned(false),
+                        },
+                        {
+                            text: 'Cancel',
+                            onPress: () => setActiveMode(null),
+                        },
+                    ]
+                );
+                return;
+            }
+
             console.log("Parsed data:", parsedData);
 
             // Check if it's a DOKO QR code
             if (parsedData.app === 'DOKO' && parsedData.action === 'send_money') {
-                navigation.navigate("AddRecieveQr", { data: parsedData });
+                // Navigate to the next screen with the parsed data
+                if (navigation && navigation.navigate) {
+                    navigation.navigate("AddRecieveQr", { data: parsedData });
+                } else {
+                    console.error("Navigation not available");
+                    Alert.alert('Error', 'Navigation not available');
+                }
             } else {
                 // Handle other QR codes or show error
                 Alert.alert(
@@ -220,10 +258,10 @@ const QrCodeSendRecive = ({ navigation }) => {
                 );
             }
         } catch (error) {
-            console.error("Error parsing QR data:", error);
+            console.error("Error processing QR data:", error);
             Alert.alert(
-                'Invalid QR Code',
-                'This QR code is not a valid DOKO payment code. Please scan a DOKO QR code.',
+                'Error',
+                'Failed to process QR code. Please try again.',
                 [
                     {
                         text: 'Try Again',
@@ -337,43 +375,47 @@ const QrCodeSendRecive = ({ navigation }) => {
                                 <Text style={styles.permissionButtonText}>Grant Permission</Text>
                             </TouchableOpacity>
                         </View>
-                    ) : (
+                    ) : device ? (
                         <View style={styles.scannerWrapper}>
-                            <QRCodeScanner
-                                onRead={scanned ? undefined : handleBarCodeScanned}
-                                // flashMode={flashMode}
-                                topContent={
-                                    <View style={styles.scannerOverlay}>
-                                        <Text style={styles.scannerInstruction}>
-                                            Position the QR code within the frame
-                                        </Text>
-                                    </View>
-                                }
-                                bottomContent={
-                                    <View style={styles.scannerBottomContent}>
-                                        <Text style={styles.scannerBottomText}>
-                                            Scan a QR code to send money
-                                        </Text>
-                                    </View>
-                                }
-                                cameraStyle={styles.camera}
-                                showMarker={true}
-                                markerStyle={styles.markerStyle}
-                                reactivate={!scanned}
-                                reactivateTimeout={2000}
+                            <Camera
+                                ref={cameraRef}
+                                style={styles.camera}
+                                device={device}
+                                isActive={activeMode === 'send'}
+                                codeScanner={codeScanner}
+                                torch={flashMode}
                             />
                             
+                            {/* Scanner Overlay */}
+                            <View style={styles.scannerOverlay}>
+                                <Text style={styles.scannerInstruction}>
+                                    Position the QR code within the frame
+                                </Text>
+                            </View>
+                            
+                            {/* Scanner Bottom Content */}
+                            <View style={styles.scannerBottomContent}>
+                                <Text style={styles.scannerBottomText}>
+                                    Scan a QR code to send money
+                                </Text>
+                            </View>
+                            
                             {/* Flash Toggle Button */}
-                            {/* <TouchableOpacity
+                            <TouchableOpacity
                                 style={styles.flashButton}
                                 onPress={toggleFlash}
                             >
                                 <Ionicons
-                                    name={flashMode === QRCodeScanner.Constants.FlashMode.off ? "flash-off" : "flash"}
+                                    name={flashMode === 'off' ? "flash-off" : "flash"}
                                     size={24}
                                     color="#FFFFFF"
                                 />
-                            </TouchableOpacity> */}
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <View style={styles.permissionContainer}>
+                            <Ionicons name="camera-outline" size={64} color="#FF6B6B" />
+                            <Text style={styles.permissionText}>Camera not available</Text>
                         </View>
                     )}
                 </View>
@@ -565,6 +607,8 @@ const styles = StyleSheet.create({
     },
     camera: {
         flex: 1,
+        width: '100%',
+        height: '100%',
     },
     flashButton: {
         position: 'absolute',
@@ -578,23 +622,32 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     scannerOverlay: {
+        position: 'absolute',
+        top: 50,
+        left: 0,
+        right: 0,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 20,
-        paddingTop: 20,
     },
     scannerInstruction: {
         color: '#FFFFFF',
         fontSize: 16,
         textAlign: 'center',
         fontFamily: 'System',
-        marginTop: 10,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
     },
     scannerBottomContent: {
+        position: 'absolute',
+        bottom: 50,
+        left: 0,
+        right: 0,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 20,
-        paddingBottom: 20,
     },
     scannerBottomText: {
         color: '#FFFFFF',
@@ -602,6 +655,10 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontFamily: 'System',
         opacity: 0.8,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
     },
     markerStyle: {
         borderColor: '#169BFF',

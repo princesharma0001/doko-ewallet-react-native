@@ -12,6 +12,7 @@ import {
   Image,
   TouchableHighlight,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -474,7 +475,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 20,
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: Platform.OS === 'ios' ? 8 : 0,
     borderRadius: 50,
   },
   searchInput: {

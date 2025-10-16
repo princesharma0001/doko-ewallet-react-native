@@ -12,6 +12,7 @@ import {
   Image,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -84,6 +85,7 @@ const countries = [
 
 const CountryPicker = ({ visible, onClose, onSelect, selectedCountry }) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredCountries, setFilteredCountries] = useState(countries);
   const slideAnim = useRef(new Animated.Value(height)).current;
@@ -211,7 +213,7 @@ const CountryPicker = ({ visible, onClose, onSelect, selectedCountry }) => {
                 },
               ]}
             >
-              Select Country
+{t('selectCountry')}
             </Text>
             <TouchableOpacity
               style={[styles.closeButton, { backgroundColor: theme.colors.border }]}
@@ -235,7 +237,7 @@ const CountryPicker = ({ visible, onClose, onSelect, selectedCountry }) => {
                     fontSize: theme.typography.sizes.md,
                   },
                 ]}
-                placeholder="Search"
+                placeholder={t('search')}
                 placeholderTextColor={theme.colors.textSecondary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}

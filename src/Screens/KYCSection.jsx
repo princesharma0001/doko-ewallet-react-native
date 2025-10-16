@@ -10,6 +10,7 @@ import {
     StatusBar,
     Dimensions,
     ScrollView,
+    Platform,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -272,6 +273,8 @@ const KYCSection = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+
     },
     scrollView: {
         flex: 1,
@@ -320,7 +323,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: 22,
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: Platform.OS === 'android' ? 0 : 12,
         // borderWidth: 1,
     },
     searchIcon: {

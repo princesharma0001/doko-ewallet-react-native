@@ -1,0 +1,1 @@
+/Users/omarbaltaji/Desktop/doko-ewallet-react-native/android/app/build/intermediates/cxx/RelWithDebInfo/5856561o/obj/x86

@@ -12,7 +12,8 @@ import {
     TextInput,
     FlatList,
     Alert,
-    ActivityIndicator
+    ActivityIndicator,
+    Platform
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
@@ -288,6 +289,7 @@ const NewGroup = () => {
         container: {
             flex: 1,
             backgroundColor: theme.colors.background,
+            paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
         },
         statusBar: {
             backgroundColor: theme.colors.background,
@@ -374,7 +376,7 @@ const NewGroup = () => {
             backgroundColor: theme.colors.surface,
             borderRadius: 50,
             paddingHorizontal: theme.spacing.lg,
-            paddingVertical: theme.spacing.md,
+            paddingVertical: Platform.OS === 'ios' ? theme.spacing.sm : 0,
             marginBottom: theme.spacing.lg,
             // borderWidth: 1,
             // borderColor: theme.colors.border,

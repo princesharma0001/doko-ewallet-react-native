@@ -87,6 +87,56 @@ if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   file(TOUCH_NOCREATE "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/android/app/.cxx/Debug/5y3s242q/armeabi-v7a/CMakeFiles/cmake.verify_globs")
 endif()
 
+# react_codegen_SRCS at /Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/@stripe/stripe-react-native/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/@stripe/stripe-react-native/android/build/generated/source/codegen/jni/*.cpp")
+set(OLD_GLOB
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/@stripe/stripe-react-native/android/build/generated/source/codegen/jni/rnstripe-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/android/app/.cxx/Debug/5y3s242q/armeabi-v7a/CMakeFiles/cmake.verify_globs")
+endif()
+
+# react_codegen_SRCS at /Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/@stripe/stripe-react-native/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/@stripe/stripe-react-native/android/build/generated/source/codegen/jni/react/renderer/components/rnstripe/*.cpp")
+set(OLD_GLOB
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/@stripe/stripe-react-native/android/build/generated/source/codegen/jni/react/renderer/components/rnstripe/ComponentDescriptors.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/@stripe/stripe-react-native/android/build/generated/source/codegen/jni/react/renderer/components/rnstripe/EventEmitters.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/@stripe/stripe-react-native/android/build/generated/source/codegen/jni/react/renderer/components/rnstripe/Props.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/@stripe/stripe-react-native/android/build/generated/source/codegen/jni/react/renderer/components/rnstripe/ShadowNodes.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/@stripe/stripe-react-native/android/build/generated/source/codegen/jni/react/renderer/components/rnstripe/States.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/@stripe/stripe-react-native/android/build/generated/source/codegen/jni/react/renderer/components/rnstripe/rnstripeJSI-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/android/app/.cxx/Debug/5y3s242q/armeabi-v7a/CMakeFiles/cmake.verify_globs")
+endif()
+
+# react_codegen_SRCS at /Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-contacts/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-contacts/android/build/generated/source/codegen/jni/*.cpp")
+set(OLD_GLOB
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-contacts/android/build/generated/source/codegen/jni/RNContactsSpec-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/android/app/.cxx/Debug/5y3s242q/armeabi-v7a/CMakeFiles/cmake.verify_globs")
+endif()
+
+# react_codegen_SRCS at /Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-contacts/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-contacts/android/build/generated/source/codegen/jni/react/renderer/components/RNContactsSpec/*.cpp")
+set(OLD_GLOB
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-contacts/android/build/generated/source/codegen/jni/react/renderer/components/RNContactsSpec/ComponentDescriptors.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-contacts/android/build/generated/source/codegen/jni/react/renderer/components/RNContactsSpec/EventEmitters.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-contacts/android/build/generated/source/codegen/jni/react/renderer/components/RNContactsSpec/Props.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-contacts/android/build/generated/source/codegen/jni/react/renderer/components/RNContactsSpec/RNContactsSpecJSI-generated.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-contacts/android/build/generated/source/codegen/jni/react/renderer/components/RNContactsSpec/ShadowNodes.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-contacts/android/build/generated/source/codegen/jni/react/renderer/components/RNContactsSpec/States.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/android/app/.cxx/Debug/5y3s242q/armeabi-v7a/CMakeFiles/cmake.verify_globs")
+endif()
+
 # react_codegen_SRCS at /Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
 file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/*.cpp")
 set(OLD_GLOB
@@ -106,6 +156,56 @@ set(OLD_GLOB
   "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/react/renderer/components/rngesturehandler_codegen/ShadowNodes.cpp"
   "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/react/renderer/components/rngesturehandler_codegen/States.cpp"
   "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/react/renderer/components/rngesturehandler_codegen/rngesturehandler_codegenJSI-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/android/app/.cxx/Debug/5y3s242q/armeabi-v7a/CMakeFiles/cmake.verify_globs")
+endif()
+
+# react_codegen_SRCS at /Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/*.cpp")
+set(OLD_GLOB
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/RNImagePickerSpec-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/android/app/.cxx/Debug/5y3s242q/armeabi-v7a/CMakeFiles/cmake.verify_globs")
+endif()
+
+# react_codegen_SRCS at /Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/react/renderer/components/RNImagePickerSpec/*.cpp")
+set(OLD_GLOB
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/react/renderer/components/RNImagePickerSpec/ComponentDescriptors.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/react/renderer/components/RNImagePickerSpec/EventEmitters.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/react/renderer/components/RNImagePickerSpec/Props.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/react/renderer/components/RNImagePickerSpec/RNImagePickerSpecJSI-generated.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/react/renderer/components/RNImagePickerSpec/ShadowNodes.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-image-picker/android/build/generated/source/codegen/jni/react/renderer/components/RNImagePickerSpec/States.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/android/app/.cxx/Debug/5y3s242q/armeabi-v7a/CMakeFiles/cmake.verify_globs")
+endif()
+
+# react_codegen_SRCS at /Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/*.cpp")
+set(OLD_GLOB
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/RNPermissionsSpec-generated.cpp"
+  )
+if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
+  message("-- GLOB mismatch!")
+  file(TOUCH_NOCREATE "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/android/app/.cxx/Debug/5y3s242q/armeabi-v7a/CMakeFiles/cmake.verify_globs")
+endif()
+
+# react_codegen_SRCS at /Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/CMakeLists.txt:9 (file)
+file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/react/renderer/components/RNPermissionsSpec/*.cpp")
+set(OLD_GLOB
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/react/renderer/components/RNPermissionsSpec/ComponentDescriptors.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/react/renderer/components/RNPermissionsSpec/EventEmitters.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/react/renderer/components/RNPermissionsSpec/Props.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/react/renderer/components/RNPermissionsSpec/RNPermissionsSpecJSI-generated.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/react/renderer/components/RNPermissionsSpec/ShadowNodes.cpp"
+  "/Users/omarbaltaji/Desktop/doko-ewallet-react-native/node_modules/react-native-permissions/android/build/generated/source/codegen/jni/react/renderer/components/RNPermissionsSpec/States.cpp"
   )
 if(NOT "${NEW_GLOB}" STREQUAL "${OLD_GLOB}")
   message("-- GLOB mismatch!")

@@ -17,6 +17,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Toast from 'react-native-toast-message';
 import CountryPicker from '../components/CountryPicker';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authService } from '../services/apiService';
 
@@ -25,9 +26,10 @@ const { width, height } = Dimensions.get('window');
 const Signup = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { theme,isDarkMode } = useTheme();
-  console.log("adgsadgasd",isDarkMode);
-  
+  const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
+  console.log("adgsadgasd", isDarkMode);
+
 
   const [selectedCountry, setSelectedCountry] = useState({
     name: 'Poland Gold',
@@ -41,8 +43,8 @@ const Signup = ({ navigation }) => {
     if (!phoneNumber.trim()) {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Please enter your phone number',
+        text1: t('error'),
+        text2: t('pleaseEnterPhoneNumber'),
         position: 'top',
         visibilityTime: 3000,
       });
@@ -52,8 +54,8 @@ const Signup = ({ navigation }) => {
     if (phoneNumber.length < 10) {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Please enter a valid phone number',
+        text1: t('error'),
+        text2: t('pleaseEnterValidPhoneNumber'),
         position: 'top',
         visibilityTime: 3000,
       });
@@ -82,23 +84,23 @@ const Signup = ({ navigation }) => {
 
       if (signupResult.success) {
         console.log('Signup successful:', signupResult.data);
-        
+
         // Call resend OTP API with the email from signup response
         const resendOTPResult = await authService.resendOTP(signupResult?.data?.phone);
-        
+
         if (resendOTPResult.success) {
-          console.log('OTP sent successfully',resendOTPResult);
+          console.log('OTP sent successfully', resendOTPResult);
           Toast.show({
             type: 'success',
-            text1: 'Success',
-            text2: `Account created successfully! ${resendOTPResult.data?.otp} OTP has been sent to your phone.`,
+            text1: t('success'),
+            text2: `${t('accountCreatedSuccessfully')} ${resendOTPResult.data?.otp} ${t('otpSentToPhone')}`,
             position: 'top',
             visibilityTime: 4000,
           });
-          
+
           // Navigate to PhoneVerify with the created user data
           navigation.navigate('PhoneVerify', {
-            userPhoneNumber:phoneNumber,
+            userPhoneNumber: phoneNumber,
             selectedCountry: selectedCountry,
             userData: signupResult.data,
             phone: signupResult.data.phone
@@ -107,7 +109,7 @@ const Signup = ({ navigation }) => {
           console.error('Resend OTP failed:', resendOTPResult);
           Toast.show({
             type: 'error',
-            text1: 'Error',
+            text1: t('error'),
             text2: resendOTPResult.error,
             position: 'top',
             visibilityTime: 4000,
@@ -117,8 +119,8 @@ const Signup = ({ navigation }) => {
         console.error('Signup failed:', signupResult.error);
         Toast.show({
           type: 'error',
-          text1: 'Error',
-          text2: signupResult.error || 'Failed to create account. Please try again.',
+          text1: t('error'),
+          text2: signupResult.error || t('failedToCreateAccount'),
           position: 'top',
           visibilityTime: 4000,
         });
@@ -127,8 +129,8 @@ const Signup = ({ navigation }) => {
       console.error('Unexpected error:', error);
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'An unexpected error occurred. Please try again.',
+        text1: t('error'),
+        text2: t('unexpectedError'),
         position: 'top',
         visibilityTime: 4000,
       });
@@ -166,7 +168,7 @@ const Signup = ({ navigation }) => {
           <View style={styles.header}>
             <View style={styles.logoContainer}>
               <Image
-                source={isDarkMode ? require('../assets/Images/Doko_with_Bamboo_Net_Logo.png') :require('../assets/Images/BlackLogo.png') }
+                source={isDarkMode ? require('../assets/Images/Doko_with_Bamboo_Net_Logo.png') : require('../assets/Images/BlackLogo.png')}
                 style={styles.logo}
                 resizeMode="contain"
               />
@@ -186,7 +188,7 @@ const Signup = ({ navigation }) => {
               },
             ]}
           >
-            Let's Get Started!
+            {t('letsGetStarted')}
           </Text>
 
           {/* Input Section */}
@@ -232,7 +234,7 @@ const Signup = ({ navigation }) => {
                     fontSize: theme.typography.sizes.md,
                   },
                 ]}
-                placeholder="Enter your phone number"
+                placeholder={t('enterYourPhoneNumber')}
                 placeholderTextColor="#9E9E9E"
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
@@ -276,7 +278,7 @@ const Signup = ({ navigation }) => {
                         },
                       ]}
                     >
-                      Creating Account...
+                      {t('creatingAccount')}
                     </Text>
                   </View>
                 ) : (
@@ -290,7 +292,7 @@ const Signup = ({ navigation }) => {
                       },
                     ]}
                   >
-                    Create Account
+                    {t('createAccount')}
                   </Text>
                 )}
               </LinearGradient>
@@ -308,7 +310,7 @@ const Signup = ({ navigation }) => {
                   },
                 ]}
               >
-                Already have an account?{' '}
+                {t('alreadyHaveAccount')}{' '}
               </Text>
               <TouchableOpacity onPress={handleSignIn}>
                 <Text
@@ -322,7 +324,7 @@ const Signup = ({ navigation }) => {
                     },
                   ]}
                 >
-                  Sign In
+                  {t('signIn')}
                 </Text>
               </TouchableOpacity>
             </View>

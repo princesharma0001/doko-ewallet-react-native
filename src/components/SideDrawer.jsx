@@ -11,6 +11,7 @@ import {
   Platform,
   ImageBackground,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -22,15 +23,17 @@ import { useAppDispatch, useAppSelector } from '../store';
 import { getProfile, logout } from '../store/slices/userSlice';
 import { getActiveSubscription } from '../store/slices/subscriptionSlice';
 import Toast from 'react-native-toast-message';
+import LogoutModal from './LogoutModal';
 
 const { width } = Dimensions.get('window');
 
 const SideDrawer = ({ isOpen, onClose, navigation }) => {
   const { theme } = useTheme();
   const [activeItem, setActiveItem] = useState('Dashboard');
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
   const { activeSubscription, isSubscriptionLoading, subscriptionError } = useAppSelector((state) => state.subscription);
-console.log("");
+  console.log("");
 
   const dispatch = useAppDispatch();
 
@@ -69,55 +72,48 @@ console.log("");
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // Clear token from AsyncStorage
-              await AsyncStorage.removeItem('dokoToken');
-              await AsyncStorage.removeItem('dokoDeviceToken');
+    setShowLogoutModal(true);
+  };
 
-              // Clear Redux state
-              dispatch(logout());
+  const handleConfirmLogout = async () => {
+    try {
+      // Clear token from AsyncStorage
+      await AsyncStorage.removeItem('dokoToken');
+      await AsyncStorage.removeItem('dokoDeviceToken');
 
-              // Show success message
-              Toast.show({
-                type: 'success',
-                text1: 'Logged out successfully',
-                text2: 'You have been logged out',
-                position: 'top',
-                visibilityTime: 2000,
-              });
+      // Clear Redux state
+      dispatch(logout());
 
-              // Close drawer and navigate to login
-              onClose();
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'Login' }],
-              });
-            } catch (error) {
-              console.error('Logout error:', error);
-              Toast.show({
-                type: 'error',
-                text1: 'Logout failed',
-                text2: 'Please try again',
-                position: 'top',
-                visibilityTime: 2000,
-              });
-            }
-          },
-        },
-      ]
-    );
+      // Show success message
+      Toast.show({
+        type: 'success',
+        text1: 'Logged out successfully',
+        text2: 'You have been logged out',
+        position: 'top',
+        visibilityTime: 2000,
+      });
+
+      // Close modal and drawer, then navigate to login
+      setShowLogoutModal(false);
+      onClose();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Logout failed',
+        text2: 'Please try again',
+        position: 'top',
+        visibilityTime: 2000,
+      });
+    }
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   return (
@@ -244,6 +240,12 @@ console.log("");
         </View>
       </View>
 
+      {/* Logout Modal */}
+      <LogoutModal
+        isVisible={showLogoutModal}
+        onClose={handleCancelLogout}
+        onConfirm={handleConfirmLogout}
+      />
     </Modal>
   );
 };
@@ -252,7 +254,7 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     flexDirection: 'row',
-    paddingTop: 20
+    // paddingTop: 20
 
   },
   backdrop: {
@@ -267,7 +269,7 @@ const styles = StyleSheet.create({
   },
   stickyHeaderWrapper: {
     position: 'absolute',
-    top: 0,
+    top: Platform.OS === 'android' ? 0 : 50,
     width: '100%',
     height: 100,
     zIndex: 10,
@@ -280,7 +282,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 50,
+    // paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+
     justifyContent: 'space-between',
   },
   avatar: {

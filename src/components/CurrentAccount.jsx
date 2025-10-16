@@ -246,6 +246,9 @@ const CurrentAccount = ({ navigation }) => {
     } else if (transaction?.type === "DEPOSIT") {
 
       return `Wallet Deposit`;
+    } else if (transaction?.category === "EXPENSE") {
+
+      return `Subscription Purchase`;
     }
     return `Transaction with`;
 

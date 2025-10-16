@@ -17,6 +17,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Toast from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { authService } from '../services/apiService';
@@ -25,6 +26,7 @@ const { width, height } = Dimensions.get('window');
 
 const EnterNameSign = ({ navigation, route }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { userData, phoneNumber, selectedCountry } = route.params || {};
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -66,67 +68,67 @@ const EnterNameSign = ({ navigation, route }) => {
 
     // First Name validation
     if (!firstName.trim()) {
-      newErrors.firstName = 'First name is required';
+      newErrors.firstName = t('firstNameRequired');
     } else if (firstName.trim().length < 2) {
-      newErrors.firstName = 'First name must be at least 2 characters';
+      newErrors.firstName = t('firstNameMinLength');
     }
 
     // Last Name validation
     if (!lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
+      newErrors.lastName = t('lastNameRequired');
     } else if (lastName.trim().length < 2) {
-      newErrors.lastName = 'Last name must be at least 2 characters';
+      newErrors.lastName = t('lastNameMinLength');
     }
 
     // Date of Birth validation
     if (!day.trim()) {
-      newErrors.day = 'Day required';
+      newErrors.day = t('dayRequired');
     } else if (!/^\d{1,2}$/.test(day) || parseInt(day) < 1 || parseInt(day) > 31) {
-      newErrors.day = 'Please enter a valid day (1-31)';
+      newErrors.day = t('validDay');
     }
 
     if (!month.trim()) {
-      newErrors.month = 'Month required';
+      newErrors.month = t('monthRequired');
     } else if (!/^\d{1,2}$/.test(month) || parseInt(month) < 1 || parseInt(month) > 12) {
-      newErrors.month = 'Please enter a valid month (1-12)';
+      newErrors.month = t('validMonth');
     }
 
     if (!year.trim()) {
-      newErrors.year = 'Year required';
+      newErrors.year = t('yearRequired');
     } else if (!/^\d{4}$/.test(year) || parseInt(year) < 1900 || parseInt(year) > new Date().getFullYear()) {
-      newErrors.year = 'Please enter a valid year';
+      newErrors.year = t('validYear');
     }
 
     // Email validation
     if (!email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = t('validEmail');
     }
 
     // Address validation
     if (!city.trim()) {
-      newErrors.city = 'City is required';
+      newErrors.city = t('cityRequired');
     } else if (city.trim().length < 2) {
-      newErrors.city = 'City must be at least 2 characters';
+      newErrors.city = t('cityMinLength');
     }
 
     if (!street.trim()) {
-      newErrors.street = 'Street is required';
+      newErrors.street = t('streetRequired');
     } else if (street.trim().length < 2) {
-      newErrors.street = 'Street must be at least 2 characters';
+      newErrors.street = t('streetMinLength');
     }
 
     if (!buildingName.trim()) {
-      newErrors.buildingName = 'Building name is required';
+      newErrors.buildingName = t('buildingNameRequired');
     } else if (buildingName.trim().length < 2) {
-      newErrors.buildingName = 'Building name must be at least 2 characters';
+      newErrors.buildingName = t('buildingNameMinLength');
     }
 
     if (!location.trim()) {
-      newErrors.location = 'Location is required';
+      newErrors.location = t('locationRequired');
     } else if (location.trim().length < 2) {
-      newErrors.location = 'Location must be at least 2 characters';
+      newErrors.location = t('locationMinLength');
     }
 
     setErrors(newErrors);
@@ -141,8 +143,8 @@ const EnterNameSign = ({ navigation, route }) => {
     if (!token) {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Authentication token not found. Please try again.',
+        text1: t('error'),
+        text2: t('authenticationTokenNotFound'),
         position: 'top',
         visibilityTime: 4000,
       });
@@ -188,8 +190,8 @@ const EnterNameSign = ({ navigation, route }) => {
 
         Toast.show({
           type: 'success',
-          text1: 'Success',
-          text2: 'Profile updated successfully!',
+          text1: t('success'),
+          text2: t('profileUpdatedSuccessfully'),
           position: 'top',
           visibilityTime: 3000,
         });
@@ -219,8 +221,8 @@ const EnterNameSign = ({ navigation, route }) => {
             if (resendResult.success) {
               Toast.show({
                 type: 'success',
-                text1: 'Success',
-                text2: `OTP has been sent Successfully. ${resendResult.data?.otp}`,
+                text1: t('success'),
+                text2: `${t('otpSentSuccessfully')} ${resendResult.data?.otp}`,
 
                 // text2: 'OTP has been sent Successfully.',
                 position: 'top',
@@ -229,8 +231,8 @@ const EnterNameSign = ({ navigation, route }) => {
             } else {
               Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: resendResult.error || 'Failed to resend OTP. You can try again.',
+                text1: t('error'),
+                text2: resendResult.error || t('failedToResendOtp'),
                 position: 'top',
                 visibilityTime: 4000,
               });
@@ -240,8 +242,8 @@ const EnterNameSign = ({ navigation, route }) => {
           console.error('Error resending OTP after profile update:', resendErr);
           Toast.show({
             type: 'error',
-            text1: 'Error',
-            text2: 'Could not resend OTP. Please try again.',
+            text1: t('error'),
+            text2: t('couldNotResendOtp'),
             position: 'top',
             visibilityTime: 4000,
           });
@@ -257,8 +259,8 @@ const EnterNameSign = ({ navigation, route }) => {
 
         Toast.show({
           type: 'error',
-          text1: 'Error',
-          text2: updateResult.error || 'Failed to update profile. Please try again.',
+          text1: t('error'),
+          text2: updateResult.error || t('failedToUpdateProfile'),
           position: 'top',
           visibilityTime: 4000,
         });
@@ -268,8 +270,8 @@ const EnterNameSign = ({ navigation, route }) => {
 
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'An unexpected error occurred. Please try again.',
+        text1: t('error'),
+        text2: t('unexpectedError'),
         position: 'top',
         visibilityTime: 4000,
       });
@@ -363,7 +365,7 @@ const EnterNameSign = ({ navigation, route }) => {
                   },
                 ]}
               >
-                Personal Information
+{t('personalInformation')}
               </Text>
 
               {/* Description */}
@@ -378,7 +380,7 @@ const EnterNameSign = ({ navigation, route }) => {
                   },
                 ]}
               >
-                Please provide your personal details and address information
+{t('providePersonalDetails')}
               </Text>
 
               {/* Input Fields */}
@@ -395,7 +397,7 @@ const EnterNameSign = ({ navigation, route }) => {
                     ]}
                     value={firstName}
                     onChangeText={(value) => handleInputChange('firstName', value)}
-                    placeholder="Enter first name"
+                    placeholder={t('enterFirstName')}
                     placeholderTextColor="#8C90BF"
                     autoCapitalize="words"
                     autoCorrect={false}
@@ -418,7 +420,7 @@ const EnterNameSign = ({ navigation, route }) => {
                     ]}
                     value={lastName}
                     onChangeText={(value) => handleInputChange('lastName', value)}
-                    placeholder="Enter last name"
+                    placeholder={t('enterLastName')}
                     placeholderTextColor="#8C90BF"
                     autoCapitalize="words"
                     autoCorrect={false}
@@ -430,7 +432,7 @@ const EnterNameSign = ({ navigation, route }) => {
                 </View>
 
                 {/* Date of Birth Section */}
-                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Date of Birth</Text>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('dateOfBirth')}</Text>
 
                 {/* Date of Birth Inputs */}
                 <View style={styles.dateOfBirthContainer}>
@@ -513,7 +515,7 @@ const EnterNameSign = ({ navigation, route }) => {
                     ]}
                     value={email}
                     onChangeText={(value) => handleInputChange('email', value)}
-                    placeholder="Enter email address"
+                    placeholder={t('enterEmailAddress')}
                     placeholderTextColor="#8C90BF"
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -526,7 +528,7 @@ const EnterNameSign = ({ navigation, route }) => {
                 </View>
 
                 {/* Address Section */}
-                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Address Information</Text>
+                <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{t('addressInformation')}</Text>
 
                 {/* City Input */}
                 <View style={styles.inputWrapper}>
@@ -540,7 +542,7 @@ const EnterNameSign = ({ navigation, route }) => {
                     ]}
                     value={city}
                     onChangeText={(value) => handleInputChange('city', value)}
-                    placeholder="Enter city"
+                    placeholder={t('enterCity')}
                     placeholderTextColor="#8C90BF"
                     autoCapitalize="words"
                     autoCorrect={false}
@@ -563,7 +565,7 @@ const EnterNameSign = ({ navigation, route }) => {
                     ]}
                     value={street}
                     onChangeText={(value) => handleInputChange('street', value)}
-                    placeholder="Enter street address"
+                    placeholder={t('enterStreetAddress')}
                     placeholderTextColor="#8C90BF"
                     autoCapitalize="words"
                     autoCorrect={false}
@@ -586,7 +588,7 @@ const EnterNameSign = ({ navigation, route }) => {
                     ]}
                     value={buildingName}
                     onChangeText={(value) => handleInputChange('buildingName', value)}
-                    placeholder="Enter building name"
+                    placeholder={t('enterBuildingName')}
                     placeholderTextColor="#8C90BF"
                     autoCapitalize="words"
                     autoCorrect={false}
@@ -609,7 +611,7 @@ const EnterNameSign = ({ navigation, route }) => {
                     ]}
                     value={location}
                     onChangeText={(value) => handleInputChange('location', value)}
-                    placeholder="Enter location/area"
+                    placeholder={t('enterLocationArea')}
                     placeholderTextColor="#8C90BF"
                     autoCapitalize="words"
                     autoCorrect={false}
@@ -656,7 +658,7 @@ const EnterNameSign = ({ navigation, route }) => {
                         },
                       ]}
                     >
-                      Updating Profile...
+{t('updatingProfile')}
                     </Text>
                   </View>
                 ) : (
@@ -670,7 +672,7 @@ const EnterNameSign = ({ navigation, route }) => {
                       },
                     ]}
                   >
-                    Continue
+{t('continue')}
                   </Text>
                 )}
               </LinearGradient>
