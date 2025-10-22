@@ -14,6 +14,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -29,6 +30,7 @@ const { width } = Dimensions.get('window');
 
 const SideDrawer = ({ isOpen, onClose, navigation }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [activeItem, setActiveItem] = useState('Dashboard');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
@@ -51,17 +53,17 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
 
   const menuItems = [
 
-    { id: 'Dashboard', route: "HomeScreen", label: 'Dashboard', icon: <Ionicons name="grid" size={20} color={theme.colors.text} /> },
-    { id: 'Wallet', label: 'Wallet', route: "Wallet", icon: <Ionicons name="wallet" size={20} color={theme.colors.text} /> },
-    { id: 'Profile', label: 'Profile', route: "ProfileSection", icon: <Ionicons name="person" size={20} color={theme.colors.text} /> },
-    { id: 'Chat', label: 'Chat', route: "NewChat", icon: <Ionicons name="chatbubble-ellipses" size={20} color={theme.colors.text} /> },
-    { id: 'Community', label: 'Community', route: "CommunitySection", icon: <Ionicons name="people" size={20} color={theme.colors.text} /> },
+    { id: 'Dashboard', route: "HomeScreen", label: t('dashboard'), icon: <Ionicons name="grid" size={20} color={theme.colors.text} /> },
+    { id: 'Wallet', label: t('wallet'), route: "Wallet", icon: <Ionicons name="wallet" size={20} color={theme.colors.text} /> },
+    { id: 'Profile', label: t('profile'), route: "ProfileSection", icon: <Ionicons name="person" size={20} color={theme.colors.text} /> },
+    { id: 'Chat', label: t('chat'), route: "NewChat", icon: <Ionicons name="chatbubble-ellipses" size={20} color={theme.colors.text} /> },
+    { id: 'Community', label: t('community'), route: "CommunitySection", icon: <Ionicons name="people" size={20} color={theme.colors.text} /> },
     // { id: 'Transaction', label: 'Transaction', route: "TransactionManagement", icon: <Feather name="repeat" size={20} color={theme.colors.text} /> },
     // { id: 'Finance', label: 'Finance', route: "HomeScreen", icon: <Ionicons name="cash" size={20} color={theme.colors.text} /> },
-    { id: 'Card', label: 'Card', route: "PhysicalCard", icon: <Ionicons name="card" size={20} color={theme.colors.text} /> },
-    { id: 'Notification', label: 'Notification', route: "Notification", icon: <Ionicons name="notifications" size={20} color={theme.colors.text} /> },
+    { id: 'Card', label: t('card'), route: "PhysicalCard", icon: <Ionicons name="card" size={20} color={theme.colors.text} /> },
+    { id: 'Notification', label: t('notification'), route: "Notification", icon: <Ionicons name="notifications" size={20} color={theme.colors.text} /> },
     // { id: 'Security', label: 'Security', route: "Login", icon: <Ionicons name="shield-checkmark" size={20} color={theme.colors.text} /> },
-    { id: 'Setting', label: 'Setting', route: 'Settings', icon: <Ionicons name="settings" size={20} color={theme.colors.text} /> },
+    { id: 'Setting', label: t('setting'), route: 'Settings', icon: <Ionicons name="settings" size={20} color={theme.colors.text} /> },
 
   ];
 
@@ -87,8 +89,8 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
       // Show success message
       Toast.show({
         type: 'success',
-        text1: 'Logged out successfully',
-        text2: 'You have been logged out',
+        text1: t('loggedOutSuccessfully'),
+        text2: t('youHaveBeenLoggedOut'),
         position: 'top',
         visibilityTime: 2000,
       });
@@ -104,8 +106,8 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
       console.error('Logout error:', error);
       Toast.show({
         type: 'error',
-        text1: 'Logout failed',
-        text2: 'Please try again',
+        text1: t('logoutFailed'),
+        text2: t('pleaseTryAgain'),
         position: 'top',
         visibilityTime: 2000,
       });
@@ -156,7 +158,7 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
               >
                 <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>
                   {isSubscriptionLoading ? '' :
-                    activeSubscription?.planId?.name || 'Get'} Plan
+                    activeSubscription?.planId?.name || t('getPlan')} {t('plan')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -217,7 +219,7 @@ const SideDrawer = ({ isOpen, onClose, navigation }) => {
                           },
                         ]}
                       >
-                        {item.label}
+                        {item.label.charAt(0).toUpperCase() + item.label.slice(1)}
                       </Text>
                     </View>
                     <AntDesign name="right" size={14} color={theme.colors.text} />

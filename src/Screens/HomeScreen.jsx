@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import BottomBar from '../components/BottomBar';
 import SideDrawer from '../components/SideDrawer';
 import AccountBottomSheet from '../components/AccountBottomSheet';
@@ -35,17 +36,18 @@ const { width, height } = Dimensions.get('window');
 const HomeScreen = () => {
 
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('home');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isAccountSheetVisible, setIsAccountSheetVisible] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState('card');
   const [currentView, setCurrentView] = useState('home'); // 'home' or 'currentAccount'
   const navigation = useNavigation();
-  const [activeFilter, setActiveFilter] = useState("All");
+  const [activeFilter, setActiveFilter] = useState(t('all'));
   const [contacts, setContacts] = useState([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState(false);
   const dispatch = useDispatch();
-  const filters = ["All", "Income", "Expenses"];
+  const filters = [t('all'), t('income'), t('expenses')];
 
   // Request contacts permission
   const requestContactsPermission = async () => {
@@ -54,11 +56,11 @@ const HomeScreen = () => {
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.READ_CONTACTS,
           {
-            title: 'Contacts Permission',
-            message: 'This app needs access to your contacts to show them in the app.',
-            buttonNeutral: 'Ask Me Later',
-            buttonNegative: 'Cancel',
-            buttonPositive: 'OK',
+            title: t('contactsPermission'),
+            message: t('thisAppNeedsAccessToYourContacts'),
+            buttonNeutral: t('askMeLater'),
+            buttonNegative: t('cancel'),
+            buttonPositive: t('ok'),
           }
         );
         return granted === PermissionsAndroid.RESULTS.GRANTED;
@@ -81,12 +83,12 @@ const HomeScreen = () => {
 
       if (!hasPermission) {
         Alert.alert(
-          'Permission Required',
-          'This app needs access to your contacts to show them. Please grant permission in Settings > Privacy & Security > Contacts.',
+          t('permissionRequired'),
+          t('thisAppNeedsAccessToYourContactsToShowThem'),
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: t('cancel'), style: 'cancel' },
             {
-              text: 'Open Settings', onPress: () => {
+              text: t('openSettings'), onPress: () => {
                 // This will open the app settings
                 console.log('User should open settings manually');
               }
@@ -104,14 +106,14 @@ const HomeScreen = () => {
 
         if (err) {
           console.error('Error fetching contacts:', err);
-          Alert.alert('Error', `Failed to fetch contacts: ${err.message || 'Unknown error'}`);
+          Alert.alert(t('error'), `${t('failedToFetchContacts')}: ${err.message || t('unknownError')}`);
           setIsLoadingContacts(false);
           return;
         }
 
         if (!contacts || contacts.length === 0) {
           console.log('No contacts found on device');
-          Alert.alert('No Contacts', 'No contacts found on your device. Please add some contacts to your phone first.');
+          Alert.alert(t('noContacts'), t('noContactsFoundOnYourDevicePleaseAddSome'));
           setContacts([]);
           setIsLoadingContacts(false);
           return;
@@ -125,10 +127,10 @@ const HomeScreen = () => {
               id: contact.recordID || `contact_${index}`,
               name: contact.displayName ||
                 `${contact.givenName || ''} ${contact.familyName || ''}`.trim() ||
-                'Unknown Contact',
+                t('unknownContact'),
               phone: contact.phoneNumbers && contact.phoneNumbers.length > 0
                 ? contact.phoneNumbers[0].number
-                : 'No phone number',
+                : t('noPhoneNumber'),
               email: contact.emailAddresses && contact.emailAddresses.length > 0
                 ? contact.emailAddresses[0].email
                 : '',
@@ -142,12 +144,12 @@ const HomeScreen = () => {
         setIsLoadingContacts(false);
 
         // Show success message
-        Alert.alert('Success', `Loaded ${processedContacts.length} contacts from your device!`);
+        Alert.alert(t('success'), `${t('loadedContactsFromYourDevice')} ${processedContacts.length}`);
       });
     } catch (error) {
       console.error('Error in fetchContacts:', error);
       setIsLoadingContacts(false);
-      Alert.alert('Error', `Failed to fetch contacts: ${error.message || 'Unknown error'}`);
+      Alert.alert(t('error'), `${t('failedToFetchContacts')}: ${error.message || t('unknownError')}`);
     }
   };
 
@@ -183,11 +185,11 @@ const HomeScreen = () => {
 
   const getAccountDisplayName = (accountId) => {
     const accountNames = {
-      current: 'Current Account',
-      crypto: 'Crypto Account',
-      card: 'Card Account',
+      current: t('currentAccount'),
+      crypto: t('cryptoAccount'),
+      card: t('cardAccount'),
     };
-    return accountNames[accountId] || 'Card Account';
+    return accountNames[accountId] || t('cardAccount');
   };
 
   const activities = [
@@ -300,7 +302,7 @@ const HomeScreen = () => {
           fontFamily: theme.typography.fontFamily,
           fontWeight: "700"
         }]}>
-          Total Balance
+          {t('totalBalance')}
         </Text>
         <TouchableOpacity>
           <Icon name="eye" size={16} color={theme.colors.text} />
@@ -341,7 +343,7 @@ const HomeScreen = () => {
           fontFamily: theme.typography.fontFamily,
           paddingTop: 8
         }]}>
-          Send
+          {t('send')}
         </Text>
       </TouchableOpacity>
 
@@ -355,7 +357,7 @@ const HomeScreen = () => {
           fontFamily: theme.typography.fontFamily,
           paddingTop: 8
         }]}>
-          Receive
+          {t('receive')}
         </Text>
       </TouchableOpacity>
     </View>
@@ -388,9 +390,9 @@ const HomeScreen = () => {
 
   const renderQuickStats = () => {
     const stats = [
-      { label: "Sent: UQ....R12F", value: "$3,428.20", onPress: () => console.log("Send pressed") },
-      { label: "Expenses", value: "$1,694.80", onPress: () => console.log("Expenses pressed") },
-      { label: "Wallets", value: "3", onPress: () => console.log("Wallets pressed") },
+      { label: t('sent'), value: "$3,428.20", onPress: () => console.log("Send pressed") },
+      { label: t('expenses'), value: "$1,694.80", onPress: () => console.log("Expenses pressed") },
+      { label: t('wallets'), value: "3", onPress: () => console.log("Wallets pressed") },
     ];
 
     return (
@@ -400,7 +402,7 @@ const HomeScreen = () => {
         paddingTop: 22
       }]}>
         <Text style={[styles.cardTitle, { color: theme.colors.text, fontFamily: theme.typography.fontFamily, paddingBottom: 6, fontWeight: "700" }]}>
-          Quick Stats
+          {t('quickStats')}
         </Text>
 
         {stats.map((item, index) => (
@@ -422,7 +424,7 @@ const HomeScreen = () => {
       paddingTop: 18
     }]}>
       <Text style={[styles.cardTitle, { color: theme.colors.text, fontFamily: theme.typography.fontFamily, fontWeight: '700' }]}>
-        Recent Activity
+        {t('recentActivity')}
       </Text>
 
       <View style={styles.filterButtons}>
@@ -433,7 +435,7 @@ const HomeScreen = () => {
               styles.filterButton,
               {
                 backgroundColor: activeFilter === filter ? theme.colors.primary : theme.colors.border,
-                paddingHorizontal: filter === "All" ? 35 : filter === "Income" ? 30 : 20,
+                paddingHorizontal: filter === t('all') ? 35 : filter === t('income') ? 30 : 20,
               },
             ]}
             onPress={() => setActiveFilter(filter)}
@@ -513,15 +515,15 @@ const HomeScreen = () => {
         ))
       ) : (
         <View style={{ padding: 20, alignItems: "center" }}>
-          <Text
-            style={{
-              color: theme.colors.textSecondary,
-              fontFamily: theme.typography.fontFamily,
-              fontSize: 16
-            }}
-          >
-            No recent activity found
-          </Text>
+            <Text
+              style={{
+                color: theme.colors.textSecondary,
+                fontFamily: theme.typography.fontFamily,
+                fontSize: 16
+              }}
+            >
+              {t('noRecentActivityFound')}
+            </Text>
         </View>
       )}
 
@@ -532,7 +534,7 @@ const HomeScreen = () => {
             color: theme.colors.text,
             fontFamily: theme.typography.fontFamily
           }]}>
-            See all
+            {t('seeAll')}
           </Text>
           <AntDesign name="right" size={20} color={theme.colors.text} />
 
@@ -555,7 +557,7 @@ const HomeScreen = () => {
             { color: theme.colors.text, fontFamily: theme.typography.fontFamily, fontWeight: "700", marginBottom: 15 },
           ]}
         >
-          My Wallet
+          {t('myWallet')}
         </Text>
 
         {/* Cards */}
@@ -572,7 +574,7 @@ const HomeScreen = () => {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                 <Image source={item.icon} resizeMode="contain" style={{ width: 60, height: 50, borderRadius: 8 }} />
                 <View>
-                  <Text style={{ color: theme.colors.text, fontWeight: "600", fontFamily: theme.typography.fontFamily }}>Balance</Text>
+                  <Text style={{ color: theme.colors.text, fontWeight: "600", fontFamily: theme.typography.fontFamily }}>{t('balance')}</Text>
                   <Text
                     style={{
                       color: theme.colors.text,
@@ -603,7 +605,7 @@ const HomeScreen = () => {
                 fontSize: 16
               }}
             >
-              No Wallet found
+              {t('noWalletFound')}
             </Text>
           </View>
         )}
@@ -634,7 +636,7 @@ const HomeScreen = () => {
                 fontWeight: "700",
                 fontFamily: theme.typography.fontFamily,
                 fontSize: 16
-              }}>Manage All Wallet</Text>
+              }}>{t('manageAllWallet')}</Text>
               <Text style={{
                 color: theme.colors.textSecondary,
                 fontSize: 12,
@@ -642,7 +644,7 @@ const HomeScreen = () => {
                 paddingTop: 5,
                 fontWeight: "500"
               }}>
-                Select Physical or Virtual
+                {t('selectPhysicalOrVirtual')}
               </Text>
             </View>
           </View>
@@ -658,26 +660,26 @@ const HomeScreen = () => {
       paddingTop: 18
     }]}>
       <Text style={[styles.cardTitle, { color: theme.colors.text, fontFamily: theme.typography.fontFamily, fontWeight: '700' }]}>
-        My Contact
+        {t('myContact')}
       </Text>
 
       {isLoadingContacts ? (
         <View style={styles.loadingContainer}>
           <Text style={[styles.loadingText, { color: theme.colors.textSecondary, fontFamily: theme.typography.fontFamily }]}>
-            Loading contacts...
+            {t('loadingContacts')}
           </Text>
         </View>
       ) : contacts.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={[styles.emptyText, { color: theme.colors.textSecondary, fontFamily: theme.typography.fontFamily }]}>
-            No contacts found on your device
+            {t('noContactsFoundOnYourDevice')}
           </Text>
           <TouchableOpacity
             style={[styles.refreshButton, { backgroundColor: theme.colors.primary }]}
             onPress={fetchContacts}
           >
             <Text style={[styles.refreshButtonText, { color: '#FFFFFF', fontFamily: theme.typography.fontFamily }]}>
-              Try Again
+              {t('tryAgain')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -711,7 +713,7 @@ const HomeScreen = () => {
                     color: theme.colors.textSecondary,
                     fontFamily: theme.typography.fontFamily
                   }]}>
-                    {contact.phone !== 'No phone number' ? contact.phone : (contact.email || 'No contact info')}
+                    {contact.phone !== t('noPhoneNumber') ? contact.phone : (contact.email || t('noContactInfo'))}
                   </Text>
                 </View>
               </View>
@@ -728,7 +730,7 @@ const HomeScreen = () => {
           color: theme.colors.text,
           fontFamily: theme.typography.fontFamily
         }]}>
-          View All Contact ({contacts.length})
+          {t('viewAllContact')} ({contacts.length})
         </Text>
         <AntDesign name="right" size={20} color={theme.colors.text} />
       </TouchableOpacity>

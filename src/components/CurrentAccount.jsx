@@ -19,6 +19,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useAppDispatch, useAppSelector } from '../store';
 import { getWalletList } from '../store/slices/walletSlice';
 import { authService, transactionHistoryService } from '../services/apiService';
@@ -30,6 +31,7 @@ import SearchUsernameModal from './SearchUsernameModal';
 
 const CurrentAccount = ({ navigation }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
   const [isSendModalVisible, setIsSendModalVisible] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [exchangeRate, setExchangeRate] = useState(null);
@@ -149,7 +151,7 @@ const CurrentAccount = ({ navigation }) => {
 
       const token = await AsyncStorage.getItem('dokoToken');
       if (!token) {
-        setTransactionsError('Authentication required');
+        setTransactionsError(t('authenticationRequired'));
         return;
       }
 
@@ -160,12 +162,12 @@ const CurrentAccount = ({ navigation }) => {
         setTransactions(result.docs || result.data?.docs || []);
         console.log('Transactions fetched successfully:', result.data?.docs?.length || 0);
       } else {
-        setTransactionsError(result.error || 'Failed to fetch transactions');
+        setTransactionsError(result.error || t('failedToFetchTransactions'));
         setTransactions([]);
       }
     } catch (error) {
       console.error('Error fetching transactions:', error);
-      setTransactionsError('An error occurred while fetching transactions');
+      setTransactionsError(t('anErrorOccurredWhileFetching'));
       setTransactions([]);
     } finally {
       setIsTransactionsLoading(false);
@@ -205,9 +207,9 @@ const CurrentAccount = ({ navigation }) => {
   const handleSendOption = (option) => {
     setIsSendModalVisible(false);
     Alert.alert(
-      'Send Option Selected',
-      `You selected: ${option}`,
-      [{ text: 'OK' }]
+      t('sendOptionSelected'),
+      `${t('youSelected')} ${option}`,
+      [{ text: t('ok') }]
     );
   };
 
@@ -229,28 +231,28 @@ const CurrentAccount = ({ navigation }) => {
       transaction?.userId?.username ||
       transaction?.userId?.firstName ||
       transaction?.userId?.firstName ||
-      'Unknown Sender';
+      t('unknownSender');
 
     const receiverName =
       transaction?.receiverId?.username ||
       transaction?.receiverId?.firstName ||
       transaction?.receiverId?.username ||
       transaction?.receiverId?.firstName ||
-      'Unknown Receiver';
+      t('unknownReceiver');
 
     if (transaction?.category === "TRANSFER" && transaction?.type !== "DEPOSIT") {
-      return `Sent to ${receiverName}`;
+      return `${t('sentTo')} ${receiverName}`;
 
     } else if (transaction?.category === "INCOME" && transaction?.type !== "DEPOSIT") {
-      return `Received from ${receiverName}`;
+      return `${t('receivedFrom')} ${receiverName}`;
     } else if (transaction?.type === "DEPOSIT") {
 
-      return `Wallet Deposit`;
+      return t('walletDeposit');
     } else if (transaction?.category === "EXPENSE") {
 
-      return `Subscription Purchase`;
+      return t('subscriptionPurchase');
     }
-    return `Transaction with`;
+    return t('transactionWith');
 
 
 
@@ -275,25 +277,25 @@ const CurrentAccount = ({ navigation }) => {
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
 
     if (diffInHours < 1) {
-      return 'Just now';
+      return t('justNow');
     } else if (diffInHours < 24) {
-      return `${diffInHours}h ago`;
+      return `${diffInHours}${t('hoursAgo')}`;
     } else {
       const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays}d ago`;
+      return `${diffInDays}${t('daysAgo')}`;
     }
   };
 
   const getTransactionDescription = (transaction) => {
     if (transaction.type === 'transfer') {
       if (transaction.metadata?.receiver) {
-        return `To ${transaction.metadata.receiver.firstName} ${transaction.metadata.receiver.lastName}`;
+        return `${t('to')} ${transaction.metadata.receiver.firstName} ${transaction.metadata.receiver.lastName}`;
       }
-      return transaction.description || 'Transfer';
+      return transaction.description || t('transfer');
     } else if (transaction.type === 'deposit') {
-      return 'Wallet top-up';
+      return t('walletTopUp');
     }
-    return transaction.description || 'Transaction';
+    return transaction.description || t('transaction');
   };
 
 
@@ -305,7 +307,7 @@ const CurrentAccount = ({ navigation }) => {
           fontFamily: theme.typography.fontFamily,
           fontWeight: "700"
         }]}>
-          Your balance
+{t('yourBalance')}
         </Text>
 
         {/* Currency Dropdown */}
@@ -373,7 +375,7 @@ const CurrentAccount = ({ navigation }) => {
               </Text>
             </>
           ) : (
-            "No wallet found"
+t('noWalletFound')
           )}
         </Text>
 
@@ -397,7 +399,7 @@ const CurrentAccount = ({ navigation }) => {
           />
         </View>
         {/* </View> */}
-        <Text style={[styles.actionText, styles.activeText, { color: theme.colors.text }]}>Send</Text>
+        <Text style={[styles.actionText, styles.activeText, { color: theme.colors.text }]}>{t('send')}</Text>
       </TouchableOpacity>
 
       {/* Deposit */}
@@ -412,7 +414,7 @@ const CurrentAccount = ({ navigation }) => {
           />
         </View>
         {/* </View> */}
-        <Text style={[styles.actionText, styles.activeText, { color: theme.colors.text }]}>Deposit</Text>
+        <Text style={[styles.actionText, styles.activeText, { color: theme.colors.text }]}>{t('deposit')}</Text>
 
       </TouchableOpacity>
 
@@ -428,14 +430,14 @@ const CurrentAccount = ({ navigation }) => {
           />
         </View>
         {/* </View> */}
-        <Text style={[styles.actionText, styles.activeText, { color: theme.colors.text }]}>QR Code</Text>
+        <Text style={[styles.actionText, styles.activeText, { color: theme.colors.text }]}>{t('qrCode')}</Text>
 
       </TouchableOpacity>
 
       {/* + Add Card (side tab) */}
       <View style={styles.addCardButton}>
         <Text style={styles.addCardText} numberOfLines={1} ellipsizeMode="clip">
-          + Add Card
+{t('addCard')}
         </Text>
       </View>
     </View>
@@ -464,7 +466,7 @@ const CurrentAccount = ({ navigation }) => {
         }]}>
           <View style={styles.currencyPickerHeader}>
             <Text style={[styles.currencyPickerTitle, { color: theme.colors.text }]}>
-              Select Currency
+{t('selectCurrency')}
             </Text>
             <TouchableOpacity
               onPress={() => setShowCurrencyPicker(false)}
@@ -537,13 +539,13 @@ const CurrentAccount = ({ navigation }) => {
     <View style={[styles.transactionsContainer, { backgroundColor: theme.colors.surface }]}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text style={[styles.transactionsTitle, { color: theme.colors.text }]}>
-          Latest Transactions
+{t('latestTransactions')}
         </Text>
         {transactions.length > 4 &&
           <Pressable onPress={() => navigation.navigate('CurrentHistory')} >
 
             <Text style={[styles.transactionsTitle, { color: "#169BFF", fontSize: 14 }]}>
-              See All
+{t('seeAll')}
             </Text>
           </Pressable>}
       </View>
@@ -552,7 +554,7 @@ const CurrentAccount = ({ navigation }) => {
 
       {isTransactionsLoading ? (
         // Show skeleton loading
-        Array.from({ length: 3 }).map((_, index) => (
+        Array.from({ length: 3 })?.map((_, index) => (
           <TransactionSkeleton key={index} />
         ))
       ) : transactionsError ? (
@@ -562,7 +564,7 @@ const CurrentAccount = ({ navigation }) => {
           </Text>
         </View>
       ) : transactions?.length > 0 ? (
-        transactions?.slice(0, 5).map((transaction) => (
+        transactions?.slice(0, 5)?.map((transaction) => (
           <TouchableHighlight
             key={transaction._id}
             style={styles.activityItem}
@@ -607,7 +609,7 @@ const CurrentAccount = ({ navigation }) => {
       ) : (
         <View style={styles.emptyContainer}>
           <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-            No transactions found
+{t('noTransactionsFound')}
           </Text>
         </View>
       )}
@@ -626,7 +628,7 @@ const CurrentAccount = ({ navigation }) => {
             onRefresh={handleRefresh}
             colors={[theme.colors.primary]}
             tintColor={theme.colors.primary}
-            title="Pull to refresh"
+            title={t('pullToRefresh')}
             titleColor={theme.colors.textSecondary}
           />
         }
@@ -693,7 +695,7 @@ const CurrentAccount = ({ navigation }) => {
                 <View style={styles.sendOptionIcon}>
                   <Image source={require("../assets/Images/R.png")} resizeMode="contain" style={{ width: 45, height: 45, }} />
                 </View>
-                <Text style={[styles.sendOptionText, { color: theme.colors.text }]}>Send to DOKO User</Text>
+                <Text style={[styles.sendOptionText, { color: theme.colors.text }]}>{t('sendToDokoUser')}</Text>
               </TouchableOpacity>
 
               {/* Send Money Internationally */}
@@ -708,7 +710,7 @@ const CurrentAccount = ({ navigation }) => {
                 <View style={[styles.sendOptionIcon, styles.internationalIcon]}>
                   <Image source={require("../assets/Images/SendMoney.png")} resizeMode="contain" style={{ width: 45, height: 45, }} />
                 </View>
-                <Text style={[styles.sendOptionText, { color: theme.colors.text }]}>Send Money Internationally</Text>
+                <Text style={[styles.sendOptionText, { color: theme.colors.text }]}>{t('sendMoneyInternationally')}</Text>
 
               </TouchableOpacity>
 
@@ -724,7 +726,7 @@ const CurrentAccount = ({ navigation }) => {
                 <View style={[styles.sendOptionIcon, styles.bankIcon]}>
                   <Image source={require("../assets/Images/BankICons.png")} resizeMode="contain" style={{ width: 45, height: 45, }} />
                 </View>
-                <Text style={[styles.sendOptionText, { color: theme.colors.text }]}>Send Via Bank Transfer</Text>
+                <Text style={[styles.sendOptionText, { color: theme.colors.text }]}>{t('sendViaBankTransfer')}</Text>
               </TouchableOpacity>
             </View>
           </View>

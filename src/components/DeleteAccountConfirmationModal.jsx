@@ -9,6 +9,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import LinearGradient from 'react-native-linear-gradient';
 
@@ -21,6 +22,7 @@ const DeleteAccountConfirmationModal = ({
     isLoading = false 
 }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
 
     return (
         <Modal
@@ -58,7 +60,7 @@ const DeleteAccountConfirmationModal = ({
                                 fontWeight: theme.typography.weights.bold,
                             }
                         ]}>
-                            Delete Account
+                            {t('deleteAccount')}
                         </Text>
                         <Text style={[
                             styles.description,
@@ -69,7 +71,7 @@ const DeleteAccountConfirmationModal = ({
                                 fontWeight: theme.typography.weights.regular,
                             }
                         ]}>
-                            Are you sure you want to delete your account? This action cannot be undone and all your data will be permanently removed.
+                            {t('areYouSureYouWantToDeleteYourAccount')}
                         </Text>
                     </View>
 
@@ -92,7 +94,7 @@ const DeleteAccountConfirmationModal = ({
                                 fontWeight: theme.typography.weights.medium,
                             }
                         ]}>
-                            This will permanently delete all your data, transactions, and account information.
+                            {t('thisWillPermanentlyDeleteAllYourData')}
                         </Text>
                     </View>
 
@@ -119,7 +121,7 @@ const DeleteAccountConfirmationModal = ({
                                     fontWeight: theme.typography.weights.medium,
                                 }
                             ]}>
-                                Cancel
+                                {t('cancel')}
                             </Text>
                         </TouchableOpacity>
 
@@ -150,7 +152,7 @@ const DeleteAccountConfirmationModal = ({
                                                 marginLeft: 8,
                                             }
                                         ]}>
-                                            Deleting...
+                                            {t('deleting')}
                                         </Text>
                                     </View>
                                 ) : (
@@ -162,7 +164,7 @@ const DeleteAccountConfirmationModal = ({
                                             fontWeight: theme.typography.weights.medium,
                                         }
                                     ]}>
-                                        Delete Account
+                                        {t('deleteAccount')}
                                     </Text>
                                 )}
                             </LinearGradient>

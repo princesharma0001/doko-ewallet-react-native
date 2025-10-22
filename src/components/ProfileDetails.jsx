@@ -12,6 +12,7 @@ import {
     Platform,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useAppSelector } from '../store';
@@ -25,6 +26,7 @@ const { width, height } = Dimensions.get('window');
 
 const ProfileDetails = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const { currentUser, isProfileLoading, profileError } = useAppSelector((state) => state.user);
     const [isLoading, setIsLoading] = useState(false);
     const [token, setToken] = useState(null);
@@ -83,49 +85,49 @@ const ProfileDetails = ({ navigation }) => {
 
         // Name validation
         if (!formData.name.trim()) {
-            newErrors.name = 'Name is required';
+            newErrors.name = t('nameRequired');
         } else if (formData.name.trim().length < 2) {
-            newErrors.name = 'Name must be at least 2 characters';
+            newErrors.name = t('nameMinLength');
         }
         if (!formData.lastName.trim()) {
-            newErrors.lastName = 'Last name is required';
+            newErrors.lastName = t('lastNameRequired');
         } else if (formData.lastName.trim().length < 2) {
-            newErrors.lastName = 'Last name must be at least 2 characters';
+            newErrors.lastName = t('lastNameMinLength');
         }
 
         // Username validation
         if (!formData.username.trim()) {
-            newErrors.username = 'Username is required';
+            newErrors.username = t('usernameRequired');
         } else if (!validateUsername(formData.username)) {
-            newErrors.username = 'Username must be 3-20 characters, letters, numbers, and underscores only';
+            newErrors.username = t('usernameInvalid');
         }
 
         // Email 1 validation
         if (!formData.email1.trim()) {
-            newErrors.email1 = 'Email is required';
+            newErrors.email1 = t('emailRequired');
         } else if (!validateEmail(formData.email1)) {
-            newErrors.email1 = 'Please enter a valid email address';
+            newErrors.email1 = t('emailInvalid');
         }
 
         // Date of Birth validation
         if (!formData.dateOfBirth.trim()) {
-            newErrors.dateOfBirth = 'Date of Birth is required';
+            newErrors.dateOfBirth = t('dateOfBirthRequired');
         } else if (!validateDate(formData.dateOfBirth)) {
-            newErrors.dateOfBirth = 'Please enter date in YYYY-MM-DD format';
+            newErrors.dateOfBirth = t('dateOfBirthInvalid');
         }
 
         // Address validation
         if (!formData.address.trim()) {
-            newErrors.address = 'Address is required';
+            newErrors.address = t('addressRequired');
         } else if (formData.address.trim().length < 5) {
-            newErrors.address = 'Address must be at least 5 characters';
+            newErrors.address = t('addressMinLength');
         }
 
         // Phone Number validation
         if (!formData.phoneNumber.trim()) {
-            newErrors.phoneNumber = 'Phone Number is required';
+            newErrors.phoneNumber = t('phoneNumberRequired');
         } else if (!validatePhone(formData.phoneNumber)) {
-            newErrors.phoneNumber = 'Please enter a valid phone number';
+            newErrors.phoneNumber = t('phoneNumberInvalid');
         }
 
         // Email 2 validation
@@ -162,8 +164,8 @@ const ProfileDetails = ({ navigation }) => {
                 if (!token) {
                     Toast.show({
                         type: 'error',
-                        text1: 'Error',
-                        text2: 'Authentication token not found. Please login again.',
+                        text1: t('error'),
+                        text2: t('authenticationTokenNotFound'),
                         position: 'top',
                         visibilityTime: 4000,
                     });
@@ -197,8 +199,8 @@ const ProfileDetails = ({ navigation }) => {
                     dispatch(getProfile());
                     Toast.show({
                         type: 'success',
-                        text1: 'Success',
-                        text2: 'Profile updated successfully!',
+                        text1: t('success'),
+                        text2: t('profileUpdatedSuccessfully'),
                         position: 'top',
                         visibilityTime: 3000,
                     });
@@ -211,8 +213,8 @@ const ProfileDetails = ({ navigation }) => {
 
                     Toast.show({
                         type: 'error',
-                        text1: 'Error',
-                        text2: updateResult.error || 'Failed to update profile. Please try again.',
+                        text1: t('error'),
+                        text2: updateResult.error || t('failedToUpdateProfile'),
                         position: 'top',
                         visibilityTime: 4000,
                     });
@@ -222,8 +224,8 @@ const ProfileDetails = ({ navigation }) => {
 
                 Toast.show({
                     type: 'error',
-                    text1: 'Error',
-                    text2: 'An unexpected error occurred. Please try again.',
+                    text1: t('error'),
+                    text2: t('unexpectedErrorOccurred'),
                     position: 'top',
                     visibilityTime: 4000,
                 });
@@ -281,16 +283,16 @@ const ProfileDetails = ({ navigation }) => {
     const renderForm = () => (
         <View style={styles.formContainer}>
             <View style={styles.titleContainer}>
-                <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Personal Details</Text>
+                <Text style={[styles.headerTitle, { color: theme.colors.text }]}>{t('personalDetails')}</Text>
             </View>
-            {renderInputField('name', 'Name')}
-            {renderInputField('lastName', 'Last Name')}
+            {renderInputField('name', t('name'))}
+            {renderInputField('lastName', t('lastName'))}
 
-            {renderInputField('username', 'Username')}
-            {renderInputField('email1', 'Email')}
-            {renderInputField('dateOfBirth', 'Date of Birth (YYYY-MM-DD)')}
-            {renderInputField('address', 'Address')}
-            {renderInputField('phoneNumber', 'Phone Number', 'phone-pad')}
+            {renderInputField('username', t('username'))}
+            {renderInputField('email1', t('email'))}
+            {renderInputField('dateOfBirth', t('dateOfBirth'))}
+            {renderInputField('address', t('address'))}
+            {renderInputField('phoneNumber', t('phoneNumber'), 'phone-pad')}
             {/* {renderInputField('email2', 'Email')} */}
         </View>
     );
@@ -298,7 +300,7 @@ const ProfileDetails = ({ navigation }) => {
     const renderInfoMessage = () => (
         <View style={styles.messageContainer}>
             <Text style={[styles.messageText, { color: theme.colors.textSecondary }]}>
-                Your Information has been saved and submitted to regulators, if you would like to update this information let us know
+                {t('yourInformationSaved')}
             </Text>
         </View>
     );
@@ -326,7 +328,7 @@ const ProfileDetails = ({ navigation }) => {
                         },
                     ]}
                 >
-                    {isSubmitting ? 'Submitting...' : 'Save Details'}
+                    {isSubmitting ? t('submitting') : t('saveDetails')}
                 </Text>
             </LinearGradient>
         </TouchableOpacity>
@@ -335,7 +337,7 @@ const ProfileDetails = ({ navigation }) => {
 
     const renderContactSupport = () => (
         <TouchableOpacity style={styles.contactSupportButton}>
-            <Text style={[styles.contactSupportText, { color: theme.colors.text }]}>Contact Support</Text>
+            <Text style={[styles.contactSupportText, { color: theme.colors.text }]}>{t('contactSupport')}</Text>
         </TouchableOpacity>
     );
 

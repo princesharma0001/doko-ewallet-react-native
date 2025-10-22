@@ -15,6 +15,7 @@ import {
     Clipboard,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { Camera, useCameraDevices, useCodeScanner } from 'react-native-vision-camera';
@@ -25,6 +26,7 @@ const { width, height } = Dimensions.get('window');
 
 const QrCodeSendRecive = ({ navigation }) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const [activeMode, setActiveMode] = useState(null); // 'send' or 'receive'
     const [hasPermission, setHasPermission] = useState(null);
     const [scanned, setScanned] = useState(false);
@@ -55,11 +57,11 @@ const QrCodeSendRecive = ({ navigation }) => {
             
             if (!isGranted) {
                 Alert.alert(
-                    'Permission Required',
-                    'Camera permission is required to scan QR codes. Please enable it in your device settings.',
+                    t('permissionRequired'),
+                    t('cameraPermissionIsRequiredToScanQrCodes'),
                     [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'Open Settings', onPress: () => Linking.openSettings() }
+                        { text: t('cancel'), style: 'cancel' },
+                        { text: t('openSettings'), onPress: () => Linking.openSettings() }
                     ]
                 );
             }
@@ -68,7 +70,7 @@ const QrCodeSendRecive = ({ navigation }) => {
         } catch (err) {
             console.error('Camera permission error:', err);
             setHasPermission(false);
-            Alert.alert('Error', 'Failed to request camera permission');
+            Alert.alert(t('error'), t('failedToRequestCameraPermission'));
             return false;
         }
     };
@@ -77,7 +79,7 @@ const QrCodeSendRecive = ({ navigation }) => {
         // Always ensure we have permission before opening scanner
         const ok = await getCameraPermissions();
         if (!ok) {
-            Alert.alert('Permission', 'Camera permission is required to scan QR codes');
+            Alert.alert(t('permission'), t('cameraPermissionIsRequiredToScanQrCodesShort'));
             return;
         }
         setActiveMode('send');
@@ -121,7 +123,7 @@ const QrCodeSendRecive = ({ navigation }) => {
 
     const shareQRCode = async () => {
         if (!qrData) {
-            Alert.alert('Error', 'QR code data not available');
+            Alert.alert(t('error'), t('qrCodeDataNotAvailable'));
             return;
         }
 
@@ -129,23 +131,23 @@ const QrCodeSendRecive = ({ navigation }) => {
         try {
             // Create a more user-friendly share message
             const userName = currentUser?.firstName || currentUser?.username || 'DOKO User';
-            const shareMessage = `💰 Send me money via DOKO!\n\nScan this QR code to send money to ${userName}\n\nQR Code Data:\n${qrData}\n\nDownload DOKO app to send money easily!`;
+            const shareMessage = `💰 ${t('sendMeMoneyViaDoko')}\n\n${t('scanThisQrCodeToSendMoneyTo')} ${userName}\n\n${t('qrCodeData')}:\n${qrData}\n\n${t('downloadDokoAppToSendMoneyEasily')}`;
 
             const shareOptions = {
                 message: shareMessage,
-                title: 'DOKO QR Code - Send Money',
+                title: t('dokoQrCodeSendMoney'),
             };
 
             const result = await Share.share(shareOptions);
 
             if (result.action === Share.sharedAction) {
-                console.log('QR code shared successfully');
+                console.log(t('qrCodeSharedSuccessfully'));
             } else if (result.action === Share.dismissedAction) {
-                console.log('Share dismissed');
+                console.log(t('shareDismissed'));
             }
         } catch (error) {
             console.error('Error sharing QR code:', error);
-            Alert.alert('Error', 'Failed to share QR code');
+            Alert.alert(t('error'), t('failedToShareQrCode'));
         } finally {
             setIsSharing(false);
         }
@@ -153,22 +155,22 @@ const QrCodeSendRecive = ({ navigation }) => {
 
     const copyQRData = async () => {
         if (!qrData) {
-            Alert.alert('Error', 'QR code data not available');
+            Alert.alert(t('error'), t('qrCodeDataNotAvailable'));
             return;
         }
 
         try {
             await Clipboard.setString(qrData);
-            Alert.alert('Copied', 'QR code data copied to clipboard');
+            Alert.alert(t('copied'), t('qrCodeDataCopiedToClipboard'));
         } catch (error) {
             console.error('Error copying QR data:', error);
-            Alert.alert('Error', 'Failed to copy QR code data');
+            Alert.alert(t('error'), t('failedToCopyQrCodeData'));
         }
     };
 
     const shareQRCodeAsImage = async () => {
         if (!qrCodeRef.current) {
-            Alert.alert('Error', 'QR code not ready');
+            Alert.alert(t('error'), t('qrCodeNotReady'));
             return;
         }
 
@@ -178,19 +180,19 @@ const QrCodeSendRecive = ({ navigation }) => {
             const qrCodeImage = await qrCodeRef.current.toDataURL();
 
             const shareOptions = {
-                message: `Scan this QR code to send me money via DOKO!\n\nUser: ${currentUser?.firstName || 'DOKO User'}`,
-                title: 'DOKO QR Code',
+                message: `${t('scanThisQrCodeToSendMeMoneyViaDoko')}\n\n${t('user')}: ${currentUser?.firstName || 'DOKO User'}`,
+                title: t('dokoQrCode'),
                 url: `data:image/png;base64,${qrCodeImage}`,
             };
 
             const result = await Share.share(shareOptions);
 
             if (result.action === Share.sharedAction) {
-                console.log('QR code image shared successfully');
+                console.log(t('qrCodeImageSharedSuccessfully'));
             }
         } catch (error) {
             console.error('Error sharing QR code image:', error);
-            Alert.alert('Error', 'Failed to share QR code image');
+            Alert.alert(t('error'), t('failedToShareQrCodeImage'));
         } finally {
             setIsSharing(false);
         }
@@ -213,15 +215,15 @@ const QrCodeSendRecive = ({ navigation }) => {
                 console.log("QR data is not JSON, treating as plain text:", e.data);
                 // Handle non-JSON QR codes
                 Alert.alert(
-                    'QR Code Detected',
-                    `Scanned: ${e.data}\n\nThis doesn't appear to be a DOKO payment QR code.`,
+                    t('qrCodeDetected'),
+                    `${t('scanned')}: ${e.data}\n\n${t('thisDoesntAppearToBeDokoPaymentQrCode')}`,
                     [
                         {
-                            text: 'Try Again',
+                            text: t('tryAgain'),
                             onPress: () => setScanned(false),
                         },
                         {
-                            text: 'Cancel',
+                            text: t('cancel'),
                             onPress: () => setActiveMode(null),
                         },
                     ]
@@ -238,20 +240,20 @@ const QrCodeSendRecive = ({ navigation }) => {
                     navigation.navigate("AddRecieveQr", { data: parsedData });
                 } else {
                     console.error("Navigation not available");
-                    Alert.alert('Error', 'Navigation not available');
+                    Alert.alert(t('error'), t('navigationNotAvailable'));
                 }
             } else {
                 // Handle other QR codes or show error
                 Alert.alert(
-                    'Invalid QR Code',
-                    'This QR code is not a valid DOKO payment code. Please scan a DOKO QR code.',
+                    t('invalidQrCode'),
+                    t('thisQrCodeIsNotValidDokoPaymentCode'),
                     [
                         {
-                            text: 'Try Again',
+                            text: t('tryAgain'),
                             onPress: () => setScanned(false),
                         },
                         {
-                            text: 'Cancel',
+                            text: t('cancel'),
                             onPress: () => setActiveMode(null),
                         },
                     ]
@@ -260,15 +262,15 @@ const QrCodeSendRecive = ({ navigation }) => {
         } catch (error) {
             console.error("Error processing QR data:", error);
             Alert.alert(
-                'Error',
-                'Failed to process QR code. Please try again.',
+                t('error'),
+                t('failedToProcessQrCode'),
                 [
                     {
-                        text: 'Try Again',
+                        text: t('tryAgain'),
                         onPress: () => setScanned(false),
                     },
                     {
-                        text: 'Cancel',
+                        text: t('cancel'),
                         onPress: () => setActiveMode(null),
                     },
                 ]
@@ -289,7 +291,7 @@ const QrCodeSendRecive = ({ navigation }) => {
                 />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-                QR Code
+                {t('qrCode')}
             </Text>
             <View style={styles.headerSpacer} />
         </View>
@@ -298,10 +300,10 @@ const QrCodeSendRecive = ({ navigation }) => {
     const renderMainContent = () => (
         <View style={styles.mainContent}>
             <Text style={[styles.title, { color: theme.colors.text }]}>
-                Choose an option
+                {t('chooseAnOption')}
             </Text>
             <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-                Send money by scanning a QR code or receive money by showing your QR code
+                {t('sendMoneyByScanning')}
             </Text>
 
             <View style={styles.buttonContainer}>
@@ -316,8 +318,8 @@ const QrCodeSendRecive = ({ navigation }) => {
                         style={styles.gradientButton}
                     >
                         <Ionicons name="qr-code-outline" size={32} color="#FFFFFF" />
-                        <Text style={styles.buttonText}>Send Money</Text>
-                        <Text style={styles.buttonSubtext}>Scan QR code to send</Text>
+                        <Text style={styles.buttonText}>{t('sendMoney')}</Text>
+                        <Text style={styles.buttonSubtext}>{t('scanQrCodeToSend')}</Text>
                     </LinearGradient>
                 </TouchableOpacity>
 
@@ -332,8 +334,8 @@ const QrCodeSendRecive = ({ navigation }) => {
                         style={styles.gradientButton}
                     >
                         <Ionicons name="qr-code" size={32} color="#FFFFFF" />
-                        <Text style={styles.buttonText}>Receive Money</Text>
-                        <Text style={styles.buttonSubtext}>Show QR code to receive</Text>
+                        <Text style={styles.buttonText}>{t('receiveMoney')}</Text>
+                        <Text style={styles.buttonSubtext}>{t('showQrCodeToReceive')}</Text>
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
@@ -354,7 +356,7 @@ const QrCodeSendRecive = ({ navigation }) => {
                     >
                         <Ionicons name="close" size={24} color="#FFFFFF" />
                     </TouchableOpacity>
-                    <Text style={styles.scannerTitle}>Scan QR Code</Text>
+                    <Text style={styles.scannerTitle}>{t('scanQrCode')}</Text>
                     <View style={styles.headerSpacer} />
                 </View>
 
@@ -362,17 +364,17 @@ const QrCodeSendRecive = ({ navigation }) => {
                     {hasPermission === null ? (
                         <View style={styles.permissionContainer}>
                             <ActivityIndicator size="large" color="#169BFF" />
-                            <Text style={styles.permissionText}>Requesting camera permission...</Text>
+                            <Text style={styles.permissionText}>{t('requestingCameraPermission')}</Text>
                         </View>
                     ) : hasPermission === false ? (
                         <View style={styles.permissionContainer}>
                             <Ionicons name="camera-outline" size={64} color="#FF6B6B" />
-                            <Text style={styles.permissionText}>Camera permission denied</Text>
+                            <Text style={styles.permissionText}>{t('cameraPermissionDenied')}</Text>
                             <TouchableOpacity
                                 style={styles.permissionButton}
                                 onPress={getCameraPermissions}
                             >
-                                <Text style={styles.permissionButtonText}>Grant Permission</Text>
+                                <Text style={styles.permissionButtonText}>{t('grantPermission')}</Text>
                             </TouchableOpacity>
                         </View>
                     ) : device ? (
@@ -389,14 +391,14 @@ const QrCodeSendRecive = ({ navigation }) => {
                             {/* Scanner Overlay */}
                             <View style={styles.scannerOverlay}>
                                 <Text style={styles.scannerInstruction}>
-                                    Position the QR code within the frame
+                                    {t('positionQrCodeWithinFrame')}
                                 </Text>
                             </View>
                             
                             {/* Scanner Bottom Content */}
                             <View style={styles.scannerBottomContent}>
                                 <Text style={styles.scannerBottomText}>
-                                    Scan a QR code to send money
+                                    {t('scanQrCodeToSendMoney')}
                                 </Text>
                             </View>
                             
@@ -415,7 +417,7 @@ const QrCodeSendRecive = ({ navigation }) => {
                     ) : (
                         <View style={styles.permissionContainer}>
                             <Ionicons name="camera-outline" size={64} color="#FF6B6B" />
-                            <Text style={styles.permissionText}>Camera not available</Text>
+                            <Text style={styles.permissionText}>{t('cameraNotAvailable')}</Text>
                         </View>
                     )}
                 </View>
@@ -438,7 +440,7 @@ const QrCodeSendRecive = ({ navigation }) => {
                         <Ionicons name="close" size={24} color={theme.colors.text} />
                     </TouchableOpacity>
                     <Text style={[styles.qrTitle, { color: theme.colors.text }]}>
-                        Your QR Code
+                        {t('yourQrCode')}
                     </Text>
                     <View style={styles.headerSpacer} />
                 </View>
@@ -455,7 +457,7 @@ const QrCodeSendRecive = ({ navigation }) => {
                     </View>
 
                     <Text style={[styles.qrInstruction, { color: theme.colors.textSecondary }]}>
-                        Show this QR code to receive money
+                        {t('showThisQrCodeToReceiveMoney')}
                     </Text>
 
                     <View style={styles.buttonRow}>
@@ -476,7 +478,7 @@ const QrCodeSendRecive = ({ navigation }) => {
                                     <Ionicons name="send-outline" size={18} color="#FFFFFF" />
                                 )}
                                 <Text style={styles.shareButtonText}>
-                                    {isSharing ? 'Sharing...' : 'Quick Share'}
+                                    {isSharing ? t('sharing') : t('quickShare')}
                                 </Text>
                             </LinearGradient>
                         </TouchableOpacity>

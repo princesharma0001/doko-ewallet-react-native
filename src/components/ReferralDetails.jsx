@@ -10,6 +10,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 
@@ -17,6 +18,7 @@ const { width, height } = Dimensions.get('window');
 
 const ReferralDetails = ({ route }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
   const navigation = useNavigation();
 
   // Mock data - replace with actual data from route params or API
@@ -28,11 +30,11 @@ const ReferralDetails = ({ route }) => {
       amount: '$50',
     },
     completedSteps: [
-      'Let your friends download the app form the app store',
-      'Press On The Link Provided by you to them after downloading the app',
-      'Let them verify their account',
-      'Convince them to subscribe to DOKO',
-      'Make them complete their payment of subscription',
+      t('letYourFriendsDownloadTheAppFromAppStore'),
+      t('pressOnTheLinkProvidedByYou'),
+      t('letThemVerifyTheirAccount'),
+      t('convinceThemToSubscribeToDoko'),
+      t('makeThemCompleteTheirPaymentOfSubscription'),
     ],
   };
 
@@ -199,7 +201,7 @@ const ReferralDetails = ({ route }) => {
         </View>
         <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
 
-          <Text style={styles.headerTitle}>Your Invite</Text>
+          <Text style={styles.headerTitle}>{t('yourInvite')}</Text>
         </View>
 
         {/* Invitee Details Card */}
@@ -213,7 +215,7 @@ const ReferralDetails = ({ route }) => {
             </View>
 
             <View style={styles.inviteeInfo}>
-              <Text style={styles.inviteeStatus}>{inviteData.invitee.status}</Text>
+              <Text style={styles.inviteeStatus}>{t('pending')}</Text>
               <Text style={styles.inviteeAmount}>{inviteData.invitee.amount}</Text>
             </View>
           </View>
@@ -222,7 +224,7 @@ const ReferralDetails = ({ route }) => {
         {/* Completion Steps Section */}
         <View style={styles.completionSection}>
           <Text style={styles.completionTitle}>
-            What your invite has completed
+            {t('whatYourInviteHasCompleted')}
           </Text>
 
           <View style={styles.completionStepsCard}>

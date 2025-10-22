@@ -15,6 +15,7 @@ import {
     RefreshControl,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -24,6 +25,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CurrentHistory = () => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const navigation = useNavigation();
     const [selectedFilter, setSelectedFilter] = useState('All');
     const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
@@ -48,7 +50,7 @@ const CurrentHistory = () => {
             
             const token = await AsyncStorage.getItem('dokoToken');
             if (!token) {
-                setError('Authentication required');
+                setError(t('authenticationRequired'));
                 return;
             }
 
@@ -58,12 +60,12 @@ const CurrentHistory = () => {
         setTransactions(result.docs || result.data?.docs || []);
                 console.log('Transactions fetched successfully:', result.data?.docs?.length || 0);
             } else {
-                setError(result.error || 'Failed to fetch transactions');
+                setError(result.error || t('failedToFetchTransactions'));
                 setTransactions([]);
             }
         } catch (error) {
             console.error('Error fetching transactions:', error);
-            setError('An error occurred while fetching transactions');
+            setError(t('anErrorOccurredWhileFetching'));
             setTransactions([]);
         } finally {
             setIsLoading(false);
@@ -72,15 +74,24 @@ const CurrentHistory = () => {
 
     // Filter transactions based on selected tab
     const getFilteredTransactions = () => {
-        if (selectedFilter === 'All') {
+        // Map translated filter values back to original values for filtering
+        const filterMap = {
+            [t('all')]: 'All',
+            [t('pending')]: 'Pending',
+            [t('completed')]: 'Completed'
+        };
+        
+        const originalFilter = filterMap[selectedFilter] || selectedFilter;
+        
+        if (originalFilter === 'All') {
             return transactions;
-        } else if (selectedFilter === 'Pending') {
+        } else if (originalFilter === 'Pending') {
             return transactions.filter(transaction => 
                 transaction.transactionStatus === 'PENDING' || 
                 transaction.transactionStatus === 'pending' ||
                 transaction.transactionStatus === 'INITIATED'
             );
-        } else if (selectedFilter === 'Completed') {
+        } else if (originalFilter === 'Completed') {
             return transactions.filter(transaction => 
                 transaction.transactionStatus === 'COMPLETED' || 
                 transaction.transactionStatus === 'completed' ||
@@ -94,6 +105,11 @@ const CurrentHistory = () => {
     useEffect(() => {
         fetchTransactions();
     }, []);
+
+    // Initialize translated filter value
+    useEffect(() => {
+        setSelectedFilter(t('all'));
+    }, [t]);
 
     // Reset date picker states when modal closes
     useEffect(() => {
@@ -110,7 +126,7 @@ const CurrentHistory = () => {
         setIsRefreshing(false);
     };
 
-    const filters = ['All', 'Pending', 'Completed'];
+    const filters = [t('all'), t('pending'), t('completed')];
 
     // Helper functions for transaction formatting
   const getTransactionType = (transaction) => {
@@ -119,18 +135,18 @@ const CurrentHistory = () => {
       transaction?.receiverId?.firstName ||
       transaction?.receiverId?.username ||
       transaction?.receiverId?.firstName ||
-      'Unknown Receiver';
+      t('unknownReceiver');
 
     if (transaction?.category === "TRANSFER" && transaction?.type !== "DEPOSIT") {
-      return `Sent to ${receiverName}`;
+      return `${t('sentTo')} ${receiverName}`;
 
     } else if (transaction?.category === "INCOME" && transaction?.type !== "DEPOSIT") {
-      return `Received from ${receiverName}`;
+      return `${t('receivedFrom')} ${receiverName}`;
     } else if (transaction?.type === "DEPOSIT") {
 
-      return `Wallet Deposit`;
+      return t('walletDeposit');
     }
-    return `Transaction with`;
+    return t('transactionWith');
 
 
 
@@ -161,13 +177,13 @@ const CurrentHistory = () => {
     const getTransactionDescription = (transaction) => {
         if (transaction.type === 'transfer') {
             if (transaction.metadata?.receiver) {
-                return `To ${transaction.metadata.receiver.firstName} ${transaction.metadata.receiver.lastName}`;
+                return `${t('to')} ${transaction.metadata.receiver.firstName} ${transaction.metadata.receiver.lastName}`;
             }
-            return transaction.description || 'Transfer';
+            return transaction.description || t('transfer');
         } else if (transaction.type === 'deposit') {
-            return 'Wallet top-up';
+            return t('walletTopUp');
         }
-        return transaction.description || 'Transaction';
+        return transaction.description || t('transaction');
     };
       const truncateText = (text, maxLength = 50) => {
     if (!text) return "";
@@ -209,8 +225,8 @@ const CurrentHistory = () => {
             if (toDate && selectedDate > toDate) {
                 setToDate(null);
                 Alert.alert(
-                    'Date Range Updated',
-                    'From date is after to date. To date has been cleared.',
+                    t('dateRangeUpdated'),
+                    t('fromDateAfterToDate'),
                     [{ text: 'OK' }]
                 );
             }
@@ -226,8 +242,8 @@ const CurrentHistory = () => {
             // If fromDate is already selected and toDate is before fromDate, show error
             if (fromDate && selectedDate < fromDate) {
                 Alert.alert(
-                    'Invalid Date Range',
-                    'To date cannot be before from date. Please select a valid date.',
+                    t('invalidDateRange'),
+                    t('toDateBeforeFromDate'),
                     [{ text: 'OK' }]
                 );
                 return;
@@ -269,8 +285,8 @@ const CurrentHistory = () => {
         } catch (error) {
             console.error('Error clearing filters:', error);
             Alert.alert(
-                'Error',
-                'Failed to clear filters. Please try again.',
+                t('error'),
+                t('failedToClearFilters'),
                 [{ text: 'OK' }]
             );
         }
@@ -280,8 +296,8 @@ const CurrentHistory = () => {
         // Validate that if both dates are selected, fromDate is not after toDate
         if (fromDate && toDate && fromDate > toDate) {
             Alert.alert(
-                'Invalid Date Range',
-                'From date cannot be after to date. Please select valid dates.',
+                t('invalidDateRange'),
+                t('fromDateAfterToDateInvalid'),
                 [{ text: 'OK' }]
             );
             return;
@@ -316,8 +332,8 @@ const CurrentHistory = () => {
         } catch (error) {
             console.error('Error applying filter:', error);
             Alert.alert(
-                'Filter Error',
-                'Failed to apply date filter. Please try again.',
+                t('filterError'),
+                t('failedToApplyDateFilter'),
                 [{ text: 'OK' }]
             );
         }
@@ -645,7 +661,7 @@ const CurrentHistory = () => {
 
             <View style={styles.transactionDetails}>
                 <View style={styles.detailRow}>
-                    <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Amount</Text>
+                    <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>{t('amount')}</Text>
                     <Text style={[styles.detailValue, { 
                         color: getTransactionAmount(transaction).startsWith('+') ? '#4CAF50' : '#F44336' 
                     }]}>
@@ -653,18 +669,18 @@ const CurrentHistory = () => {
                     </Text>
                 </View>
                 <View style={styles.detailRow}>
-                    <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Currency</Text>
+                    <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>{t('currency')}</Text>
                     <Text style={[styles.detailValue, { color: theme.colors.text }]}>{transaction.currency}</Text>
                 </View>
                 <View style={styles.detailRow}>
-                    <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Status</Text>
+                    <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>{t('status')}</Text>
                     <Text style={[styles.detailValue, { color: getStatusColor(transaction.transactionStatus) }]}>
                         {transaction.transactionStatus}
                     </Text>
                 </View>
                 {transaction.metadata?.fee && (
                     <View style={styles.detailRow}>
-                        <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>Fee</Text>
+                        <Text style={[styles.detailLabel, { color: theme.colors.textSecondary }]}>{t('fee')}</Text>
                         <Text style={[styles.detailValue, { color: theme.colors.text }]}>
                             {transaction.currency === 'NPR' ? '₨' : '$'}{transaction.metadata.fee}
                         </Text>
@@ -692,10 +708,10 @@ const CurrentHistory = () => {
 
             <View style={{ paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: theme.typography.sizes.xxl }]}>History</Text>
+                    <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: theme.typography.sizes.xxl }]}>{t('history')}</Text>
                     {isFilterActive && (
                         <View style={[styles.filterActiveIndicator, { backgroundColor: theme.colors.primary }]}>
-                            <Text style={[styles.filterActiveText, { color: '#FFFFFF' }]}>Filtered</Text>
+                            <Text style={[styles.filterActiveText, { color: '#FFFFFF' }]}>{t('filtered')}</Text>
                         </View>
                     )}
                 </View>
@@ -749,7 +765,7 @@ const CurrentHistory = () => {
                         onRefresh={handleRefresh}
                         colors={[theme.colors.primary]}
                         tintColor={theme.colors.primary}
-                        title="Pull to refresh"
+                        title={t('pullToRefresh')}
                         titleColor={theme.colors.textSecondary}
                     />
                 }
@@ -769,7 +785,7 @@ const CurrentHistory = () => {
                             onPress={fetchTransactions}
                         >
                             <Text style={[styles.retryButtonText, { color: theme.colors.primary }]}>
-                                Retry
+                                {t('retry')}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -778,7 +794,7 @@ const CurrentHistory = () => {
                 ) : (
                     <View style={styles.emptyContainer}>
                         <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-                            No {selectedFilter.toLowerCase()} transactions found
+                            {t('noTransactionsFound').replace('{filter}', selectedFilter.toLowerCase())}
                         </Text>
                     </View>
                 )}
@@ -802,14 +818,14 @@ const CurrentHistory = () => {
                         <View style={styles.modalGrabber} />
 
                         <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Filter by Date</Text>
+                            <Text style={styles.modalTitle}>{t('filterByDate')}</Text>
                         </View>
 
                         {/* Date Picker Row */}
                         <View style={styles.datePickerRow}>
                             {/* From Date Picker */}
                             <View style={styles.datePickerContainer}>
-                                <Text style={styles.datePickerLabel}>From Date</Text>
+                                <Text style={styles.datePickerLabel}>{t('fromDate')}</Text>
                                 <TouchableOpacity
                                     style={styles.datePickerButton}
                                     onPress={() => {
@@ -844,7 +860,7 @@ const CurrentHistory = () => {
 
                             {/* To Date Picker */}
                             <View style={styles.datePickerContainer}>
-                                <Text style={styles.datePickerLabel}>To Date</Text>
+                                <Text style={styles.datePickerLabel}>{t('toDate')}</Text>
                                 <TouchableOpacity
                                     style={styles.datePickerButton}
                                     onPress={() => {
@@ -885,7 +901,7 @@ const CurrentHistory = () => {
                                 style={styles.clearAllButton}
                                 onPress={handleClearAllDates}
                             >
-                                <Text style={styles.clearAllButtonText}>Clear All Dates</Text>
+                                <Text style={styles.clearAllButtonText}>{t('clearAllDates')}</Text>
                             </TouchableOpacity>
                         )}
 
@@ -894,7 +910,7 @@ const CurrentHistory = () => {
                             style={[styles.clearAllButton, { marginBottom: 16 }]}
                             onPress={handleClearFilters}
                         >
-                            <Text style={styles.clearAllButtonText}>Clear All Filters</Text>
+                            <Text style={styles.clearAllButtonText}>{t('clearAllFilters')}</Text>
                         </TouchableOpacity>
 
                         {/* Submit Button with Gradient */}
@@ -908,7 +924,7 @@ const CurrentHistory = () => {
                                 style={{ width: '100%', alignItems: 'center' }}
                                 onPress={handleSubmitFilter}
                             >
-                                <Text style={styles.submitButtonText}>Confirm</Text>
+                                <Text style={styles.submitButtonText}>{t('confirm')}</Text>
                             </TouchableOpacity>
                         </LinearGradient>
                     </View>

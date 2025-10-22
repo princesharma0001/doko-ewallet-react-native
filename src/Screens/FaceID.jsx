@@ -11,14 +11,16 @@ import {
     Animated,
     Image,
 } from 'react-native';
-import TouchID from 'react-native-touch-id';
+import ReactNativeBiometrics, { BiometryTypes } from 'react-native-biometrics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
 const FaceID = ({ navigation, route }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const [isSupported, setIsSupported] = useState(false);
     const [biometryType, setBiometryType] = useState('');
     const [isEnrolled, setIsEnrolled] = useState(false);
@@ -39,39 +41,104 @@ const FaceID = ({ navigation, route }) => {
 
     const checkBiometricSupport = async () => {
         try {
-            const biometryType = await TouchID.isSupported();
-            setIsSupported(true);
-            setBiometryType(biometryType);
+            // Check if ReactNativeBiometrics is available
+            if (!ReactNativeBiometrics) {
+                console.log('ReactNativeBiometrics is not available');
+                setIsSupported(false);
+                setIsEnrolled(false);
+                return;
+            }
 
-            // Check if biometric is enrolled
-            const enrolled = await TouchID.isDeviceSecure();
-            setIsEnrolled(enrolled);
+            const rnBiometrics = new ReactNativeBiometrics({ allowDeviceCredentials: true });
+            
+            // Check if the instance has the required methods
+            if (!rnBiometrics || typeof rnBiometrics.isSensorAvailable !== 'function') {
+                console.log('ReactNativeBiometrics instance is not properly initialized');
+                setIsSupported(false);
+                setIsEnrolled(false);
+                return;
+            }
+
+            const { available, biometryType } = await rnBiometrics.isSensorAvailable();
+            
+            if (available) {
+                setIsSupported(true);
+                setBiometryType(biometryType);
+                setIsEnrolled(true); // If sensor is available, it means biometric is enrolled
+            } else {
+                setIsSupported(false);
+                setIsEnrolled(false);
+            }
         } catch (error) {
             console.log('Biometric not supported:', error);
             setIsSupported(false);
+            setIsEnrolled(false);
+        }
+    };
+
+    const createBiometricKey = async () => {
+        try {
+            if (!ReactNativeBiometrics) {
+                throw new Error('ReactNativeBiometrics is not available');
+            }
+
+            const rnBiometrics = new ReactNativeBiometrics({ allowDeviceCredentials: true });
+            
+            if (!rnBiometrics || typeof rnBiometrics.createKeys !== 'function') {
+                throw new Error('ReactNativeBiometrics instance is not properly initialized');
+            }
+
+            const { publicKey } = await rnBiometrics.createKeys();
+            console.log('Biometric key created:', publicKey);
+            return publicKey;
+        } catch (error) {
+            console.log('Error creating biometric key:', error);
+            throw error;
+        }
+    };
+
+    const checkBiometricKeys = async () => {
+        try {
+            if (!ReactNativeBiometrics) {
+                console.log('ReactNativeBiometrics is not available');
+                return false;
+            }
+
+            const rnBiometrics = new ReactNativeBiometrics({ allowDeviceCredentials: true });
+            
+            if (!rnBiometrics || typeof rnBiometrics.biometricKeysExist !== 'function') {
+                console.log('ReactNativeBiometrics instance is not properly initialized');
+                return false;
+            }
+
+            const { keysExist } = await rnBiometrics.biometricKeysExist();
+            return keysExist;
+        } catch (error) {
+            console.log('Error checking biometric keys:', error);
+            return false;
         }
     };
 
     const handleEnableFaceID = async () => {
         if (!isSupported) {
             Alert.alert(
-                'Not Supported',
-                'Face ID/Touch ID is not supported on this device.',
-                [{ text: 'OK' }]
+                t('notSupported'),
+                t('faceIdNotSupported'),
+                [{ text: t('ok') }]
             );
             return;
         }
 
         if (!isEnrolled) {
             Alert.alert(
-                'Not Enrolled',
-                'Please set up Face ID/Touch ID in your device settings first.',
+                t('notEnrolled'),
+                t('pleaseSetupBiometricFirst'),
                 [
-                    { text: 'Cancel', style: 'cancel' },
+                    { text: t('cancel'), style: 'cancel' },
                     {
-                        text: 'Settings', onPress: () => {
+                        text: t('settings'), onPress: () => {
                             // Navigate to device settings
-                            Alert.alert('Settings', 'Please go to Settings > Face ID & Passcode to set up Face ID.');
+                            Alert.alert(t('settings'), t('goToSettings'));
                         }
                     }
                 ]
@@ -82,48 +149,88 @@ const FaceID = ({ navigation, route }) => {
         setIsProcessing(true);
 
         try {
-            // Authenticate with Face ID/Touch ID
-            const result = await TouchID.authenticate(
-                `Use ${biometryType} to secure your account`,
-                {
-                    title: 'Face ID Authentication',
-                    subTitle: 'Use your face to unlock the app',
-                    description: 'Place your face in front of the camera',
-                    fallbackLabel: 'Use Passcode',
-                    cancelLabel: 'Cancel',
-                }
-            );
+            // Check if ReactNativeBiometrics is available
+            if (!ReactNativeBiometrics) {
+                Alert.alert(t('error'), 'Biometric authentication is not available on this device.');
+                return;
+            }
 
-            if (result) {
-                // Face ID setup successful
-                Alert.alert(
-                    'Face ID Enabled',
-                    'Face ID has been successfully enabled for your account!',
-                    [
-                        {
-                            text: 'Continue',
-                            onPress: () => navigation.navigate('MainApp', {
-                                userData: route.params?.userData,
-                                passcode: route.params?.passcode,
-                                faceIdEnabled: true,
-                                biometryType: biometryType
-                            })
-                        }
-                    ]
-                );
+            // Authenticate with Face ID/Touch ID
+            const rnBiometrics = new ReactNativeBiometrics({ allowDeviceCredentials: true });
+            
+            if (!rnBiometrics || typeof rnBiometrics.simplePrompt !== 'function') {
+                Alert.alert(t('error'), 'Biometric authentication is not properly initialized.');
+                return;
+            }
+
+            const { success } = await rnBiometrics.simplePrompt({
+                promptMessage: t('faceIdAuthentication'),
+                cancelButtonText: t('cancel'),
+            });
+
+            if (success) {
+                try {
+                    // Check if biometric keys already exist
+                    const keysExist = await checkBiometricKeys();
+                    let publicKey = null;
+                    
+                    if (!keysExist) {
+                        // Create biometric key for secure storage
+                        publicKey = await createBiometricKey();
+                    } else {
+                        console.log('Biometric keys already exist');
+                    }
+                    
+                    // Face ID setup successful
+                    Alert.alert(
+                        t('faceIdEnabled'),
+                        t('faceIdEnabledSuccessfully'),
+                        [
+                            {
+                                text: t('continue'),
+                                onPress: () => navigation.navigate('MainApp', {
+                                    userData: route.params?.userData,
+                                    passcode: route.params?.passcode,
+                                    faceIdEnabled: true,
+                                    biometryType: biometryType,
+                                    biometricPublicKey: publicKey
+                                })
+                            }
+                        ]
+                    );
+                } catch (keyError) {
+                    console.log('Error with biometric keys:', keyError);
+                    // Still proceed with Face ID setup even if key creation fails
+                    Alert.alert(
+                        t('faceIdEnabled'),
+                        t('faceIdEnabledSuccessfully'),
+                        [
+                            {
+                                text: t('continue'),
+                                onPress: () => navigation.navigate('MainApp', {
+                                    userData: route.params?.userData,
+                                    passcode: route.params?.passcode,
+                                    faceIdEnabled: true,
+                                    biometryType: biometryType
+                                })
+                            }
+                        ]
+                    );
+                }
             }
         } catch (error) {
             console.log('Face ID authentication failed:', error);
 
-            if (error.code === 'UserCancel') {
-                Alert.alert('Cancelled', 'Face ID setup was cancelled.');
-            } else if (error.code === 'UserFallback') {
-                Alert.alert('Fallback', 'User chose to use passcode instead.');
+            // Handle different error types
+            if (error.message && error.message.includes('UserCancel')) {
+                Alert.alert(t('cancelled'), t('faceIdSetupCancelled'));
+            } else if (error.message && error.message.includes('UserFallback')) {
+                Alert.alert(t('fallback'), t('userChosePasscode'));
             } else {
                 Alert.alert(
-                    'Authentication Failed',
-                    'Face ID authentication failed. Please try again.',
-                    [{ text: 'OK' }]
+                    t('authenticationFailed'),
+                    t('faceIdAuthenticationFailed'),
+                    [{ text: t('ok') }]
                 );
             }
         } finally {
@@ -133,12 +240,12 @@ const FaceID = ({ navigation, route }) => {
 
     const handleSkip = () => {
        Alert.alert(
-  'Skip Face ID',
-  'Are you sure you want to skip Face ID setup? You can enable it later in settings.',
+  t('skipFaceId'),
+  t('skipFaceIdConfirmation'),
   [
-    { text: 'Cancel', style: 'cancel' },
+    { text: t('cancel'), style: 'cancel' },
     {
-      text: 'Skip',
+      text: t('skip'),
       onPress: () => {
         navigation.reset({
           index: 0,
@@ -161,9 +268,9 @@ const FaceID = ({ navigation, route }) => {
     };
 
     const getBiometricIcon = () => {
-        if (biometryType === 'FaceID') {
+        if (biometryType === BiometryTypes.FaceID) {
             return '👤';
-        } else if (biometryType === 'TouchID') {
+        } else if (biometryType === BiometryTypes.TouchID) {
             return '👆';
         } else {
             return '🔐';
@@ -171,12 +278,14 @@ const FaceID = ({ navigation, route }) => {
     };
 
     const getBiometricName = () => {
-        if (biometryType === 'FaceID') {
-            return 'Face ID';
-        } else if (biometryType === 'TouchID') {
-            return 'Touch ID';
+        if (biometryType === BiometryTypes.FaceID) {
+            return t('faceId');
+        } else if (biometryType === BiometryTypes.TouchID) {
+            return t('touchId');
+        } else if (biometryType === BiometryTypes.Biometrics) {
+            return t('biometric');
         } else {
-            return 'Biometric';
+            return t('biometric');
         }
     };
 
@@ -200,12 +309,12 @@ const FaceID = ({ navigation, route }) => {
 
                     {/* Title */}
                     <Text style={[styles.title, { color: theme.colors.text }]}>
-                        Enter with Face ID?
+                        {t('enterWithFaceId')}
                     </Text>
 
                     {/* Description */}
                     <Text style={styles.description}>
-                        Would you like to enter the application with Face ID
+                        {t('wouldLikeToEnterWithFaceId')}
                         {/* {isSupported && isEnrolled
                             ? `Use ${getBiometricName()} to quickly and securely access your account.`
                             : isSupported
@@ -218,7 +327,7 @@ const FaceID = ({ navigation, route }) => {
                     {!isSupported && (
                         <View style={styles.statusContainer}>
                             <Text style={styles.statusText}>
-                                Your device doesn't support biometric authentication.
+                                {t('deviceNotSupportBiometric')}
                             </Text>
                         </View>
                     )}
@@ -226,7 +335,7 @@ const FaceID = ({ navigation, route }) => {
                     {isSupported && !isEnrolled && (
                         <View style={styles.statusContainer}>
                             <Text style={styles.statusText}>
-                                Please set up {getBiometricName()} in Settings first.
+                                {t('pleaseSetupBiometricInSettings').replace('{biometricName}', getBiometricName())}
                             </Text>
                         </View>
                     )}
@@ -245,7 +354,7 @@ const FaceID = ({ navigation, route }) => {
                         activeOpacity={0.8}
                     >
                         <Text style={styles.enableButtonText}>
-                            {isProcessing ? 'Setting up...' : `Enable ${getBiometricName()}`}
+                            {isProcessing ? t('settingUp') : t('enableBiometric').replace('{biometricName}', getBiometricName())}
                         </Text>
                     </TouchableOpacity>
 
@@ -255,7 +364,7 @@ const FaceID = ({ navigation, route }) => {
                         onPress={handleSkip}
                         activeOpacity={0.7}
                     >
-                        <Text style={[styles.skipText,{color:theme.colors.text}]}>Maybe Later</Text>
+                        <Text style={[styles.skipText,{color:theme.colors.text}]}>{t('maybeLater')}</Text>
                     </TouchableOpacity>
                 </View>
             </Animated.View>

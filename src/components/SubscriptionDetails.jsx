@@ -13,6 +13,7 @@ import {
     Image,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useAppSelector, useAppDispatch } from '../store';
@@ -24,6 +25,7 @@ const { width, height } = Dimensions.get('window');
 
 const SubscriptionDetails = ({ navigation, route }) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const dispatch = useAppDispatch();
     const { selectedPlan } = useAppSelector((state) => state.subscription);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -74,8 +76,8 @@ const SubscriptionDetails = ({ navigation, route }) => {
         console.log('Payment successful:', subscriptionData);
         Toast.show({
             type: 'success',
-            text1: 'Subscription Activated',
-            text2: 'Your subscription has been successfully activated!',
+            text1: t('subscriptionActivated'),
+            text2: t('yourSubscriptionHasBeenActivated'),
             position: 'top',
             visibilityTime: 4000,
         });
@@ -99,7 +101,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
                     style={styles.laterButton}
                     onPress={() => navigation?.goBack()}
                 >
-                    <Text style={[styles.laterText, { color: theme.colors.textSecondary }]}>Later</Text>
+                    <Text style={[styles.laterText, { color: theme.colors.textSecondary }]}>{t('later')}</Text>
                 </TouchableOpacity>
 
 
@@ -122,7 +124,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
                     shadowRadius: 8,
                     elevation: 4,
                 }]}>
-                    <Text style={[styles.planTitle, { color: theme.colors.text }]}>No plan selected</Text>
+                    <Text style={[styles.planTitle, { color: theme.colors.text }]}>{t('noPlanSelected')}</Text>
                 </View>
             );
         }
@@ -143,7 +145,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
                     <Text style={[styles.planTitle, { color: theme.colors.text }]}>{planData.name}</Text>
                     {planData.isPopular && (
                         <View style={styles.popularBadge}>
-                            <Text style={styles.popularText}>Most Popular</Text>
+                            <Text style={styles.popularText}>{t('mostPopular')}</Text>
                         </View>
                     )}
                 </View>
@@ -156,7 +158,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
                 </Text>
 
                 <View style={styles.featuresSection}>
-                    <Text style={[styles.featuresTitle, { color: theme.colors.text }]}>Features for you</Text>
+                    <Text style={[styles.featuresTitle, { color: theme.colors.text }]}>{t('featuresForYou')}</Text>
 
                     {planData.features.map((feature, index) => (
                         <View key={index} style={styles.featureItem}>
@@ -213,12 +215,12 @@ const SubscriptionDetails = ({ navigation, route }) => {
 
                     {/* Title */}
                     <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
-                        Add Money To Your Account
+                        {t('addMoneyToYourAccount')}
                     </Text>
 
                     {/* Description */}
                     <Text style={[styles.modalDescription, { color: theme.colors.textSecondary }]}>
-                        You need to deposit money to your account to subscribe :)
+                        {t('youNeedToDepositMoney')}
                     </Text>
 
                     {/* Action Buttons */}
@@ -228,7 +230,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.modalActionText, { color: '#169BFF' }]}>
-                            Pay With Pickup
+                            {t('payWithPickup')}
                         </Text>
                     </TouchableOpacity>
 
@@ -238,7 +240,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.modalActionText, { color: '#169BFF' }]}>
-                            Pay With Card
+                            {t('payWithCard')}
                         </Text>
                     </TouchableOpacity>
                 </Animated.View>
@@ -257,7 +259,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
                     style={styles.gradientButton}
                 >
                     <Text style={[styles.trialButtonText, { color: "#fff" }]}>
-                        Pay NPR {planData?.price || 0}/Month and Open Account
+                        {t('payNprAndOpenAccount').replace('{price}', planData?.price || 0)}
                     </Text>
                 </LinearGradient>
             </TouchableOpacity>
@@ -279,7 +281,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
             {renderHeader()}
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
-                    <Text style={[styles.headerTitle, { color: theme.colors.text, paddingBottom: 18 }]}>Subscribe Now</Text>
+                    <Text style={[styles.headerTitle, { color: theme.colors.text, paddingBottom: 18 }]}>{t('subscribeNow')}</Text>
 
                     {renderPlanCard()}
                 </View>
@@ -305,12 +307,12 @@ const SubscriptionDetails = ({ navigation, route }) => {
                                 color={theme.colors.text}
                                 style={styles.cartIcon}
                             />
-                            <Text style={[styles.paymentTitle, { color: theme.colors.text }]}>Issuance Fee</Text>
+                            <Text style={[styles.paymentTitle, { color: theme.colors.text }]}>{t('issuanceFee')}</Text>
                         </View>
 
                         <View style={styles.paymentItem}>
                             <Text style={[styles.paymentItemText, { color: theme.colors.text }]}>
-                                {planData?.name || 'Plan'} Subscription
+                                {t('planSubscription').replace('{planName}', planData?.name || 'Plan')}
                             </Text>
                             <Text style={[styles.paymentItemAmount, { color: theme.colors.text }]}>
                                 NPR {planData?.price || '$0.00'}
@@ -325,7 +327,7 @@ const SubscriptionDetails = ({ navigation, route }) => {
                         <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
 
                         <View style={styles.totalPayment}>
-                            <Text style={[styles.totalText, { color: theme.colors.text }]}>Total Payment</Text>
+                            <Text style={[styles.totalText, { color: theme.colors.text }]}>{t('totalPayment')}</Text>
                             <Text style={[styles.totalAmount, { color: theme.colors.text }]}>
                                 NPR {(planData?.price || 0 + 30).toFixed(2)}
                             </Text>

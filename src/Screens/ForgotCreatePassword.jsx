@@ -11,6 +11,7 @@ import {
     Alert,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Toast from 'react-native-toast-message';
 import { authService } from '../services/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +21,7 @@ const { width, height } = Dimensions.get('window');
 
 const ForgotCreatePassword = ({ navigation, route }) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const [passcode, setPasscode] = useState('');
     const [confirmPasscode, setConfirmPasscode] = useState('');
     const [isConfirming, setIsConfirming] = useState(false);
@@ -84,8 +86,8 @@ const ForgotCreatePassword = ({ navigation, route }) => {
                 if (passcode !== confirmPasscode) {
                     Toast.show({
                         type: 'error',
-                        text1: 'Error',
-                        text2: 'The passcodes do not match. Please try again.',
+                        text1: t('error'),
+                        text2: t('passcodesDoNotMatch'),
                         position: 'top',
                         visibilityTime: 3000,
                     });
@@ -100,8 +102,8 @@ const ForgotCreatePassword = ({ navigation, route }) => {
                     if (!token) {
                         Toast.show({
                             type: 'error',
-                            text1: 'Error',
-                            text2: 'Authentication token not found. Please try again.',
+                            text1: t('error'),
+                            text2: t('authenticationTokenNotFound'),
                             position: 'top',
                             visibilityTime: 4000,
                         });
@@ -115,8 +117,8 @@ const ForgotCreatePassword = ({ navigation, route }) => {
                     if (result.success) {
                         Toast.show({
                             type: 'success',
-                            text1: 'Success',
-                            text2: 'Your passcode has been created successfully!',
+                            text1: t('success'),
+                            text2: t('passcodeCreatedSuccessfully'),
                             position: 'top',
                             visibilityTime: 3000,
                         });
@@ -127,8 +129,8 @@ const ForgotCreatePassword = ({ navigation, route }) => {
                     } else {
                         Toast.show({
                             type: 'error',
-                            text1: 'Error',
-                            text2: result.error || 'Failed to create passcode. Please try again.',
+                            text1: t('error'),
+                            text2: result.error || t('failedToCreatePasscode'),
                             position: 'top',
                             visibilityTime: 4000,
                         });
@@ -139,8 +141,8 @@ const ForgotCreatePassword = ({ navigation, route }) => {
                 } catch (err) {
                     Toast.show({
                         type: 'error',
-                        text1: 'Error',
-                        text2: 'An unexpected error occurred. Please try again.',
+                        text1: t('error'),
+                        text2: t('unexpectedErrorOccurred'),
                         position: 'top',
                         visibilityTime: 4000,
                     });
@@ -221,7 +223,7 @@ const ForgotCreatePassword = ({ navigation, route }) => {
             <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
                 {/* Title */}
                 <Text style={[styles.title, { color: theme.colors?.text }]}>
-                    {isConfirming ? 'Confirm Passcode' : 'Create Passcode'}
+                    {isConfirming ? t('confirmPasscode') : t('createPasscode')}
                 </Text>
 
                 {/* Passcode Dots */}

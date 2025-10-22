@@ -10,6 +10,7 @@ import {
     StatusBar,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -24,6 +25,7 @@ const { width, height } = Dimensions.get('window');
 
 const ProfileSection = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const [activeItem, setActiveItem] = useState('Dashboard');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -46,13 +48,13 @@ const ProfileSection = ({ navigation }) => {
     }, []);
 
     const menuItems = [
-        { id: 'Personal Details', label: 'Personal Details', route: 'ProfileDetails', icon: <Ionicons name="person-outline" size={20} color={theme.colors.text} /> },
-        { id: 'Subscription', route: "MySubscription", label: 'My Subscription', icon: <Ionicons name="ribbon-outline" size={20} color={theme.colors.text} /> },
-        { id: 'notifications', label: 'Notification Settings', route: "Notification", icon: <Ionicons name="notifications-outline" size={20} color={theme.colors.text} /> },
-        { id: 'Privacy', label: 'Privacy', route: "MyDocument", icon: <Ionicons name="shield-checkmark-outline" size={20} color={theme.colors.text} /> },
-        { id: 'terms', label: 'Terms & Conditions', route: "MyTerms", icon: <Ionicons name="document-text-outline" size={20} color={theme.colors.text} /> },
-        { id: 'referral', label: 'Referral', route: "ReferralSection", icon: <Ionicons name="grid-outline" size={20} color={theme.colors.text} /> },
-        { id: 'delete', label: 'Delete Account', action: 'delete', icon: <MaterialIcons name="delete-outline" size={20} color="#FF3B30" /> },
+        { id: 'Personal Details', label: t('personalDetails'), route: 'ProfileDetails', icon: <Ionicons name="person-outline" size={20} color={theme.colors.text} /> },
+        { id: 'Subscription', route: "MySubscription", label: t('mySubscription'), icon: <Ionicons name="ribbon-outline" size={20} color={theme.colors.text} /> },
+        { id: 'notifications', label: t('notificationSettings'), route: "Notification", icon: <Ionicons name="notifications-outline" size={20} color={theme.colors.text} /> },
+        { id: 'Privacy', label: t('privacy'), route: "MyDocument", icon: <Ionicons name="shield-checkmark-outline" size={20} color={theme.colors.text} /> },
+        { id: 'terms', label: t('termsAndConditions'), route: "MyTerms", icon: <Ionicons name="document-text-outline" size={20} color={theme.colors.text} /> },
+        { id: 'referral', label: t('referral'), route: "ReferralSection", icon: <Ionicons name="grid-outline" size={20} color={theme.colors.text} /> },
+        { id: 'delete', label: t('deleteAccount'), action: 'delete', icon: <MaterialIcons name="delete-outline" size={20} color="#FF3B30" /> },
     ];
 
 
@@ -70,8 +72,8 @@ const ProfileSection = ({ navigation }) => {
         if (!token) {
             Toast.show({
                 type: 'error',
-                text1: 'Error',
-                text2: 'Authentication token not found. Please login again.',
+                text1: t('error'),
+                text2: t('authenticationTokenNotFound'),
                 position: 'top',
                 visibilityTime: 4000,
             });
@@ -148,7 +150,7 @@ const ProfileSection = ({ navigation }) => {
                 <View style={styles.headerSpacer} />
 
                 <TouchableOpacity onPress={() => navigation.navigate("KYCSection")} style={[styles.proMemberButton, { backgroundColor: "#246BFD" }]}>
-                    <Text style={[styles.proMemberText, { color: "#fff" }]}>Verify Identity</Text>
+                    <Text style={[styles.proMemberText, { color: "#fff" }]}>{t('verifyIdentity')}</Text>
                 </TouchableOpacity>
             </View>
         </View>

@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { authService } from '../services/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -23,6 +24,7 @@ const { width, height } = Dimensions.get('window');
 
 const MySubscription = ({ navigation }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { currentUser } = useAppSelector((state) => state.user);
     const { activeSubscription, isSubscriptionLoading, subscriptionError } = useAppSelector((state) => state.subscription);
   console.log("adgsadgsdgsafasdf",activeSubscription);
@@ -55,8 +57,8 @@ const MySubscription = ({ navigation }) => {
     if (!subscriptionData?.id) {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'No active subscription found to cancel',
+        text1: t('error'),
+        text2: t('noActiveSubscriptionFound'),
       });
       return;
     }
@@ -67,8 +69,8 @@ const MySubscription = ({ navigation }) => {
     if (!cancelReason.trim()) {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Please provide a reason for cancellation',
+        text1: t('error'),
+        text2: t('pleaseProvideReason'),
       });
       return;
     }
@@ -76,8 +78,8 @@ const MySubscription = ({ navigation }) => {
     if (!authToken || !activeSubscription?.id) {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Unable to cancel subscription',
+        text1: t('error'),
+        text2: t('unableToCancelSubscription'),
       });
       return;
     }
@@ -94,8 +96,8 @@ const MySubscription = ({ navigation }) => {
       if (response.success) {
         Toast.show({
           type: 'success',
-          text1: 'Success',
-          text2: response.message || 'Subscription cancelled successfully',
+          text1: t('success'),
+          text2: response.message || t('subscriptionCancelledSuccessfully'),
         });
         
         // Close modal and reset state
@@ -106,16 +108,16 @@ const MySubscription = ({ navigation }) => {
       } else {
         Toast.show({
           type: 'error',
-          text1: 'Error',
-          text2: response.error || 'Failed to cancel subscription',
+          text1: t('error'),
+          text2: response.error || t('failedToCancelSubscription'),
         });
       }
     } catch (error) {
       console.error('Cancel subscription error:', error);
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'An unexpected error occurred',
+        text1: t('error'),
+        text2: t('anUnexpectedErrorOccurred'),
       });
     } finally {
       setIsCancelling(false);
@@ -131,39 +133,39 @@ const MySubscription = ({ navigation }) => {
   const subscriptionFeatures = [
     {
       id: 'card-issued',
-      title: 'Card issued',
+      title: t('cardIssued'),
       type: 'number',
       value: '3',
     },
     {
       id: 'free-virtual-cards',
-      title: 'Free Virtual Cards',
+      title: t('freeVirtualCards'),
       type: 'slider',
       current: 2,
       total: 3,
     },
     {
       id: 'no-commission-trades',
-      title: 'No Commission Trades',
+      title: t('noCommissionTrades'),
       type: 'slider',
       current: 2,
       total: 3,
     },
     {
       id: 'cashback-received-1',
-      title: 'Cashback Received',
+      title: t('cashbackReceived'),
       type: 'number',
       value: '3',
     },
     {
       id: 'cashback-received-2',
-      title: 'Cashback Received',
+      title: t('cashbackReceived'),
       type: 'number',
       value: '3',
     },
     {
       id: 'Cancel Subscription',
-      title: 'Cancel Subscription',
+      title: t('cancelSubscription'),
       type: 'cancel',
       isClickable: true,
     },
@@ -253,7 +255,7 @@ const MySubscription = ({ navigation }) => {
   const renderSubscriptionFeatures = () => (
     <View style={styles.featuresContainer}>
       <View style={styles.titleContainer}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>My Pro Subscription</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>{t('myProSubscription')}</Text>
       </View>
       {subscriptionFeatures.map(renderFeatureCard)}
     </View>
@@ -279,7 +281,7 @@ const MySubscription = ({ navigation }) => {
           <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
             <View style={[styles.modalHeader, { backgroundColor: theme.colors.surface }]}>
               <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
-                Cancel Subscription
+                {t('cancelSubscription')}
               </Text>
               <TouchableOpacity
                 onPress={handleCancelModal}
@@ -291,7 +293,7 @@ const MySubscription = ({ navigation }) => {
             
             <View style={styles.modalContent}>
               <Text style={[styles.modalDescription, { color: theme.colors.text }]}>
-                We're sorry to see you go! Please let us know why you're cancelling your subscription:
+                {t('weAreSorryToSeeYouGo')}
               </Text>
               
               <TextInput
@@ -303,7 +305,7 @@ const MySubscription = ({ navigation }) => {
                     borderColor: theme.colors.textSecondary
                   }
                 ]}
-                placeholder="Enter your reason for cancellation..."
+                placeholder={t('enterYourReasonForCancellation')}
                 placeholderTextColor={theme.colors.textSecondary}
                 value={cancelReason}
                 onChangeText={setCancelReason}
@@ -314,7 +316,7 @@ const MySubscription = ({ navigation }) => {
               />
               
               <Text style={[styles.charCount, { color: theme.colors.textSecondary }]}>
-                {cancelReason.length}/200 characters
+                {cancelReason.length}/200 {t('characters')}
               </Text>
             </View>
             
@@ -324,7 +326,7 @@ const MySubscription = ({ navigation }) => {
                 onPress={handleCancelModal}
               >
                 <Text style={[styles.modalButtonText, { color: theme.colors.text }]}>
-                  Cancel
+                  {t('cancel')}
                 </Text>
               </TouchableOpacity>
               
@@ -344,7 +346,7 @@ const MySubscription = ({ navigation }) => {
                   <ActivityIndicator size="small" color="white" />
                 ) : (
                   <Text style={styles.confirmButtonText}>
-                   Okay
+                   {t('okay')}
                   </Text>
                 )}
               </TouchableOpacity>

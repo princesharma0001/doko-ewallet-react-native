@@ -10,6 +10,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useAppSelector, useAppDispatch } from '../store';
@@ -20,6 +21,7 @@ const { width, height } = Dimensions.get('window');
 
 const Subscription = ({ navigation }) => {
     const { theme } = useTheme();
+    const { t } = useLanguage();
     const dispatch = useAppDispatch();
     const { plans, selectedPlan, isLoading, error } = useAppSelector((state) => state.subscription);
 
@@ -33,13 +35,13 @@ const Subscription = ({ navigation }) => {
         if (error) {
             Toast.show({
                 type: 'error',
-                text1: 'Error',
+                text1: t('error'),
                 text2: error,
                 position: 'top',
                 visibilityTime: 4000,
             });
         }
-    }, [error]);
+    }, [error, t]);
 
     const handlePlanSelect = (plan) => {
         dispatch(setSelectedPlan(plan));
@@ -56,7 +58,7 @@ const Subscription = ({ navigation }) => {
                     style={styles.laterButton}
                     onPress={() => navigation?.goBack()}
                 >
-                    <Text style={[styles.laterText, { color: theme.colors.textSecondary }]}>Later</Text>
+                    <Text style={[styles.laterText, { color: theme.colors.textSecondary }]}>{t('later')}</Text>
                 </TouchableOpacity>
 
 
@@ -96,7 +98,7 @@ const Subscription = ({ navigation }) => {
         if (!selectedPlan) {
             return (
                 <View style={[styles.planCard, { backgroundColor: theme.colors.surface }]}>
-                    <Text style={[styles.planTitle, { color: theme.colors.text }]}>No plan selected</Text>
+                    <Text style={[styles.planTitle, { color: theme.colors.text }]}>{t('noPlanSelected')}</Text>
                 </View>
             );
         }
@@ -107,7 +109,7 @@ const Subscription = ({ navigation }) => {
                     <Text style={[styles.planTitle, { color: theme.colors.text }]}>{selectedPlan.name}</Text>
                     {selectedPlan.isPopular && (
                         <View style={styles.popularBadge}>
-                            <Text style={styles.popularText}>Most Popular</Text>
+                            <Text style={styles.popularText}>{t('mostPopular')}</Text>
                         </View>
                     )}
                 </View>
@@ -120,7 +122,7 @@ const Subscription = ({ navigation }) => {
                 </Text>
 
                 <View style={styles.featuresSection}>
-                    <Text style={[styles.featuresTitle, { color: theme.colors.text }]}>Features for you</Text>
+                    <Text style={[styles.featuresTitle, { color: theme.colors.text }]}>{t('featuresForYou')}</Text>
 
                     {selectedPlan.features.map((feature, index) => (
                         <View key={index} style={styles.featureItem}>
@@ -145,7 +147,7 @@ const Subscription = ({ navigation }) => {
                         style={styles.gradientButton}
                     >
                         <Text style={[styles.trialButtonText, { color: "#fff" }]}>
-                            Choose {selectedPlan.name} Plan
+                            {t('choosePlan').replace('{planName}', selectedPlan.name)}
                         </Text>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -156,19 +158,19 @@ const Subscription = ({ navigation }) => {
     const renderFooter = () => (
         <View style={styles.footer}>
             <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>
-                This is a 12 month plan. By proceeding, you agree to the{' '}
+                {t('thisIsTwelveMonthPlan')}{' '}
             </Text>
             <View style={styles.linksContainer}>
                 <TouchableOpacity>
-                    <Text style={[styles.linkText, { color: theme.colors.primary }]}>Promotion Terms</Text>
+                    <Text style={[styles.linkText, { color: theme.colors.primary }]}>{t('promotionTerms')}</Text>
                 </TouchableOpacity>
                 <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>, </Text>
                 <TouchableOpacity>
-                    <Text style={[styles.linkText, { color: theme.colors.primary }]}>Plan Terms</Text>
+                    <Text style={[styles.linkText, { color: theme.colors.primary }]}>{t('planTerms')}</Text>
                 </TouchableOpacity>
-                <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}> and </Text>
+                <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}> {t('and')} </Text>
                 <TouchableOpacity>
-                    <Text style={[styles.linkText, { color: theme.colors.primary }]}>Insurance Documents</Text>
+                    <Text style={[styles.linkText, { color: theme.colors.primary }]}>{t('insuranceDocuments')}</Text>
                 </TouchableOpacity>
                 <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>.</Text>
             </View>
@@ -182,7 +184,7 @@ const Subscription = ({ navigation }) => {
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color={theme.colors.primary} />
                     <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-                        Loading subscription plans...
+                        {t('loadingSubscriptionPlans')}
                     </Text>
                 </View>
             </View>
@@ -194,7 +196,7 @@ const Subscription = ({ navigation }) => {
             {renderHeader()}
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
-                    <Text style={[styles.headerTitle, { color: theme.colors.text, paddingBottom: 18 }]}>Select Plan</Text>
+                    <Text style={[styles.headerTitle, { color: theme.colors.text, paddingBottom: 18 }]}>{t('selectPlan')}</Text>
 
                     {renderPlanTabs()}
                     {renderPlanCard()}

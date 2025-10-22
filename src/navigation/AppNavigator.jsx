@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import Button from '../components/Button';
 
 // Import screens
 import Splash from '../Screens/Splash';
@@ -66,131 +65,7 @@ import CommunitySection from '../components/CommunitySection';
 const Stack = createStackNavigator();
 
 // Main App component for authenticated users
-const MainApp = ({ navigation }) => {
-  const { theme } = useTheme();
 
-  const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Logout',
-          onPress: () => {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Splash' }],
-            });
-          }
-        }
-      ]
-    );
-  };
-
-  return (
-    <View style={[styles.mainAppContainer, { backgroundColor: theme.colors.background }]}>
-      <View style={{ padding: theme.spacing.lg }}>
-        <Text style={{
-          color: theme.colors.text,
-          fontSize: theme.typography.sizes.xl,
-          fontFamily: theme.typography.fontFamily,
-          fontWeight: theme.typography.weights.bold,
-          marginBottom: theme.spacing.md,
-        }}>
-          DOKO
-        </Text>
-
-        <View style={{ gap: theme.spacing.sm, marginBottom: theme.spacing.lg }}>
-          <Button
-            title="Show Signup Screen"
-            variant="primary"
-            onPress={() => navigation.navigate('Signup')}
-          />
-          <Button
-            title="Show Phone Verify"
-            variant="outline"
-            onPress={() => navigation.navigate('PhoneVerify', {
-              userPhoneNumber: '+91-9650448097'
-            })}
-          />
-          <Button
-            title="Take Selfie"
-            variant="outline"
-            onPress={() => navigation.navigate('TakeSelfie')}
-          />
-          <Button
-            title="Email Verify"
-            variant="outline"
-            onPress={() => navigation.navigate('EmailVerify')}
-          />
-          <Button
-            title="Camera Screen"
-            variant="outline"
-            onPress={() => navigation.navigate('CameraScreen', { userData: { test: true } })}
-          />
-          <Button
-            title="Create Password"
-            variant="outline"
-            onPress={() => navigation.navigate('CreatePassword', { userData: { test: true } })}
-          />
-          <Button
-            title="Face ID Setup"
-            variant="outline"
-            onPress={() => navigation.navigate('FaceID', { userData: { test: true }, passcode: '1234' })}
-          />
-          <Button
-            title="Enter Password"
-            variant="outline"
-            onPress={() => navigation.navigate('EnterPassword', { userData: { test: true } })}
-          />
-          <Button
-            title="Home Screen"
-            variant="gradient"
-            gradientColors={['#667eea', '#764ba2']}
-            onPress={() => navigation.navigate('HomeScreen')}
-          />
-          <Button
-            title="Button Examples"
-            variant="gradient"
-            gradientColors={['#667eea', '#764ba2']}
-            onPress={() => navigation.navigate('ButtonExamples')}
-          />
-          <Button
-            title="Current History"
-            variant="gradient"
-            gradientColors={['#667eea', '#764ba2']}
-            onPress={() => navigation.navigate('CurrentHistory')}
-          />
-          <Button
-            title="Bank Transfer"
-            variant="gradient"
-            gradientColors={['#8B5CF6', '#3B82F6']}
-            onPress={() => navigation.navigate('BankTransfer')}
-          />
-          <Button
-            title="Report User Modal Test"
-            variant="gradient"
-            gradientColors={['#FF6B6B', '#4ECDC4']}
-            onPress={() => navigation.navigate('ReportUserModalTest')}
-          />
-          <Button
-            title="QR Send/Receive"
-            variant="gradient"
-            gradientColors={['#10B981', '#059669']}
-            onPress={() => navigation.navigate('QrCodeSendRecive')}
-          />
-        
-          <Button
-            title="Logout"
-            variant="danger"
-            onPress={handleLogout}
-          />
-        </View>
-      </View>
-    </View>
-  );
-};
 
 const AppNavigator = () => {
   return (
@@ -411,10 +286,7 @@ const AppNavigator = () => {
             gestureEnabled: false, // Disable swipe back on Face ID
           }}
         /> */}
-        <Stack.Screen
-          name="MainApp"
-          component={MainApp}
-        />
+      
         {/* <Stack.Screen 
           name="HomeScreen" 
           component={HomeScreen}

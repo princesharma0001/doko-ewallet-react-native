@@ -14,6 +14,7 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Toast from 'react-native-toast-message';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { authService } from '../services/apiService';
@@ -23,6 +24,7 @@ const { width, height } = Dimensions.get('window');
 
 const ForgotVerify = ({ navigation, route }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { identity, userData } = route.params || {};
   const [otp, setOtp] = useState(['', '', '', '']);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -93,7 +95,7 @@ const ForgotVerify = ({ navigation, route }) => {
     
     // Check if OTP is empty or incomplete
     if (!completeOtp || completeOtp.length !== 4) {
-      setErrorMessage('Please enter the 4-digit verification code');
+      setErrorMessage(t('pleaseEnterVerificationCode'));
       return;
     }
 
@@ -108,8 +110,8 @@ const ForgotVerify = ({ navigation, route }) => {
       if (result.success) {
         Toast.show({
           type: 'success',
-          text1: 'Verification Successful',
-          text2: 'Code verified successfully',
+          text1: t('verificationSuccessful'),
+          text2: t('codeVerifiedSuccessfully'),
           position: 'top',
           visibilityTime: 2000,
         });
@@ -126,8 +128,8 @@ const ForgotVerify = ({ navigation, route }) => {
       } else {
         Toast.show({
           type: 'error',
-          text1: 'Verification Failed',
-          text2: result.error || 'Invalid verification code',
+          text1: t('verificationFailed'),
+          text2: result.error || t('invalidVerificationCode'),
           position: 'top',
           visibilityTime: 3000,
         });
@@ -136,8 +138,8 @@ const ForgotVerify = ({ navigation, route }) => {
       console.error('Verification error:', error);
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'An unexpected error occurred',
+        text1: t('error'),
+        text2: t('unexpectedErrorOccurred'),
         position: 'top',
         visibilityTime: 3000,
       });
@@ -155,8 +157,8 @@ const ForgotVerify = ({ navigation, route }) => {
       if (result.success) {
         Toast.show({
           type: 'success',
-          text1: 'Code Sent',
-          text2: 'New verification code sent successfully',
+          text1: t('codeSent'),
+          text2: t('newVerificationCodeSent'),
           position: 'top',
           visibilityTime: 2000,
         });
@@ -170,8 +172,8 @@ const ForgotVerify = ({ navigation, route }) => {
       } else {
         Toast.show({
           type: 'error',
-          text1: 'Failed',
-          text2: result.error || 'Failed to resend code',
+          text1: t('failed'),
+          text2: result.error || t('failedToResendCode'),
           position: 'top',
           visibilityTime: 3000,
         });
@@ -180,8 +182,8 @@ const ForgotVerify = ({ navigation, route }) => {
       console.error('Resend error:', error);
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'An unexpected error occurred',
+        text1: t('error'),
+        text2: t('unexpectedErrorOccurred'),
         position: 'top',
         visibilityTime: 3000,
       });
@@ -253,7 +255,7 @@ const ForgotVerify = ({ navigation, route }) => {
                 },
               ]}
             >
-              Verify Your Identity
+              {t('verifyYourIdentity')}
             </Text>
 
             {/* Description */}
@@ -268,7 +270,7 @@ const ForgotVerify = ({ navigation, route }) => {
                 },
               ]}
             >
-              Please enter 4-digit verification code sent to {identity}
+              {t('enterVerificationCodeSent')} {identity}
             </Text>
 
             {/* OTP Input Fields */}
@@ -312,7 +314,7 @@ const ForgotVerify = ({ navigation, route }) => {
                   },
                 ]}
               >
-                Didn't receive the code?
+                {t('didntReceiveCode')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -341,7 +343,7 @@ const ForgotVerify = ({ navigation, route }) => {
                         },
                       ]}
                     >
-                      Verifying...
+                      {t('verifying')}
                     </Text>
                   </View>
                 ) : (
@@ -355,7 +357,7 @@ const ForgotVerify = ({ navigation, route }) => {
                       },
                     ]}
                   >
-                    Submit
+                    {t('submit')}
                   </Text>
                 )}
               </LinearGradient>

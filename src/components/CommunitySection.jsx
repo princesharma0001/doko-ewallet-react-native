@@ -12,34 +12,36 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 const { width, height } = Dimensions.get('window');
 
 const CommunitySection = ({ onBackPress, onCreateChannel }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('guide');
 
   const tabs = [
-    { id: 'guide', label: 'Guide' },
-    { id: 'suggested', label: 'Suggested' },
-    { id: 'tips', label: 'Tips' },
+    { id: 'guide', label: t('guide') },
+    { id: 'suggested', label: t('suggested') },
+    { id: 'tips', label: t('tips') },
   ];
 
   const guideSteps = [
     {
       number: '1',
-      title: 'Select a Channel',
-      description: 'Choose from existing channels in the sidebar to join conversations on specific topics.',
+      title: t('selectAChannel'),
+      description: t('chooseFromExistingChannels'),
     },
     {
       number: '2',
-      title: 'Create a New Channel',
-      description: "If you can't find what you're looking for, create a new channel to start a fresh discussion.",
+      title: t('createANewChannel'),
+      description: t('ifYouCantFindWhatYoureLookingFor'),
     },
     {
       number: '3',
-      title: 'Participate in Discussions',
-      description: 'Once you\'ve joined a channel, you can send messages, share files, and engage with other community members.',
+      title: t('participateInDiscussions'),
+      description: t('onceYouveJoinedAChannel'),
     },
   ];
 
@@ -214,18 +216,18 @@ const CommunitySection = ({ onBackPress, onCreateChannel }) => {
       case 'suggested':
         return (
           <View style={styles.guideContainer}>
-            <Text style={styles.guideStepTitle}>Suggested Channels</Text>
+            <Text style={styles.guideStepTitle}>{t('suggestedChannels')}</Text>
             <Text style={styles.guideStepDescription}>
-              Discover popular channels and communities that might interest you.
+              {t('discoverPopularChannels')}
             </Text>
           </View>
         );
       case 'tips':
         return (
           <View style={styles.guideContainer}>
-            <Text style={styles.guideStepTitle}>Community Tips</Text>
+            <Text style={styles.guideStepTitle}>{t('communityTips')}</Text>
             <Text style={styles.guideStepDescription}>
-              Learn best practices for engaging with the community and making the most of your experience.
+              {t('learnBestPractices')}
             </Text>
           </View>
         );
@@ -250,7 +252,7 @@ const CommunitySection = ({ onBackPress, onCreateChannel }) => {
         <View style={styles.header}>
           <View style={styles.headerContent}>
            
-            <Text style={styles.headerTitle}>Community</Text>
+            <Text style={styles.headerTitle}>{t('community')}</Text>
           </View>
         </View>
 
@@ -266,9 +268,9 @@ const CommunitySection = ({ onBackPress, onCreateChannel }) => {
           </View>
           <View style={{flex:1,width:"100%",paddingTop:35}}>
 
-          <Text style={styles.noChannelTitle}>No Channel Selected</Text>
+          <Text style={styles.noChannelTitle}>{t('noChannelSelected')}</Text>
           <Text style={styles.noChannelDescription}>
-            Select a channel from the list or create a new one to start chatting.
+            {t('selectChannelFromListOrCreateNew')}
           </Text>
           <TouchableOpacity
             style={styles.createChannelButton}
@@ -281,7 +283,7 @@ const CommunitySection = ({ onBackPress, onCreateChannel }) => {
               end={{ x: 1, y: 0 }}
               style={styles.createChannelButton}
             >
-              <Text style={styles.createChannelButtonText}>Create Channel</Text>
+              <Text style={styles.createChannelButtonText}>{t('createChannel')}</Text>
             </LinearGradient>
           </TouchableOpacity>
           </View>

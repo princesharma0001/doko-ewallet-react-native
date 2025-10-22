@@ -12,6 +12,7 @@ import {
   Animated,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { authService } from '../services/apiService';
@@ -22,6 +23,7 @@ const { width } = Dimensions.get('window');
 
 const NotificationList = ({ navigation }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [notifications, setNotifications] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -68,7 +70,7 @@ const NotificationList = ({ navigation }) => {
     try {
       const token = await AsyncStorage.getItem('dokoToken');
       if (!token) {
-        setError('Authentication required');
+        setError(t('authenticationRequired'));
         return;
       }
 
@@ -101,10 +103,10 @@ const NotificationList = ({ navigation }) => {
           limit: response.limit || 10,
         });
       } else {
-        setError(response.error || 'Failed to load notifications');
+        setError(response.error || t('failedToLoadNotifications'));
         // Toast.show({
         //   type: 'error',
-        //   text1: 'Error',
+        //   text1: t('error'),
         //   text2: response.error || 'Failed to load notifications',
         //   position: 'top',
         //   visibilityTime: 3000,
@@ -112,11 +114,11 @@ const NotificationList = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Error loading notifications:', error);
-      setError('An error occurred while loading notifications');
+      setError(t('anErrorOccurredWhileLoading'));
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Failed to load notifications',
+        text1: t('error'),
+        text2: t('failedToLoadNotifications'),
         position: 'top',
         visibilityTime: 3000,
       });
@@ -199,10 +201,10 @@ const NotificationList = ({ navigation }) => {
     const notificationTime = new Date(timestamp);
     const diffInMinutes = Math.floor((now - notificationTime) / (1000 * 60));
 
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-    return `${Math.floor(diffInMinutes / 1440)}d ago`;
+    if (diffInMinutes < 1) return t('justNow');
+    if (diffInMinutes < 60) return `${diffInMinutes}${t('minutesAgo')}`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}${t('hoursAgo')}`;
+    return `${Math.floor(diffInMinutes / 1440)}${t('daysAgo')}`;
   };
 
   const getIconComponent = (iconName, color) => {
@@ -282,23 +284,23 @@ const NotificationList = ({ navigation }) => {
               try {
                 const token = await AsyncStorage.getItem('dokoToken');
                 if (!token) {
-                  Toast.show({ type: 'error', text1: 'Error', text2: 'Authentication required', position: 'top', visibilityTime: 2500 });
+                  Toast.show({ type: 'error', text1: t('error'), text2: t('authenticationRequired'), position: 'top', visibilityTime: 2500 });
                   return;
                 }
                 const requesterId = notification?.id;
                 if (!requesterId) {
-                  Toast.show({ type: 'error', text1: 'Error', text2: 'Requester ID missing', position: 'top', visibilityTime: 2500 });
+                  Toast.show({ type: 'error', text1: t('error'), text2: t('requesterIdMissing'), position: 'top', visibilityTime: 2500 });
                   return;
                 }
                 const resp = await authService.acceptFriendRequest(requesterId, token);
                 if (resp.success) {
-                  Toast.show({ type: 'success', text1: 'Success', text2: resp.message || 'Request accepted', position: 'top', visibilityTime: 2500 });
+                  Toast.show({ type: 'success', text1: t('success'), text2: resp.message || t('requestAccepted'), position: 'top', visibilityTime: 2500 });
                   onRefresh();
                 } else {
-                  Toast.show({ type: 'error', text1: 'Error', text2: resp.error || 'Failed to accept request', position: 'top', visibilityTime: 2500 });
+                  Toast.show({ type: 'error', text1: t('error'), text2: resp.error || t('failedToAcceptRequest'), position: 'top', visibilityTime: 2500 });
                 }
               } catch (e) {
-                Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to accept request', position: 'top', visibilityTime: 2500 });
+                Toast.show({ type: 'error', text1: t('error'), text2: t('failedToAcceptRequest'), position: 'top', visibilityTime: 2500 });
               }
             }}
             style={styles.deleteButton}
@@ -311,23 +313,23 @@ const NotificationList = ({ navigation }) => {
               try {
                 const token = await AsyncStorage.getItem('dokoToken');
                 if (!token) {
-                  Toast.show({ type: 'error', text1: 'Error', text2: 'Authentication required', position: 'top', visibilityTime: 2500 });
+                  Toast.show({ type: 'error', text1: t('error'), text2: t('authenticationRequired'), position: 'top', visibilityTime: 2500 });
                   return;
                 }
                 const requesterId = notification?.id;
                 if (!requesterId) {
-                  Toast.show({ type: 'error', text1: 'Error', text2: 'Requester ID missing', position: 'top', visibilityTime: 2500 });
+                  Toast.show({ type: 'error', text1: t('error'), text2: t('requesterIdMissing'), position: 'top', visibilityTime: 2500 });
                   return;
                 }
                 const resp = await authService.rejectFriendRequest(requesterId, token);
                 if (resp.success) {
-                  Toast.show({ type: 'success', text1: 'Success', text2: resp.message || 'Request rejected', position: 'top', visibilityTime: 2500 });
+                  Toast.show({ type: 'success', text1: t('success'), text2: resp.message || t('requestRejected'), position: 'top', visibilityTime: 2500 });
                   onRefresh();
                 } else {
-                  Toast.show({ type: 'error', text1: 'Error', text2: resp.error || 'Failed to reject request', position: 'top', visibilityTime: 2500 });
+                  Toast.show({ type: 'error', text1: t('error'), text2: resp.error || t('failedToRejectRequest'), position: 'top', visibilityTime: 2500 });
                 }
               } catch (e) {
-                Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to reject request', position: 'top', visibilityTime: 2500 });
+                Toast.show({ type: 'error', text1: t('error'), text2: t('failedToRejectRequest'), position: 'top', visibilityTime: 2500 });
               }
             }}
             style={styles.deleteButton}
@@ -384,28 +386,28 @@ const NotificationList = ({ navigation }) => {
             <AntDesign name="arrowleft" size={24} color={theme.colors.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-            Notifications
+            {t('notifications')}
           </Text>
           <TouchableOpacity onPress={async () => {
             try {
               const token = await AsyncStorage.getItem('dokoToken');
               if (!token) {
-                Toast.show({ type: 'error', text1: 'Error', text2: 'Authentication required', position: 'top', visibilityTime: 2500 });
+                Toast.show({ type: 'error', text1: t('error'), text2: t('authenticationRequired'), position: 'top', visibilityTime: 2500 });
                 return;
               }
               const resp = await authService.clearNotifications(token);
               if (resp.success) {
-                Toast.show({ type: 'success', text1: 'Success', text2: resp.message || 'Cleared', position: 'top', visibilityTime: 2500 });
+                Toast.show({ type: 'success', text1: t('success'), text2: resp.message || t('cleared'), position: 'top', visibilityTime: 2500 });
                 await loadNotifications(1, true);
               } else {
-                Toast.show({ type: 'error', text1: 'Error', text2: resp.error || 'Failed to clear', position: 'top', visibilityTime: 2500 });
+                Toast.show({ type: 'error', text1: t('error'), text2: resp.error || t('failedToClear'), position: 'top', visibilityTime: 2500 });
               }
             } catch (e) {
-              Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to clear notifications', position: 'top', visibilityTime: 2500 });
+              Toast.show({ type: 'error', text1: t('error'), text2: t('failedToClearNotifications'), position: 'top', visibilityTime: 2500 });
             }
           }}>
             <Text style={[styles.markAllText, { color: theme.colors.primary }]}>
-              Clear All
+              {t('clearAll')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -415,7 +417,7 @@ const NotificationList = ({ navigation }) => {
           <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
           <TextInput
             style={[styles.searchInput, { color: theme.colors.text }]}
-            placeholder="Search notifications..."
+            placeholder={t('searchNotifications')}
             placeholderTextColor={theme.colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -440,28 +442,28 @@ const NotificationList = ({ navigation }) => {
           <AntDesign name="arrowleft" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-          Notifications
+          {t('notifications')}
         </Text>
         <TouchableOpacity onPress={async () => {
           try {
             const token = await AsyncStorage.getItem('dokoToken');
             if (!token) {
-              Toast.show({ type: 'error', text1: 'Error', text2: 'Authentication required', position: 'top', visibilityTime: 2500 });
+              Toast.show({ type: 'error', text1: t('error'), text2: t('authenticationRequired'), position: 'top', visibilityTime: 2500 });
               return;
             }
             const resp = await authService.clearNotifications(token);
             if (resp.success) {
-              Toast.show({ type: 'success', text1: 'Success', text2: resp.message || 'Cleared', position: 'top', visibilityTime: 2500 });
+              Toast.show({ type: 'success', text1: t('success'), text2: resp.message || t('cleared'), position: 'top', visibilityTime: 2500 });
               await loadNotifications(1, true);
             } else {
-              Toast.show({ type: 'error', text1: 'Error', text2: resp.error || 'Failed to clear', position: 'top', visibilityTime: 2500 });
+              Toast.show({ type: 'error', text1: t('error'), text2: resp.error || t('failedToClear'), position: 'top', visibilityTime: 2500 });
             }
           } catch (e) {
-            Toast.show({ type: 'error', text1: 'Error', text2: 'Failed to clear notifications', position: 'top', visibilityTime: 2500 });
+            Toast.show({ type: 'error', text1: t('error'), text2: t('failedToClearNotifications'), position: 'top', visibilityTime: 2500 });
           }
         }}>
           <Text style={[styles.markAllText, { color: theme.colors.primary }]}>
-            Clear All
+            {t('clearAll')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -471,7 +473,7 @@ const NotificationList = ({ navigation }) => {
         <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
         <TextInput
           style={[styles.searchInput, { color: theme.colors.text }]}
-          placeholder="Search notifications..."
+          placeholder={t('searchNotifications')}
           placeholderTextColor={theme.colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -497,10 +499,10 @@ const NotificationList = ({ navigation }) => {
           <View style={styles.emptyState}>
             <Ionicons name="alert-circle" size={64} color={theme.colors.textSecondary} />
             <Text style={[styles.emptyStateTitle, { color: theme.colors.text }]}>
-              Error Loading Notifications
+              {t('errorLoadingNotifications')}
             </Text>
             <Text style={[styles.emptyStateSubtitle, { color: theme.colors.textSecondary }]}>
-              {"You have no notifications yet"}
+              {t('youHaveNoNotificationsYet')}
             </Text>
 
           </View>
@@ -514,10 +516,10 @@ const NotificationList = ({ navigation }) => {
           <View style={styles.emptyState}>
             <Ionicons name="notifications-outline" size={64} color={theme.colors.textSecondary} />
             <Text style={[styles.emptyStateTitle, { color: theme.colors.text }]}>
-              No Data Found
+              {t('noDataFound')}
             </Text>
             <Text style={[styles.emptyStateSubtitle, { color: theme.colors.textSecondary }]}>
-              {"You have no notifications yet"}
+              {t('youHaveNoNotificationsYet')}
             </Text>
           </View>
         )}

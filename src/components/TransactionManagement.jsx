@@ -15,6 +15,7 @@ import {
   Alert,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import Feather from 'react-native-vector-icons/Feather';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -30,6 +31,7 @@ const { width } = Dimensions.get('window');
 
 const TransactionManagement = ({ navigation }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('All');
   const [selectedType, setSelectedType] = useState('All');
@@ -52,6 +54,12 @@ const TransactionManagement = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [exportData, setExportData] = useState('');
+
+  // Initialize translated values
+  useEffect(() => {
+    setSelectedFilter(t('all'));
+    setSelectedType(t('all'));
+  }, [t]);
 
   // Load auth token and transactions
   useEffect(() => {
@@ -96,8 +104,8 @@ const TransactionManagement = ({ navigation }) => {
     if (!authToken) {
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Authentication required',
+        text1: t('error'),
+        text2: t('authenticationRequired'),
       });
       return;
     }
@@ -133,16 +141,16 @@ const TransactionManagement = ({ navigation }) => {
       } else {
         Toast.show({
           type: 'error',
-          text1: 'Error',
-          text2: response.error || 'Failed to fetch transactions',
+          text1: t('error'),
+          text2: response.error || t('failedToFetchTransactions'),
         });
       }
     } catch (error) {
       console.error('Export transactions error:', error);
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'An unexpected error occurred',
+        text1: t('error'),
+        text2: t('unexpectedErrorOccurred'),
       });
     } finally {
       setIsLoading(false);
@@ -172,44 +180,44 @@ const TransactionManagement = ({ navigation }) => {
     try {
       await Share.share({
         message: exportData,
-        title: 'Transaction Export',
+        title: t('transactionExport'),
       });
     } catch (error) {
       console.error('Share error:', error);
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Failed to share data',
+        text1: t('error'),
+        text2: t('failedToShareData'),
       });
     }
   };
 
-  const filterOptions = ['All', 'Send', 'Receive', 'Pending', 'Failed'];
+  const filterOptions = [t('all'), t('send'), t('receive'), t('pending'), t('failed')];
 
   const typeOptions = [
-    'All',
-    'Deposit',
-    'Withdrawal',
-    'Subscription'
+    t('all'),
+    t('deposit'),
+    t('withdrawal'),
+    t('subscription')
   ];
 
   const statusOptions = [
-    'All Status',
-    'Completed',
-    'Pending',
-    'Failed',
-    'Cancelled',
-    'Processing'
+    t('allStatus'),
+    t('completed'),
+    t('pending'),
+    t('failed'),
+    t('cancelled'),
+    t('processing')
   ];
 
   const networkOptions = [
-    'All Networks',
-    'Ethereum',
-    'Bitcoin',
-    'Polygon',
-    'Binance Smart Chain',
-    'Avalanche',
-    'Solana'
+    t('allNetworks'),
+    t('ethereum'),
+    t('bitcoin'),
+    t('polygon'),
+    t('binanceSmartChain'),
+    t('avalanche'),
+    t('solana')
   ];
 
   // Date picker handlers
@@ -315,11 +323,22 @@ const TransactionManagement = ({ navigation }) => {
       safeString(transaction.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       safeString(transaction.amount || '').toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesFilter = selectedFilter === 'All' ||
-      (selectedFilter === 'Send' && (transaction.type === 'chat_payment' || transaction.type === 'send')) ||
-      (selectedFilter === 'Receive' && (transaction.type === 'receive' || transaction.type === 'deposit')) ||
-      (selectedFilter === 'Pending' && transaction.status === 'pending') ||
-      (selectedFilter === 'Failed' && transaction.status === 'failed');
+    // Map translated filter values back to original values for filtering
+    const filterMap = {
+      [t('all')]: 'All',
+      [t('send')]: 'Send',
+      [t('receive')]: 'Receive',
+      [t('pending')]: 'Pending',
+      [t('failed')]: 'Failed'
+    };
+
+    const originalFilter = filterMap[selectedFilter] || selectedFilter;
+
+    const matchesFilter = originalFilter === 'All' ||
+      (originalFilter === 'Send' && (transaction.type === 'chat_payment' || transaction.type === 'send')) ||
+      (originalFilter === 'Receive' && (transaction.type === 'receive' || transaction.type === 'deposit')) ||
+      (originalFilter === 'Pending' && transaction.status === 'pending') ||
+      (originalFilter === 'Failed' && transaction.status === 'failed');
 
     return matchesSearch && matchesFilter;
   });
@@ -478,10 +497,10 @@ const TransactionManagement = ({ navigation }) => {
     <View style={[styles.analyticsCard, { backgroundColor: theme.colors.surface }]}>
       <View style={styles.analyticsHeader}>
         <Text style={[styles.analyticsTitle, { color: theme.colors.text }]}>
-          Transaction Analytics
+          {t('transactionAnalytics')}
         </Text>
         <Text style={[styles.analyticsSubtitle, { color: theme.colors.textSecondary }]}>
-          Visual overview of your transaction history
+          {t('visualOverview')}
         </Text>
       </View>
 
@@ -546,24 +565,24 @@ const TransactionManagement = ({ navigation }) => {
 
     const getTransactionTitle = (transaction) => {
       if (transaction.type === 'subscription') {
-        return 'Subscription Payment';
+        return t('subscriptionPayment');
       } else if (transaction.type === 'chat_payment') {
-        return 'Chat Payment';
+        return t('chatPayment');
       } else if (transaction.type === 'deposit') {
-        return 'Deposit';
+        return t('deposit');
       } else if (transaction.type === 'withdrawal') {
-        return 'Withdrawal';
+        return t('withdrawal');
       }
-      return transaction.description || 'Transaction';
+      return transaction.description || t('transaction');
     };
 
     const getTransactionSubtitle = (transaction) => {
       if (transaction.recipient?.firstName) {
-        return `To: ${transaction.recipient.firstName} ${transaction.recipient.lastName || ''}`.trim();
+        return `${t('to')}: ${transaction.recipient.firstName} ${transaction.recipient.lastName || ''}`.trim();
       } else if (transaction.initiator?.firstName) {
-        return `From: ${transaction.initiator.firstName} ${transaction.initiator.lastName || ''}`.trim();
+        return `${t('from')}: ${transaction.initiator.firstName} ${transaction.initiator.lastName || ''}`.trim();
       }
-      return transaction.description || 'Transaction';
+      return transaction.description || t('transaction');
     };
 
     return (
@@ -629,7 +648,7 @@ const TransactionManagement = ({ navigation }) => {
       <View style={styles.headerTop}>
 
         <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: theme.typography.sizes.xl }]}>
-          Transaction Management
+          {t('transactionManagement')}
         </Text>
         {/* <TouchableOpacity>
             <Ionicons name="filter" size={24} color={theme.colors.text} />
@@ -650,7 +669,7 @@ const TransactionManagement = ({ navigation }) => {
             <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
             <TextInput
               style={[styles.searchInput, { color: theme.colors.text }]}
-              placeholder="Search transactions..."
+              placeholder={t('searchTransactions')}
               placeholderTextColor={theme.colors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -662,16 +681,16 @@ const TransactionManagement = ({ navigation }) => {
             {/* Dropdown Filters */}
             <View style={styles.dropdownContainer}>
               <DropdownButton
-                title="Type"
+                title={t('selectType')}
                 value={selectedType}
                 onPress={() => setShowTypeModal(true)}
-                placeholder="-Select Type-"
+                placeholder={`-${t('selectType')}-`}
               />
               <DropdownButton
-                title="Status"
+                title={t('selectStatus')}
                 value={selectedStatus}
                 onPress={() => setShowStatusModal(true)}
-                placeholder="-Select Status-"
+                placeholder={`-${t('selectStatus')}-`}
               />
               {/* <DropdownButton
                 title="Network"
@@ -685,7 +704,7 @@ const TransactionManagement = ({ navigation }) => {
              <View style={styles.dateContainer}>
                <DateInput
                  value={fromDate}
-                 placeholder="From Date"
+                 placeholder={t('fromDate')}
                  isFromDate={true}
                  onPress={openFromDatePicker}
                  onClear={() => {
@@ -695,7 +714,7 @@ const TransactionManagement = ({ navigation }) => {
                />
                <DateInput
                  value={toDate}
-                 placeholder="To Date"
+                 placeholder={t('toDate')}
                  isFromDate={false}
                  onPress={openToDatePicker}
                  onClear={() => {
@@ -706,19 +725,19 @@ const TransactionManagement = ({ navigation }) => {
              </View>
 
              {/* Clear All Filters Button */}
-             {(fromDate || toDate || selectedType !== 'All' || selectedStatus || selectedNetwork) && (
+             {(fromDate || toDate || selectedType !== t('all') || selectedStatus || selectedNetwork) && (
                <TouchableOpacity
                  style={[styles.clearFiltersButton, { backgroundColor: theme.colors.surface }]}
                  onPress={() => {
                    clearDateFilters();
-                   setSelectedType('All');
+                   setSelectedType(t('all'));
                    setSelectedStatus('');
                    setSelectedNetwork('');
                  }}
                >
                  <Ionicons name="refresh-outline" size={16} color={theme.colors.textSecondary} />
                  <Text style={[styles.clearFiltersText, { color: theme.colors.textSecondary }]}>
-                   Clear All Filters
+                   {t('clearAllFilters')}
                  </Text>
                </TouchableOpacity>
              )}
@@ -749,7 +768,7 @@ const TransactionManagement = ({ navigation }) => {
                         },
                       ]}
                     >
-                      Exporting...
+                      {t('exporting')}
                     </Text>
                   </View>
                 ) : (
@@ -764,7 +783,7 @@ const TransactionManagement = ({ navigation }) => {
                       },
                     ]}
                   >
-                    Export Transactions
+                    {t('exportTransactions')}
                   </Text>
                 )}
               </LinearGradient>
@@ -772,7 +791,7 @@ const TransactionManagement = ({ navigation }) => {
             <View style={{ paddingVertical: 15 }}>
 
               <Button
-                title={!show ? "Show Analytics"  :"Hide Analytics"}
+                title={!show ? t("showAnalytics") : t("hideAnalytics")}
                 variant="outline"
                 onPress={() => setShow(!show)}
               />
@@ -783,14 +802,14 @@ const TransactionManagement = ({ navigation }) => {
             {/* Transaction List */}
             <View style={styles.transactionListSection}>
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-                Recent Transactions
+                {t('recentTransactions')}
               </Text>
               
               {isLoading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color={theme.colors.primary} />
                   <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
-                    Loading transactions...
+                    {t('loadingTransactions')}
                   </Text>
                 </View>
               ) : filteredTransactions.length > 0 ? (
@@ -801,10 +820,10 @@ const TransactionManagement = ({ navigation }) => {
                 <View style={styles.emptyState}>
                   <Ionicons name="receipt-outline" size={64} color={theme.colors.textSecondary} />
                   <Text style={[styles.emptyStateTitle, { color: theme.colors.text }]}>
-                    No Transactions Found
+                    {t('noTransactionsFound')}
                   </Text>
                   <Text style={[styles.emptyStateSubtitle, { color: theme.colors.textSecondary }]}>
-                    {searchQuery ? 'Try adjusting your search criteria' : 'Your transaction history will appear here'}
+                    {searchQuery ? t('tryAdjustingSearch') : t('transactionHistoryWillAppear')}
                   </Text>
                 </View>
               )}
@@ -822,7 +841,7 @@ const TransactionManagement = ({ navigation }) => {
         options={typeOptions}
         selectedValue={selectedType}
         onSelect={setSelectedType}
-        title="Select Type"
+        title={t('selectType')}
       />
       <DropdownModal
         visible={showStatusModal}
@@ -830,7 +849,7 @@ const TransactionManagement = ({ navigation }) => {
         options={statusOptions}
         selectedValue={selectedStatus}
         onSelect={setSelectedStatus}
-        title="Select Status"
+        title={t('selectStatus')}
       />
       <DropdownModal
         visible={showNetworkModal}
@@ -838,7 +857,7 @@ const TransactionManagement = ({ navigation }) => {
         options={networkOptions}
         selectedValue={selectedNetwork}
         onSelect={setSelectedNetwork}
-        title="Select Network"
+        title={t('selectNetwork')}
       />
 
       {/* Date Pickers */}
@@ -853,7 +872,7 @@ const TransactionManagement = ({ navigation }) => {
             <View style={[styles.datePickerModal, { backgroundColor: theme.colors.background }]}>
               <View style={[styles.datePickerHeader, { backgroundColor: theme.colors.surface }]}>
                 <Text style={[styles.datePickerTitle, { color: theme.colors.text }]}>
-                  Select From Date
+                  {t('selectFromDate')}
                 </Text>
                 <TouchableOpacity 
                   onPress={() => setShowFromDatePicker(false)}
@@ -880,7 +899,7 @@ const TransactionManagement = ({ navigation }) => {
                   onPress={() => setShowFromDatePicker(false)}
                 >
                   <Text style={[styles.datePickerButtonText, { color: theme.colors.text }]}>
-                    Cancel
+                    {t('cancel')}
                   </Text>
                 </TouchableOpacity>
                 
@@ -889,7 +908,7 @@ const TransactionManagement = ({ navigation }) => {
                   onPress={() => setShowFromDatePicker(false)}
                 >
                   <Text style={styles.datePickerConfirmText}>
-                    Select
+                    {t('select')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -909,7 +928,7 @@ const TransactionManagement = ({ navigation }) => {
             <View style={[styles.datePickerModal, { backgroundColor: theme.colors.background }]}>
               <View style={[styles.datePickerHeader, { backgroundColor: theme.colors.surface }]}>
                 <Text style={[styles.datePickerTitle, { color: theme.colors.text }]}>
-                  Select To Date
+                  {t('selectToDate')}
                 </Text>
                 <TouchableOpacity 
                   onPress={() => setShowToDatePicker(false)}
@@ -936,7 +955,7 @@ const TransactionManagement = ({ navigation }) => {
                   onPress={() => setShowToDatePicker(false)}
                 >
                   <Text style={[styles.datePickerButtonText, { color: theme.colors.text }]}>
-                    Cancel
+                    {t('cancel')}
                   </Text>
                 </TouchableOpacity>
                 
@@ -945,7 +964,7 @@ const TransactionManagement = ({ navigation }) => {
                   onPress={() => setShowToDatePicker(false)}
                 >
                   <Text style={styles.datePickerConfirmText}>
-                    Select
+                    {t('select')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -965,7 +984,7 @@ const TransactionManagement = ({ navigation }) => {
           <View style={[styles.shareModalContainer, { backgroundColor: theme.colors.background }]}>
             <View style={[styles.shareModalHeader, { backgroundColor: theme.colors.surface }]}>
               <Text style={[styles.shareModalTitle, { color: theme.colors.text }]}>
-                Export Transactions
+                {t('exportTransactionsTitle')}
               </Text>
               <TouchableOpacity
                 onPress={() => setShowShareModal(false)}
@@ -977,8 +996,7 @@ const TransactionManagement = ({ navigation }) => {
             
             <View style={styles.shareModalContent}>
               <Text style={[styles.shareModalDescription, { color: theme.colors.text }]}>
-                Your transaction data has been formatted and is ready to share. 
-                You can share it via email, messaging apps, or save it to your device.
+                {t('exportDescription')}
               </Text>
               
               <View style={[styles.exportPreview, { backgroundColor: theme.colors.surface }]}>
@@ -988,7 +1006,7 @@ const TransactionManagement = ({ navigation }) => {
               </View>
               
               <Text style={[styles.exportStats, { color: theme.colors.textSecondary }]}>
-                {transactions.length} transactions exported
+                {transactions.length} {t('transactionsExported')}
               </Text>
             </View>
             
@@ -998,7 +1016,7 @@ const TransactionManagement = ({ navigation }) => {
                 onPress={() => setShowShareModal(false)}
               >
                 <Text style={[styles.shareModalButtonText, { color: theme.colors.text }]}>
-                  Cancel
+                  {t('cancel')}
                 </Text>
               </TouchableOpacity>
               
@@ -1008,7 +1026,7 @@ const TransactionManagement = ({ navigation }) => {
               >
                 <Ionicons name="share-outline" size={20} color="white" style={{ marginRight: 8 }} />
                 <Text style={styles.shareButtonText}>
-                  Share
+                  {t('share')}
                 </Text>
               </TouchableOpacity>
             </View>

@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 
@@ -18,6 +19,7 @@ const { width, height } = Dimensions.get('window');
 
 const ReferralSection = ({ onBackPress, onSendLink }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
   const navigation = useNavigation();
   // Mock data - replace with actual data from props or state
   const referralData = {
@@ -31,10 +33,10 @@ const ReferralSection = ({ onBackPress, onSendLink }) => {
   };
 
   const instructions = [
-    'Let your friends download the app from the app store',
-    'Press On The Link Provided by you to them after downloading the app',
-    'Let them verify their account',
-    'Convince them to subscribe to DOKO',
+    t('letYourFriendsDownloadTheApp'),
+    t('pressOnTheLinkProvided'),
+    t('letThemVerifyTheirAccount'),
+    t('convinceThemToSubscribeToDoko'),
   ];
 
   const styles = StyleSheet.create({
@@ -225,21 +227,21 @@ const ReferralSection = ({ onBackPress, onSendLink }) => {
           </View>
         </View>
         <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
-          <Text style={styles.headerTitle}>Earn 50$ For Every Invite</Text>
+          <Text style={styles.headerTitle}>{t('earnFiftyDollarsForEveryInvite')}</Text>
         </View>
 
         <View style={styles.offerSummaryCard}>
-          <Text style={styles.timeLeftLabel}>Time left</Text>
+          <Text style={styles.timeLeftLabel}>{t('timeLeft')}</Text>
           <Text style={styles.timeLeftValue}>{referralData.timeLeft}</Text>
           <Text style={styles.allActionsText}>
-            All actions below must be completed
+            {t('allActionsBelowMustBeCompleted')}
           </Text>
         </View>
 
         {/* Instructions Section */}
         <View style={styles.instructionsSection}>
           <Text style={styles.instructionsTitle}>
-            What my invited friends need to do
+            {t('whatMyInvitedFriendsNeedToDo')}
           </Text>
           <View style={{ backgroundColor: theme.colors.surface, paddingHorizontal: 14, paddingTop: 20, paddingBottom: 8, borderRadius: 15 }}>
 
@@ -256,10 +258,10 @@ const ReferralSection = ({ onBackPress, onSendLink }) => {
         <View style={styles.progressSection}>
           <View style={styles.progressHeader}>
             <Text style={styles.invitesText}>
-              Invites {referralData.earnedAmount} earned
+              {t('invitesEarned').replace('{amount}', referralData.earnedAmount)}
             </Text>
             <Text style={styles.pendingAmount}>
-              {referralData.pendingAmount} Pending
+              {referralData.pendingAmount} {t('pending')}
             </Text>
           </View>
 
@@ -270,7 +272,7 @@ const ReferralSection = ({ onBackPress, onSendLink }) => {
                   <Text style={styles.friendInitials}>{friend.initials}</Text>
                 </View>
                 <Text style={styles.completionText}>
-                  {friend.completion}% Completed
+                  {friend.completion}% {t('completed')}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -289,7 +291,7 @@ const ReferralSection = ({ onBackPress, onSendLink }) => {
             end={{ x: 1.5, y: 0.5 }}
             style={styles.sendLinkButton}
           >
-            <Text style={styles.sendLinkButtonText}>Send a Link</Text>
+            <Text style={styles.sendLinkButtonText}>{t('sendALink')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </ScrollView>

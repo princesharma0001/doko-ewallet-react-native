@@ -18,6 +18,7 @@ import {
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useStripe, useConfirmPayment, CardField } from '@stripe/stripe-react-native';
 import { authService } from '../services/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,6 +27,7 @@ const { width, height } = Dimensions.get('window');
 
 const CreditCard = ({ navigation, amount = "$100.00" }) => {
     const { theme, isDarkMode } = useTheme();
+    const { t } = useLanguage();
     const { confirmPayment } = useConfirmPayment();
     const { createPaymentMethod } = useStripe();
     const [selectedCurrency, setSelectedCurrency] = useState('NPR');
@@ -72,12 +74,12 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
 
     const handlePayNow = async () => {
         if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
-            Alert.alert('Error', 'Please enter a valid amount');
+            Alert.alert(t('error'), t('pleaseEnterValidAmount'));
             return;
         }
 
         if (!cardDetails?.complete) {
-            Alert.alert('Error', 'Please enter complete card details');
+            Alert.alert(t('error'), t('pleaseEnterCompleteCardDetails'));
             return;
         }
 
@@ -86,8 +88,8 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
         // Test toast to verify Toast is working
         Toast.show({
             type: 'info',
-            text1: 'Processing Payment',
-            text2: 'Please wait...',
+            text1: t('processingPayment'),
+            text2: t('pleaseWait'),
             position: 'top',
             visibilityTime: 2000,
         });
@@ -96,7 +98,7 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
             // Get user token
             const token = await AsyncStorage.getItem('dokoToken');
             if (!token) {
-                Alert.alert('Error', 'User not authenticated');
+                Alert.alert(t('error'), t('userNotAuthenticated'));
                 setIsLoading(false);
                 return;
             }
@@ -107,7 +109,7 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
             // Call deposit initiation API
             const result = await authService.initiateDeposit(
                 amountInCents,
-                "Wallet top-up",
+                t('walletTopUp'),
                 selectedCurrency,
                 token
             );
@@ -120,8 +122,8 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
                 const { error: paymentMethodError, paymentMethod } = await createPaymentMethod({
                     paymentMethodType: 'Card',
                     billingDetails: {
-                        name: 'Customer',
-                        email: 'customer@example.com',
+                        name: t('customer'),
+                        email: t('customerEmail'),
                     },
                 });
 
@@ -129,7 +131,7 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
                     console.error('Payment method creation failed:', paymentMethodError);
                     Toast.show({
                         type: 'error',
-                        text1: 'Payment Failed',
+                        text1: t('paymentFailed'),
                         text2: paymentMethodError.message,
                         position: 'top',
                         visibilityTime: 4000,
@@ -144,8 +146,8 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
                         paymentMethodType: 'Card',
                         paymentMethodData: {
                             billingDetails: {
-                                name: 'Customer',
-                                email: 'customer@example.com',
+                                name: t('customer'),
+                                email: t('customerEmail'),
                             },
                         },
                     }
@@ -155,7 +157,7 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
                     console.error('Payment failed:', error);
                     Toast.show({
                         type: 'error',
-                        text1: 'Payment Failed',
+                        text1: t('paymentFailed'),
                         text2: error.message,
                         position: 'top',
                         visibilityTime: 4000,
@@ -178,8 +180,8 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
                             setTimeout(() => {
                                 Toast.show({
                                     type: 'success',
-                                    text1: 'Deposit Successful',
-                                    text2: `Successfully added ${selectedCurrency} ${paymentAmount} to your wallet`,
+                                    text1: t('depositSuccessful'),
+                                    text2: `${t('successfullyAdded')} ${selectedCurrency} ${paymentAmount} ${t('toYourWallet')}`,
                                     position: 'top',
                                     visibilityTime: 4000,
                                 });
@@ -189,8 +191,8 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
                             console.error('Deposit verification failed:', verifyResult.error);
                             Toast.show({
                                 type: 'error',
-                                text1: 'Verification Failed',
-                                text2: verifyResult.error || 'Failed to verify deposit',
+                                text1: t('verificationFailed'),
+                                text2: verifyResult.error || t('failedToVerifyDeposit'),
                                 position: 'top',
                                 visibilityTime: 4000,
                             });
@@ -199,8 +201,8 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
                         console.error('Deposit verification error:', verifyError);
                         Toast.show({
                             type: 'error',
-                            text1: 'Verification Error',
-                            text2: 'An error occurred while verifying deposit',
+                            text1: t('verificationError'),
+                            text2: t('errorOccurredWhileVerifying'),
                             position: 'top',
                             visibilityTime: 4000,
                         });
@@ -212,14 +214,14 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
                     }
                 }
             } else {
-                Alert.alert('Error', result.error || 'Failed to initiate payment');
+                Alert.alert(t('error'), result.error || t('failedToInitiatePayment'));
             }
         } catch (error) {
             console.error('Payment error:', error);
             Toast.show({
                 type: 'error',
-                text1: 'Payment Error',
-                text2: 'An unexpected error occurred during payment',
+                text1: t('paymentError'),
+                text2: t('unexpectedErrorOccurred'),
                 position: 'top',
                 visibilityTime: 4000,
             });
@@ -291,7 +293,7 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
         <View style={styles.inputsSection}>
             <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface }]}>
                 <Text style={[styles.cardInputLabel, { color: theme.colors.text }]}>
-                    Card Details
+                    {t('cardDetails')}
                 </Text>
                 <CardField
                     postalCodeEnabled={false}
@@ -331,7 +333,7 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
                 />
                 <View style={[styles.currencyPickerContainer, { backgroundColor: theme.colors.surface }]}>
                     <Text style={[styles.currencyPickerTitle, { color: theme.colors.text }]}>
-                        Select Currency
+                        {t('selectCurrency')}
                     </Text>
                     {currencies.map((currency) => (
                         <TouchableOpacity
@@ -387,7 +389,7 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
                     {isLoading ? (
                         <ActivityIndicator color="#FFFFFF" size="small" />
                     ) : (
-                        <Text style={styles.payButtonText}>Pay Now</Text>
+                        <Text style={styles.payButtonText}>{t('payNow')}</Text>
                     )}
                 </LinearGradient>
             </TouchableOpacity>
@@ -403,7 +405,7 @@ const CreditCard = ({ navigation, amount = "$100.00" }) => {
             <View style={{ paddingHorizontal: 25 }}>
 
                 <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: theme.typography.sizes.xxl }]}>
-                    Credit/Debit Card
+                    {t('creditDebitCard')}
                 </Text>
             </View>
             <ScrollView

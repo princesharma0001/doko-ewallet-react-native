@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -23,6 +24,7 @@ const { width, height } = Dimensions.get('window');
 
 const DAppSection = ({ navigation }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -84,8 +86,12 @@ const DAppSection = ({ navigation }) => {
     },
   ];
 
-  const categories = ['All', 'DeFi', 'NFTs', 'Games'];
+  const categories = [t('all'), t('defi'), t('nfts'), t('games')];
 
+  // Initialize selectedCategory with translated value
+  useEffect(() => {
+    setSelectedCategory(t('all'));
+  }, [t]);
 
   const handleSearch = (text) => {
     setSearchQuery(text);
@@ -97,20 +103,20 @@ const DAppSection = ({ navigation }) => {
 
   const handleDAppPress = (dApp) => {
     Alert.alert(
-      'Open dApp',
-      `Would you like to open ${dApp.name}?`,
+      t('openDApp'),
+      `${t('wouldYouLikeToOpen')} ${dApp.name}?`,
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Open', onPress: () => console.log(`Opening ${dApp.url}`) },
+        { text: t('cancel'), style: 'cancel' },
+        { text: t('open'), onPress: () => console.log(`Opening ${dApp.url}`) },
       ]
     );
   };
 
   const handleAddCustomDApp = () => {
     Alert.alert(
-      'Add Custom dApp',
-      'This feature will allow you to add custom dApps to your browser.',
-      [{ text: 'OK' }]
+      t('addCustomDApp'),
+      t('addCustomDAppDescription'),
+      [{ text: t('ok') }]
     );
   };
 
@@ -122,8 +128,18 @@ const DAppSection = ({ navigation }) => {
   const filteredDApps = dApps.filter(dApp => {
     const matchesSearch = dApp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       dApp.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' ||
-      dApp.category.toLowerCase() === selectedCategory.toLowerCase();
+    
+    // Map translated categories back to original category names for filtering
+    const categoryMap = {
+      [t('all')]: 'All',
+      [t('defi')]: 'DEFI',
+      [t('nfts')]: 'NFT',
+      [t('games')]: 'GAMES'
+    };
+    
+    const originalCategory = categoryMap[selectedCategory] || selectedCategory;
+    const matchesCategory = originalCategory === 'All' ||
+      dApp.category.toLowerCase() === originalCategory.toLowerCase();
     return matchesSearch && matchesCategory;
   });
 
@@ -131,10 +147,10 @@ const DAppSection = ({ navigation }) => {
     <View style={styles.dAppHeader}>
       <View style={{ paddingHorizontal: 20, paddingVertical: 12 }}>
         <Text style={[styles.dAppTitle, { color: theme.colors.text, fontSize: theme.typography.sizes.xxl }]}>
-          dApp Browser
+          {t('dAppBrowser')}
         </Text>
         <Text style={[styles.dAppSubtitle, { color: theme.colors.textSecondary }]}>
-          Browse and interact with decentralized applications directly from the platform.
+          {t('browseAndInteract')}
         </Text>
       </View>
 
@@ -147,7 +163,7 @@ const DAppSection = ({ navigation }) => {
         <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
         <TextInput
           style={[styles.searchInput, { color: theme.colors.text }]}
-          placeholder="Search"
+          placeholder={t('search')}
           placeholderTextColor={theme.colors.textSecondary}
           value={searchQuery}
           onChangeText={handleSearch}
@@ -252,7 +268,7 @@ const DAppSection = ({ navigation }) => {
         activeOpacity={0.7}
       >
         <Text style={[styles.addCustomButtonText, { color: theme.colors.primary }]}>
-          + Add Custom dApp
+          {t('addCustomDAppButton')}
         </Text>
       </TouchableOpacity>
     </View>

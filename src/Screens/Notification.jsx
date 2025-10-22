@@ -11,6 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -69,6 +70,7 @@ const CustomToggle = ({ value, onValueChange, disabled, theme }) => {
 
 const Notification = ({ navigation }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const [notifications, setNotifications] = useState({
     marketingOffers: true,
     transaction: true,
@@ -82,22 +84,22 @@ const Notification = ({ navigation }) => {
     {
       id: 'marketingOffers',
       icon: 'percent',
-      title: 'Marketing Offers',
-      description: "I accept to recieve emails about DOKO's services and products that may benefit me in the future.",
+      title: t('marketingOffers'),
+      description: t('marketingOffersDescription'),
     },
     {
       id: 'transaction',
       icon: 'swap-horizontal',
-      title: 'Transactions',
-      description: 'I accept to receive notifications regarding all transactions.',
+      title: t('transactions'),
+      description: t('transactionsDescription'),
     },
     {
       id: 'investmentNews',
       icon: 'trending-up',
-      title: 'Investment News',
-      description: 'I accept to receive emails and in-app notifications of investment.',
+      title: t('investmentNews'),
+      description: t('investmentNewsDescription'),
     },
-  ], []);
+  ], [t]);
 
   // Load user settings on component mount
   useEffect(() => {
@@ -142,8 +144,8 @@ const Notification = ({ navigation }) => {
         console.log('Failed to load settings, using defaults:', result.error);
         Toast.show({
           type: 'error',
-          text1: 'Settings',
-          text2: result.error || 'Failed to load notification settings',
+          text1: t('settings'),
+          text2: result.error || t('failedToLoadNotificationSettings'),
           position: 'top',
           visibilityTime: 3000,
         });
@@ -152,8 +154,8 @@ const Notification = ({ navigation }) => {
       console.error('Error loading user settings:', error);
       Toast.show({
         type: 'error',
-        text1: 'Settings',
-        text2: 'Failed to load notification settings',
+        text1: t('settings'),
+        text2: t('failedToLoadNotificationSettings'),
         position: 'top',
         visibilityTime: 3000,
       });
@@ -211,7 +213,7 @@ const Notification = ({ navigation }) => {
       if (!token) {
         console.log('No token found, reverting state');
         setNotifications(previousNotifications);
-        Alert.alert('Error', 'Authentication token not found. Please log in again.');
+        Alert.alert(t('error'), t('authenticationTokenNotFound'));
         return;
       }
 
@@ -233,7 +235,7 @@ const Notification = ({ navigation }) => {
       if (result.success) {
         Toast.show({
           type: 'success',
-          text1: 'Notification',
+          text1: t('notification'),
           text2: result?.message,
           position: 'top',
           visibilityTime: 4000,
@@ -244,7 +246,7 @@ const Notification = ({ navigation }) => {
         setNotifications(previousNotifications);
         Toast.show({
           type: 'error',
-          text1: 'Notification',
+          text1: t('notification'),
           text2: result?.error,
           position: 'top',
           visibilityTime: 4000,
@@ -256,7 +258,7 @@ const Notification = ({ navigation }) => {
       setNotifications(previousNotifications);
       Toast.show({
         type: 'error',
-        text1: 'Notification',
+        text1: t('notification'),
         text2: error.result?.error,
         position: 'top',
         visibilityTime: 4000,
@@ -331,7 +333,7 @@ const Notification = ({ navigation }) => {
       {/* Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: theme.typography.sizes.xxl }]}>
-          Notifications
+          {t('notifications')}
         </Text>
 
 
@@ -339,7 +341,7 @@ const Notification = ({ navigation }) => {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
             <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
-              Loading settings...
+              {t('loadingSettings')}
             </Text>
           </View>
         ) : (

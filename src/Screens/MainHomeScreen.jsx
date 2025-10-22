@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import CurrentAccount from "../components/CurrentAccount"
 import CryptoAccount from "../components/CryptoAccount"
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -32,6 +33,7 @@ const { width, height } = Dimensions.get('window');
 
 const MainHomeScreen = ({ navigation }) => {
   const { theme, isDarkMode } = useTheme();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('home');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isAccountSheetVisible, setIsAccountSheetVisible] = useState(false);
@@ -52,11 +54,11 @@ const MainHomeScreen = ({ navigation }) => {
 
   const getAccountDisplayName = (accountId) => {
     const accountNames = {
-      current: 'Current Account',
-      crypto: 'Crypto Account',
-      card: 'Card Account',
+      current: t('currentAccount'),
+      crypto: t('cryptoAccount'),
+      card: t('cardAccount'),
     };
-    return accountNames[accountId] || 'Card Account';
+    return accountNames[accountId] || t('cardAccount');
   };
 
   const handleTabPress = (tabId) => {
@@ -117,7 +119,7 @@ const MainHomeScreen = ({ navigation }) => {
                 fontFamily: theme.typography.fontFamily,
                 textAlign: 'center'
               }]}>
-              {activeTab === "apps" ? "Apps" : "DApp Browser"}
+{activeTab === "apps" ? t('apps') : t('dAppBrowser')}
               </Text>
             </View>
           </Pressable>
@@ -132,7 +134,7 @@ const MainHomeScreen = ({ navigation }) => {
                 fontFamily: theme.typography.fontFamily,
                 textAlign: 'center'
               }]}>
-                {activeTab === 'dapp' ? 'DApp Browser' : getAccountDisplayName(selectedAccount)}
+{activeTab === 'dapp' ? t('dAppBrowser') : getAccountDisplayName(selectedAccount)}
 
               </Text>
               <Ionicons name="chevron-down" size={16} color={theme.colors.text} style={{ marginLeft: 8 }} />

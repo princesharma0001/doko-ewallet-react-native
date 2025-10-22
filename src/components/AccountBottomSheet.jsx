@@ -11,6 +11,7 @@ import {
   PanResponder,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -19,6 +20,7 @@ const { width, height } = Dimensions.get('window');
 
 const AccountBottomSheet = ({ isVisible, onClose, onSelectAccount, selectedAccount }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(height)).current;
   const pan = useRef(new Animated.Value(0)).current;
@@ -90,20 +92,20 @@ const AccountBottomSheet = ({ isVisible, onClose, onSelectAccount, selectedAccou
   const accountOptions = [
     {
       id: 'current',
-      title: 'Current Account',
+      title: t('currentAccount'),
       icon: 'account-balance',
       iconType: 'MaterialIcons',
     },
     {
       id: 'card',
-      title: 'Card Account',
+      title: t('cardAccount'),
       icon: 'credit-card',
       iconType: 'MaterialIcons',
     },
 
     // {
     //   id: 'crypto',
-    //   title: 'Crypto Account',
+    //   title: t('cryptoAccount'),
     //   icon: 'credit-card',
     //   iconType: 'MaterialIcons',
     // },
@@ -195,7 +197,7 @@ const AccountBottomSheet = ({ isVisible, onClose, onSelectAccount, selectedAccou
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-              Select Account
+             {t('selectAccount')}
             </Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color={theme.colors.text} />
