@@ -222,7 +222,7 @@ const translations = {
     accountDeletedSuccessfully: 'Your account has been successfully deleted.',
     failedToDeleteAccount: 'Failed to delete account. Please try again.',
     unexpectedErrorOccurred: 'An unexpected error occurred. Please try again.',
-    
+    getPlan:"Subscribe",
     // ProfileDetails
     personalDetails: 'Personal Details',
     name: 'Name',

@@ -45,10 +45,8 @@ const PickOriginal = ({ navigation }) => {
     const handleMethodSelect = (methodId) => {
         setSelectedMethod(methodId);
         console.log("Sdgasdgsa", methodId);
-        if (methodId === "Bank Transfer") {
-            console.log("adgasd");
-
-            // navigation.navigate("BankTransferSendInternational")
+        if (methodId === "Passport") {
+            navigation.navigate("kycs")
         } else {
             console.log("adgasd");
 

@@ -188,7 +188,7 @@ const FaceID = ({ navigation, route }) => {
                         [
                             {
                                 text: t('continue'),
-                                onPress: () => navigation.navigate('MainApp', {
+                                onPress: () => navigation.navigate('Login', {
                                     userData: route.params?.userData,
                                     passcode: route.params?.passcode,
                                     faceIdEnabled: true,
@@ -207,7 +207,7 @@ const FaceID = ({ navigation, route }) => {
                         [
                             {
                                 text: t('continue'),
-                                onPress: () => navigation.navigate('MainApp', {
+                                onPress: () => navigation.navigate('Login', {
                                     userData: route.params?.userData,
                                     passcode: route.params?.passcode,
                                     faceIdEnabled: true,

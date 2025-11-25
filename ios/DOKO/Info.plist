@@ -36,7 +36,7 @@
 	<key>NSContactsUsageDescription</key>
 	<string>This app needs access to your contacts to show them in the app for easy communication.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string>Location access is required to comply with KYC regulations.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Required for video capture</string>
 	<key>NSPhotoLibraryUsageDescription</key>

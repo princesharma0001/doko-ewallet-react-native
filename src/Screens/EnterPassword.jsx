@@ -10,7 +10,7 @@ import {
   Alert,
   Image,
 } from 'react-native';
-import TouchID from 'react-native-touch-id';
+import ReactNativeBiometrics, { BiometryTypes } from 'react-native-biometrics';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,37 +44,38 @@ const EnterPassword = ({ navigation, route }) => {
     try {
       setIsProcessing(true);
 
-      // Check if Face ID is supported
-      const biometryType = await TouchID.isSupported();
+      const rnBiometrics = new ReactNativeBiometrics({ allowDeviceCredentials: true });
+      const { available, biometryType } = await rnBiometrics.isSensorAvailable();
+      console.log("dsfgdsa",biometryType);
+      
 
-      if (biometryType) {
-        // Authenticate with Face ID
-        const result = await TouchID.authenticate(
-          t('useFaceIdToUnlock'),
-          {
-            title: t('faceIdAuthentication'),
-            subTitle: t('useFaceToUnlock'),
-            description: t('placeFaceInCamera'),
-            fallbackLabel: t('usePasscode'),
-            cancelLabel: t('cancel'),
-          }
+      if (!available || ![BiometryTypes.FaceID, BiometryTypes.TouchID, 'FaceID', 'TouchID'].includes(biometryType)) {
+        Alert.alert(
+          t('notSupported'),
+          t('faceIdNotSupported'),
+          [{ text: t('ok') }],
         );
+        return;
+      }
 
-        if (result) {
-          // Face ID authentication successful
-          navigation.navigate('HomeScreen', {
-            userData: route.params?.userData,
-            loginMethod: 'faceid'
-          });
-        }
+      const { success } = await rnBiometrics.simplePrompt({
+        promptMessage: t('faceIdAuthentication'),
+        cancelButtonText: t('cancel'),
+      });
+
+      if (success) {
+        navigation.navigate('HomeScreen', {
+          userData: route.params?.userData,
+          loginMethod: 'faceid',
+        });
       }
     } catch (error) {
       console.log('Face ID authentication failed:', error);
-      if (error.code !== 'UserCancel') {
+      if (error?.code !== 'UserCancel') {
         Alert.alert(
           t('authenticationFailed'),
           t('faceIdFailed'),
-          [{ text: t('ok') }]
+          [{ text: t('ok') }],
         );
       }
     } finally {

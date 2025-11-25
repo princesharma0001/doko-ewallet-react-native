@@ -19,6 +19,7 @@
     "@react-navigation/stack": "^7.4.8",
     "@reduxjs/toolkit": "^2.9.0",
     "@stripe/stripe-react-native": "^0.54.1",
+    "@sumsub/react-native-mobilesdk-module": "^1.39.0",
     "axios": "^1.12.2",
     "react": "19.1.0",
     "react-native": "0.81.1",

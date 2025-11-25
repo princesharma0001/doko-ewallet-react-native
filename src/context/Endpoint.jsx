@@ -1,4 +1,5 @@
-const url = "https://backend.dokowallet.com/"; //  url
+const url = "https://backend.dokowallet.com/"; //  live
+// const url = "https://1f9dq437-8000.inc1.devtunnels.ms/"; //  local
 
 
 const ApiConfig = {
@@ -41,5 +42,6 @@ const ApiConfig = {
     updateUserSettings: `${url}api/v1/userSetting/update`,
     getUserSettings: `${url}api/v1/userSetting/get`,
     getUserTransactionHistory: `${url}api/v1/transactionHistory/list`,
+    startKyc: `${url}api/v1/kyc/start`,
 };
 export default ApiConfig;

@@ -1824,6 +1824,40 @@ export const userSettingsService = {
       }
     }
   },
+
+  // Start KYC process and fetch SumSub access token
+  startKyc: async () => {
+    try {
+      const response = await apiClient.post(ApiConfig.startKyc, {});
+      const payload = response.data || {};
+      console.log("sadsfghfdgsfs",payload);
+      
+      return {
+        success: payload.error === false || payload.error === 'false',
+        data: payload.data,
+        message: payload.message,
+      };
+    } catch (error) {
+      if (error.response) {
+        const errorMessage = error.response.data?.message || 'KYC start failed';
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'Network error - Please check your internet connection',
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
 };
 
 // Transaction history service
