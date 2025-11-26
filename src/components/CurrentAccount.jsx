@@ -187,7 +187,18 @@ const CurrentAccount = ({ navigation }) => {
           result.data?.docs?.length || 0
         );
       } else {
+        console.log("Asdhfds",result.error);
+        
         setTransactionsError(result.error || t("failedToFetchTransactions"));
+        if(result.error ==="Your token has expired. Please login again"){
+          await AsyncStorage.removeItem('dokoToken');
+          await AsyncStorage.removeItem('dokoDeviceToken');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+    
+        }
         setTransactions([]);
       }
     } catch (error) {
@@ -225,8 +236,8 @@ const CurrentAccount = ({ navigation }) => {
   const handleSendPress = () => {
     console.log("Send button pressed!");
     if (currentUser.kycStatus === "APPROVED") {
-      setShowLogoutModal(true);
-      // setIsSendModalVisible(true);
+      // setShowLogoutModal(true);
+      setIsSendModalVisible(true);
     } else {
       setShowLogoutModal(true);
     }
@@ -312,9 +323,9 @@ const CurrentAccount = ({ navigation }) => {
     const symbol = currency === "NPR" ? "₨" : "$";
 
     if (transaction.category === "TRANSFER") {
-      return `-${symbol}${amount}`;
+      return `-${symbol}${Number(amount).toFixed(2)}`;
     } else {
-      return `+${symbol}${amount}`;
+      return `+${symbol}${Number(amount).toFixed(2)}`;
     }
   };
 
@@ -936,6 +947,7 @@ const CurrentAccount = ({ navigation }) => {
         visible={showSearchUsernameModal}
         onClose={() => setShowSearchUsernameModal(false)}
         onSelectUser={handleUserSelect}
+        type="current"
       />
       <KycModal
         isVisible={showLogoutModal}

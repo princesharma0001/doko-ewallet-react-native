@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -13,21 +13,28 @@ import {
   TouchableHighlight,
   ActivityIndicator,
   Platform,
-} from 'react-native';
-import { useTheme } from '../context/ThemeContext';
-import AntDesign from 'react-native-vector-icons/AntDesign';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import UserProfileModal from './UserProfileModal';
-import { authService, chatService } from '../services/apiService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Toast from 'react-native-toast-message';
-import { useNavigation } from '@react-navigation/native';
+} from "react-native";
+import { useTheme } from "../context/ThemeContext";
+import AntDesign from "react-native-vector-icons/AntDesign";
+import Ionicons from "react-native-vector-icons/Ionicons";
+import UserProfileModal from "./UserProfileModal";
+import { authService, chatService } from "../services/apiService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from "react-native-toast-message";
+import { useNavigation } from "@react-navigation/native";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
-const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUser }) => {
+const SearchUsernameModal = ({
+  visible,
+  onClose,
+  onClose1,
+  type,
+  onClose2,
+  onSelectUser,
+}) => {
   const { theme } = useTheme();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showUserProfileModal, setShowUserProfileModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [searchResults, setSearchResults] = useState([]);
@@ -49,9 +56,9 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
       setIsSearching(true);
       setSearchError(null);
 
-      const token = await AsyncStorage.getItem('dokoToken');
+      const token = await AsyncStorage.getItem("dokoToken");
       if (!token) {
-        setSearchError('Authentication required');
+        setSearchError("Authentication required");
         return;
       }
 
@@ -60,12 +67,12 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
       if (result.success) {
         setSearchResults(result.data || []);
       } else {
-        setSearchError(result.error || 'Search failed');
+        setSearchError(result.error || "Search failed");
         setSearchResults([]);
       }
     } catch (error) {
-      console.error('Search error:', error);
-      setSearchError('An error occurred while searching');
+      console.error("Search error:", error);
+      setSearchError("An error occurred while searching");
       setSearchResults([]);
     } finally {
       setIsSearching(false);
@@ -95,7 +102,7 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
   // Clear search results when modal closes
   useEffect(() => {
     if (!visible) {
-      setSearchQuery('');
+      setSearchQuery("");
       setSearchResults([]);
       setSearchError(null);
       setIsSearching(false);
@@ -104,7 +111,16 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
 
   // Generate avatar color based on user data
   const getAvatarColor = (user) => {
-    const colors = ['#169BFF', '#E91E63', '#4CAF50', '#FF9800', '#9C27B0', '#F44336', '#00BCD4', '#795548'];
+    const colors = [
+      "#169BFF",
+      "#E91E63",
+      "#4CAF50",
+      "#FF9800",
+      "#9C27B0",
+      "#F44336",
+      "#00BCD4",
+      "#795548",
+    ];
     const index = (user.firstName?.charCodeAt(0) || 0) % colors.length;
     return colors[index];
   };
@@ -114,32 +130,32 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
     if (user.firstName) {
       return user.firstName.charAt(0).toUpperCase();
     }
-    return 'U';
+    return "U";
   };
 
   const handleUserSelect = async (user) => {
     console.log("sdagasdgasdg", user);
-// setShowUserProfileModal(true)
+    // setShowUserProfileModal(true)
     const userId = user?._id || user?.id;
     const userName = user?.firstName || user?.username;
     setSelectedUser(user);
 
     await createIndividualChat(userId, userName);
 
-    console.log('Selected user:', user.username);
+    console.log("Selected user:", user.username);
     // setShowUserProfileModal(true);
   };
 
   const createIndividualChat = async (participantId, userName) => {
     console.log("dgasdgasdg", userName);
 
-    const token = await AsyncStorage.getItem('dokoToken');
+    const token = await AsyncStorage.getItem("dokoToken");
     if (!token) {
       Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Authentication required',
-        position: 'top',
+        type: "error",
+        text1: "Error",
+        text2: "Authentication required",
+        position: "top",
         visibilityTime: 3000,
       });
       return;
@@ -148,7 +164,10 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
     setCreatingChatForUser(participantId);
 
     try {
-      const response = await chatService.createIndividualChat(participantId, token);
+      const response = await chatService.createIndividualChat(
+        participantId,
+        token
+      );
       console.log("asfsdaf", response);
 
       if (response.success) {
@@ -157,37 +176,36 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
         // Close all local modals before navigating
         setShowUserProfileModal(false);
         onClose && onClose();
-        onClose1();
-        onClose2();
-        navigation.navigate('InvidusalGroup', {
+        if (type !== "current") onClose1();
+        if (type !== "current") onClose2();
+        navigation.navigate("InvidusalGroup", {
           groupData: {
             id: data.chatId || data.chatId,
             name: userName ?? "",
             recipientId: data?.id || data._id,
-            chatType: data.chatType
-          }
+            chatType: data.chatType,
+          },
         });
 
         // Navigate to the chat or handle the response
         // You can add navigation logic here if needed
-        console.log('Chat created:', response.data);
-
+        console.log("Chat created:", response.data);
       } else {
         Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: response.error ?? 'Failed to create individual chat',
-          position: 'top',
+          type: "error",
+          text1: "Error",
+          text2: response.error ?? "Failed to create individual chat",
+          position: "top",
           visibilityTime: 3000,
         });
       }
     } catch (error) {
-      console.error('Error creating individual chat:', error);
+      console.error("Error creating individual chat:", error);
       Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to create individual chat',
-        position: 'top',
+        type: "error",
+        text1: "Error",
+        text2: "Failed to create individual chat",
+        position: "top",
         visibilityTime: 3000,
       });
     } finally {
@@ -195,14 +213,13 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
     }
   };
   const sendFriendRequestHandleer = async (participantId) => {
-
-    const token = await AsyncStorage.getItem('dokoToken');
+    const token = await AsyncStorage.getItem("dokoToken");
     if (!token) {
       Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Authentication required',
-        position: 'top',
+        type: "error",
+        text1: "Error",
+        text2: "Authentication required",
+        position: "top",
         visibilityTime: 3000,
       });
       return;
@@ -211,42 +228,45 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
     setCreatingChatForUser(participantId);
 
     try {
-
-      const response = await authService.sendFriendRequest(participantId, token);
+      const response = await authService.sendFriendRequest(
+        participantId,
+        token
+      );
       console.log("asfsdaf", response);
 
       if (response.success) {
         setShowUserProfileModal(false);
         onClose && onClose();
-        onClose1();
-        onClose2();
+        if (type !== "current") onClose1();
+        if (type !== "current") onClose2();
+        // onClose1();
+        // onClose2();
         console.log("adfsadgasdgsdagsdagsda", response);
         Toast.show({
-          type: 'success',
-          text1: 'success',
+          type: "success",
+          text1: "success",
           text2: response?.message,
-          position: 'top',
+          position: "top",
           visibilityTime: 3000,
         });
 
-        console.log('Chat created:', response.data);
-
+        console.log("Chat created:", response.data);
       } else {
         Toast.show({
-          type: 'error',
-          text1: 'Error',
-          text2: response.error ?? 'Failed to create individual chat',
-          position: 'top',
+          type: "error",
+          text1: "Error",
+          text2: response.error ?? "Failed to create individual chat",
+          position: "top",
           visibilityTime: 3000,
         });
       }
     } catch (error) {
-      console.error('Error creating individual chat:', error);
+      console.error("Error creating individual chat:", error);
       Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to create individual chat',
-        position: 'top',
+        type: "error",
+        text1: "Error",
+        text2: "Failed to create individual chat",
+        position: "top",
         visibilityTime: 3000,
       });
     } finally {
@@ -255,52 +275,64 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
   };
 
   const handleProfileAction = (action) => {
-    console.log('Profile action:', action);
+    console.log("Profile action:", action);
     setShowUserProfileModal(false);
     onSelectUser({ ...selectedUser, action });
   };
 
   // const UserItem = ({ user }) => (
   const UserItem = ({ user }) => {
-    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Unknown User';
-    const initials = `${(user.firstName || '').charAt(0)}${(user.lastName || '').charAt(0)}`.toUpperCase() || 'U';
+    const fullName =
+      `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+      user.email ||
+      "Unknown User";
+    const initials =
+      `${(user.firstName || "").charAt(0)}${(user.lastName || "").charAt(
+        0
+      )}`.toUpperCase() || "U";
     const userId = user._id || user.id;
     const isThisUserCreating = creatingChatForUser === userId;
     console.log("sdagasdgasd", user);
-
 
     return (
       <TouchableHighlight
         // style={[styles.userItem]}
         style={[styles.userItem, isThisUserCreating && styles.disabledItem]}
-
         onPress={() => handleUserSelect(user)}
         underlayColor={theme.colors.surface}
         disabled={isThisUserCreating}
-
       >
         <View style={styles.userContent}>
-          <View style={[styles.avatar, { backgroundColor: getAvatarColor(user) }]}>
+          <View
+            style={[styles.avatar, { backgroundColor: getAvatarColor(user) }]}
+          >
             <Text style={styles.avatarText}>{getAvatarText(user)}</Text>
           </View>
           <View style={styles.userInfo}>
             <Text style={[styles.username, { color: theme.colors.text }]}>
               {user.firstName} {user.lastName}
             </Text>
-            <Text style={[styles.userPhone, { color: theme.colors.textSecondary }]}>
+            <Text
+              style={[styles.userPhone, { color: theme.colors.textSecondary }]}
+            >
               {user.countryCode} {user.phone}
             </Text>
           </View>
-          {user?.isFriend ? null :
-            <TouchableOpacity onPress={() => sendFriendRequestHandleer(user?._id)
-            }>
-
+          {user?.isFriend ? null : (
+            <TouchableOpacity
+              onPress={() => sendFriendRequestHandleer(user?._id)}
+            >
               {isThisUserCreating ? (
                 <ActivityIndicator size="small" color={theme.colors.primary} />
               ) : (
-                <Ionicons name="person-add" size={20} color={theme.colors.textSecondary} />
+                <Ionicons
+                  name="person-add"
+                  size={20}
+                  color={theme.colors.textSecondary}
+                />
               )}
-            </TouchableOpacity>}
+            </TouchableOpacity>
+          )}
         </View>
       </TouchableHighlight>
     );
@@ -312,7 +344,12 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
       <View style={styles.userContent}>
         <View style={[styles.avatar, styles.skeletonAvatar]} />
         <View style={styles.userInfo}>
-          <View style={[styles.skeletonText, { width: 120, height: 16, marginBottom: 4 }]} />
+          <View
+            style={[
+              styles.skeletonText,
+              { width: 120, height: 16, marginBottom: 4 },
+            ]}
+          />
           <View style={[styles.skeletonText, { width: 80, height: 14 }]} />
         </View>
       </View>
@@ -327,7 +364,7 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
       onRequestClose={onClose}
     >
       <StatusBar
-        barStyle={theme.isDarkMode ? 'light-content' : 'dark-content'}
+        barStyle={theme.isDarkMode ? "light-content" : "dark-content"}
         backgroundColor="transparent"
         translucent
       />
@@ -337,7 +374,12 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
           activeOpacity={1}
           onPress={onClose}
         />
-        <View style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
+        <View
+          style={[
+            styles.modalContainer,
+            { backgroundColor: theme.colors.background },
+          ]}
+        >
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity
@@ -363,8 +405,17 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
           </View>
 
           {/* Search Bar */}
-          <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}>
-            <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
+          <View
+            style={[
+              styles.searchContainer,
+              { backgroundColor: theme.colors.surface },
+            ]}
+          >
+            <Ionicons
+              name="search"
+              size={20}
+              color={theme.colors.textSecondary}
+            />
             <TextInput
               style={[styles.searchInput, { color: theme.colors.text }]}
               placeholder="Search"
@@ -372,13 +423,16 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
-            <TouchableOpacity style={styles.searchQrButton} activeOpacity={0.7}>
+            {/* <TouchableOpacity style={styles.searchQrButton} activeOpacity={0.7}>
               <Ionicons name="qr-code" size={20} color="#169BFF" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           {/* Users List */}
-          <ScrollView style={styles.usersList} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.usersList}
+            showsVerticalScrollIndicator={false}
+          >
             {isSearching ? (
               // Show skeleton loading
               Array.from({ length: 3 }).map((_, index) => (
@@ -387,7 +441,12 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
             ) : searchError ? (
               // Show error message
               <View style={styles.errorContainer}>
-                <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>
+                <Text
+                  style={[
+                    styles.errorText,
+                    { color: theme.colors.textSecondary },
+                  ]}
+                >
                   {searchError}
                 </Text>
               </View>
@@ -399,14 +458,24 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
             ) : searchQuery.trim() ? (
               // Show no results message
               <View style={styles.noResultsContainer}>
-                <Text style={[styles.noResultsText, { color: theme.colors.textSecondary }]}>
+                <Text
+                  style={[
+                    styles.noResultsText,
+                    { color: theme.colors.textSecondary },
+                  ]}
+                >
                   No users found for "{searchQuery}"
                 </Text>
               </View>
             ) : (
               // Show initial message
               <View style={styles.initialContainer}>
-                <Text style={[styles.initialText, { color: theme.colors.textSecondary }]}>
+                <Text
+                  style={[
+                    styles.initialText,
+                    { color: theme.colors.textSecondary },
+                  ]}
+                >
                   Search for users by phone number or name
                 </Text>
               </View>
@@ -429,8 +498,8 @@ const SearchUsernameModal = ({ visible, onClose, onClose1, onClose2, onSelectUse
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
   },
   modalBackdrop: {
     flex: 1,
@@ -442,9 +511,9 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
@@ -453,12 +522,12 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    fontFamily: 'System',
+    fontWeight: "600",
+    fontFamily: "System",
   },
   headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
   },
   qrButton: {
@@ -466,23 +535,23 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: 16,
-    fontWeight: '500',
-    fontFamily: 'System',
+    fontWeight: "500",
+    fontFamily: "System",
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginHorizontal: 20,
     marginBottom: 20,
     paddingHorizontal: 16,
-    paddingVertical: Platform.OS === 'ios' ? 8 : 0,
+    paddingVertical: Platform.OS === "ios" ? 8 : 0,
     borderRadius: 50,
   },
   searchInput: {
     flex: 1,
     marginLeft: 12,
     fontSize: 16,
-    fontFamily: 'System',
+    fontFamily: "System",
   },
   searchQrButton: {
     padding: 4,
@@ -497,40 +566,40 @@ const styles = StyleSheet.create({
     borderRadius: 13,
   },
   userContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 5
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: 5,
   },
   avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: 16,
-    position: 'relative',
+    position: "relative",
   },
   avatarText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: '600',
-    fontFamily: 'System',
+    fontWeight: "600",
+    fontFamily: "System",
   },
   selectionIndicator: {
-    position: 'absolute',
+    position: "absolute",
     top: -2,
     right: -2,
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: 'white',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "white",
+    alignItems: "center",
+    justifyContent: "center",
   },
   username: {
     fontSize: 16,
-    fontWeight: '500',
-    fontFamily: 'System',
+    fontWeight: "500",
+    fontFamily: "System",
   },
   userInfo: {
     flex: 1,
@@ -540,48 +609,48 @@ const styles = StyleSheet.create({
   },
   userPhone: {
     fontSize: 14,
-    fontWeight: '400',
-    fontFamily: 'System',
+    fontWeight: "400",
+    fontFamily: "System",
     marginTop: 2,
   },
   // Skeleton loading styles
   skeletonAvatar: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
   },
   skeletonText: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: "#E0E0E0",
     borderRadius: 4,
   },
   // Container styles
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 40,
   },
   errorText: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   noResultsContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 40,
   },
   noResultsText: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   initialContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingVertical: 40,
   },
   initialText: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
 

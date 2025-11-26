@@ -151,18 +151,16 @@ const CurrentHistory = () => {
 
 
   };
-    const getTransactionAmount = (transaction) => {
-        const amount = transaction.amount;
-        const currency = transaction.currency;
-        const symbol = currency === 'NPR' ? '₨' : '$';
-        
-        if (transaction.type === 'transfer' && transaction.subType === 'sent') {
-            return `-${symbol}${amount}`;
-        } else {
-            return `+${symbol}${amount}`;
-        }
-    };
-
+  const getTransactionAmount = (transaction) => {
+    const amount = transaction.amount;
+    const currency = transaction.currency;
+    const symbol = currency === "NPR" ? "₨" : "$";
+    if (transaction.category === "TRANSFER") {
+        return `-${symbol}${Number(amount).toFixed(2)}`;
+      } else {
+        return `+${symbol}${Number(amount).toFixed(2)}`;
+      }
+  };
     const formatTransactionDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-GB', {
@@ -715,10 +713,9 @@ const CurrentHistory = () => {
                         </View>
                     )}
                 </View>
-                <TouchableOpacity style={[styles.filterButton, isFilterActive && { backgroundColor: theme.colors.primary, borderRadius: 20 }]} onPress={handleFilterPress}>
+                {/* <TouchableOpacity style={[styles.filterButton, isFilterActive && { backgroundColor: theme.colors.primary, borderRadius: 20 }]} onPress={handleFilterPress}>
                     <Image source={require('../../assets/Images/filters.png')} style={{ width: 20, height: 20, tintColor: isFilterActive ? '#FFFFFF' : undefined }} />
-                    {/* <Text style={[styles.filterIcon, { color: theme.colors.primary }]}>⚙</Text> */}
-                </TouchableOpacity>
+                </TouchableOpacity> */}
             </View>
 
             {/* Filter Tabs */}

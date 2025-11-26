@@ -227,11 +227,11 @@ const GroupSeperateChat = () => {
                     scrollViewRef.current?.scrollToEnd({ animated: true });
                 }, 100);
 
-                Toast.show({
-                    type: 'success',
-                    text1: 'Success',
-                    text2: 'Message sent successfully',
-                });
+                // Toast.show({
+                //     type: 'success',
+                //     text1: 'Success',
+                //     text2: 'Message sent successfully',
+                // });
             } else {
                 Toast.show({
                     type: 'error',

@@ -633,7 +633,7 @@ const TransactionManagement = ({ navigation }) => {
           </View>
         </View>
         
-        <Text style={[styles.transactionDate, { color: theme.colors.textSecondary }]}>
+        <Text style={[styles.transactionDate, { color: theme.colors.textSecondary,paddingLeft:width * 0.13 }]}>
           {formatDate(transaction.createdAt)}
         </Text>
       </View>

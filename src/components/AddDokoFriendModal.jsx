@@ -174,6 +174,7 @@ const AddDokoFriendModal = ({ visible, onClose,onClose1, onSelectOption }) => {
         onSelectUser={handleUserSelect}
         onClose1={()=> onClose()}
         onClose2={()=> onClose1()}
+         type="friend"
       />
     </Modal>
   );

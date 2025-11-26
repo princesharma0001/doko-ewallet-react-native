@@ -48,7 +48,7 @@ const KycModal = ({ isVisible, onClose, onConfirm }) => {
             {/* Icon */}
             <View style={styles.iconContainer}>
               <View style={styles.iconBackground}>
-                <Ionicons name="log-out-outline" size={24} color="#FFFFFF" />
+                <Ionicons name="alert-circle-sharp" size={34} color="#FFFFFF" />
               </View>
             </View>
 

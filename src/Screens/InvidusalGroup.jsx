@@ -237,6 +237,15 @@ const InvidusalGroup = () => {
                 //     text2: 'Message sent successfully',
                 // });
             } else {
+                if (response.error === "Your token has expired. Please login again") {
+                    await AsyncStorage.removeItem("dokoToken");
+                    await AsyncStorage.removeItem("dokoDeviceToken");
+                    navigation.reset({
+                      index: 0,
+                      routes: [{ name: "Login" }],
+                    });
+                  }
+      
                 Toast.show({
                     type: 'error',
                     text1: 'Error',
