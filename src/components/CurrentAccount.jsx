@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   Pressable,
+  Animated,
 } from "react-native";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import AntDesign from "react-native-vector-icons/AntDesign";
@@ -51,6 +52,17 @@ const CurrentAccount = ({ navigation }) => {
 
   const [isTransactionsLoading, setIsTransactionsLoading] = useState(false);
   const [transactionsError, setTransactionsError] = useState(null);
+
+  // Pulse animation for skeleton loader
+  const pulse = useRef(new Animated.Value(0.6)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.6, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
 
   // Currency configuration
   const currencies = [
@@ -254,13 +266,14 @@ const CurrentAccount = ({ navigation }) => {
   };
 
   const handleSendPressDepositQR = () => {
+    navigation.navigate("QrCodeSendRecive");
     console.log("Send button pressed!");
-    if (currentUser.kycStatus === "APPROVED") {
-      // setShowLogoutModal(true);
-      navigation.navigate("QrCodeSendRecive");
-    } else {
-      setShowLogoutModal(true);
-    }
+    // if (currentUser.kycStatus === "APPROVED") {
+    //   // setShowLogoutModal(true);
+    //   navigation.navigate("QrCodeSendRecive");
+    // } else {
+    //   setShowLogoutModal(true);
+    // }
   };
 
   const handleSendOption = (option) => {
@@ -358,60 +371,102 @@ const CurrentAccount = ({ navigation }) => {
     return transaction.description || t("transaction");
   };
 
-  const renderBalanceSection = () => (
+  // Balance Skeleton Component
+  const BalanceSkeleton = () => (
     <View style={[styles.balanceSection, {}]}>
-      <View style={styles.balanceHeader}>
-        <Text
+      {/* <View style={styles.balanceHeader}>
+        <Animated.View
           style={[
-            styles.balanceLabel,
+            styles.skeletonText,
             {
-              color: theme.colors.text,
-              fontFamily: theme.typography.fontFamily,
-              fontWeight: "700",
+              width: 100,
+              height: 16,
+              backgroundColor: theme.colors.border || "#E0E0E0",
+              opacity: pulse,
             },
           ]}
-        >
-          {t("yourBalance")}
-        </Text>
-
-        {/* Currency Dropdown */}
-        <TouchableOpacity
+        />
+        <Animated.View
           style={[
             styles.currencySelector,
             {
-              // backgroundColor: theme.colors.surface,
-              // borderColor: theme.colors.border || 'rgba(255, 255, 255, 0.2)'
+              backgroundColor: theme.colors.border || "#E0E0E0",
+              opacity: pulse,
+              width: 100,
+              height: 35,
+              borderRadius: 8,
             },
           ]}
-          onPress={() => setShowCurrencyPicker(true)}
-          activeOpacity={0.7}
-        >
-          <Image
-            source={
-              currentCurrency?.flag || require("../assets/Images/USA.png")
-            }
-            style={styles.flagIcon}
-          />
-          <Text style={[styles.currencyText, { color: theme.colors.text }]}>
-            {selectedCurrency}
-          </Text>
-          <Ionicons
-            name="chevron-down"
-            size={14}
-            color={theme.colors.textSecondary}
-            style={styles.chevronIcon}
-          />
-        </TouchableOpacity>
+        />
+      </View> */}
+      <View style={styles.balanceSkeletonContainer}>
+        <Animated.View
+          style={[
+            styles.skeletonText,
+            {
+              width: 200,
+              height: 52,
+              backgroundColor: theme.colors.border || "#E0E0E0",
+              opacity: pulse,
+              borderRadius: 8,
+            },
+          ]}
+        />
       </View>
-      {isWalletListLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator
-            size="large"
-            color={theme.colors.primary}
-            style={styles.activityIndicator}
-          />
+    </View>
+  );
+
+  // your balance sections
+  const renderBalanceSection = () => {
+    if (isWalletListLoading) {
+      return <BalanceSkeleton />;
+    }
+
+    return (
+      <View style={[styles.balanceSection, {}]}>
+        <View style={styles.balanceHeader}>
+          <Text
+            style={[
+              styles.balanceLabel,
+              {
+                color: theme.colors.text,
+                fontFamily: theme.typography.fontFamily,
+                fontWeight: "700",
+              },
+            ]}
+          >
+            {t("yourBalance")}
+          </Text>
+
+          {/* Currency Dropdown */}
+          <TouchableOpacity
+            style={[
+              styles.currencySelector,
+              {
+                // backgroundColor: theme.colors.surface,
+                // borderColor: theme.colors.border || 'rgba(255, 255, 255, 0.2)'
+              },
+            ]}
+            onPress={() => setShowCurrencyPicker(true)}
+            activeOpacity={0.7}
+          >
+            <Image
+              source={
+                currentCurrency?.flag || require("../assets/Images/USA.png")
+              }
+              style={styles.flagIcon}
+            />
+            <Text style={[styles.currencyText, { color: theme.colors.text }]}>
+              {selectedCurrency}
+            </Text>
+            <Ionicons
+              name="chevron-down"
+              size={14}
+              color={theme.colors.textSecondary}
+              style={styles.chevronIcon}
+            />
+          </TouchableOpacity>
         </View>
-      ) : (
         <Text
           style={[
             styles.balanceAmount,
@@ -447,9 +502,9 @@ const CurrentAccount = ({ navigation }) => {
             t("noWalletFound")
           )}
         </Text>
-      )}
-    </View>
-  );
+      </View>
+    );
+  };
 
   const renderActionButtons = () => (
     <View
@@ -1398,6 +1453,11 @@ const styles = StyleSheet.create({
   skeletonText: {
     backgroundColor: "#E0E0E0",
     borderRadius: 4,
+  },
+  balanceSkeletonContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
   },
 });
 
