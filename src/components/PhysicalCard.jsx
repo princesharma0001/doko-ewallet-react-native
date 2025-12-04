@@ -26,6 +26,7 @@ const PhysicalCard = ({ navigation }) => {
   const [isCardFrozen, setIsCardFrozen] = useState(false);
   const [showActivateModal, setShowActivateModal] = useState(false);
   const [showActivateModal1, setShowActivateModal1] = useState(false);
+  const [hasCardIssued, setHasCardIssued] = useState(false); // Default to false - no card issued
 
   const transactions = [
     {
@@ -86,7 +87,6 @@ const PhysicalCard = ({ navigation }) => {
               style={{ width: 35, height: 35, tintColor: theme.colors.primaryText }}
               resizeMode="contain"
             />
-            {/* Or use Ionicons if icon is a name string */}
           </View>
           <View style={styles.transactionDetails}>
             <Text style={[styles.transactionType, { color: theme.colors.text }]}>
@@ -250,78 +250,126 @@ const PhysicalCard = ({ navigation }) => {
     </Modal >
   );
 
+  // Render No Card Issued View
+  const renderNoCardIssued = () => (
+    <View style={styles.noCardContainer}>
+      <View style={styles.noCardContent}>
+        {/* Icon or Image */}
+        <View style={[styles.noCardIconContainer, { backgroundColor: theme.colors.surface }]}>
+          <Ionicons name="card-outline" size={64} color={theme.colors.textSecondary} />
+        </View>
+        
+        {/* Title */}
+        <Text style={[styles.noCardTitle, { color: theme.colors.text }]}>
+          No Card Issued
+        </Text>
+        
+        {/* Description */}
+        <Text style={[styles.noCardDescription, { color: theme.colors.textSecondary }]}>
+          You don't have a physical card yet. Apply now to get your card and start shopping online.
+        </Text>
+        
+        {/* Apply Card Button */}
+        <TouchableOpacity
+          style={styles.applyCardButton}
+          onPress={() => {
+            // Navigate to ApplyCard screen
+            navigation.navigate('ApplyCard');
+          }}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={["#1AA5FF", "#6B22E7", "#6B22E7", "#6B22E7"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1.5, y: 0.5 }}
+            style={styles.gradientButton}
+          >
+            <Text style={[styles.applyCardButtonText, { color: "#fff" }]}>
+              Apply Card
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <AntDesign name="arrowleft" size={24} color={theme.colors.text} />
         </TouchableOpacity>
 
         <View style={{ width: 24 }} />
-      </View>
+      </View> */}
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={{ paddingVertical: 15 }}>
+        {!hasCardIssued ? (
+          // No Card Issued View
+          renderNoCardIssued()
+        ) : (
+          // Card Issued View
+          <>
+            <View style={{ paddingVertical: 15 }}>
+              <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: theme.typography.sizes.xxl }]}>
+                Online Shopping
+              </Text>
+            </View>
+            {/* Card Section */}
+            <View style={[styles.cardContainer, {}]}>
+              <Image source={require("../assets/Images/physical.png")} style={{ resizeMode: 'contain', width: width * 0.9, height: height * 0.3, borderRadius: 15 }} />
+            </View>
 
-          <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: theme.typography.sizes.xxl }]}>
-            Online Shopping
-          </Text>
-        </View>
-        {/* Card Section */}
-        <View style={[styles.cardContainer, {}]}>
-          <Image source={require("../assets/Images/physical.png")} style={{ resizeMode: 'contain', width: width * 0.9, height: height * 0.3, borderRadius: 15 }} />
+            {/* Action Buttons */}
+            <View style={styles.actionButtonsContainer}>
+              <View style={styles.actionRow}>
+                <ActionButton
+                  icon={require("../assets/Images/ActivatedICon.png")}
+                  title="Activate Card"
+                  onPress={() => setShowActivateModal(true)}
+                  isActive={isCardActive}
+                />
+                <ActionButton
+                  icon={require("../assets/Images/widthdraw.png")}
+                  title="Add Money"
+                  onPress={() => navigation.navigate("CardPassword")}
+                />
+              </View>
+              <View style={styles.actionRow}>
+                <ActionButton
+                  icon={require("../assets/Images/FrezeICon.png")}
+                  title="Freeze Card"
+                  onPress={() => setShowActivateModal1(true)}
+                  isActive={showActivateModal1}
+                />
+                {/* <ActionButton
+                  icon={require("../assets/Images/widthdraw.png")}
+                  title="Withdraw Money"
+                  onPress={() => console.log('Withdraw pressed')}
+                /> */}
+              </View>
+            </View>
 
-        </View>
+            {/* Transactions Section */}
+            <View style={[styles.transactionsSection, { backgroundColor: theme.colors.surface, paddingHorizontal: 10, paddingVertical: 15, borderRadius: 15 }]}>
+              <View style={styles.transactionsHeader}>
+                <Text style={[styles.transactionsTitle, { color: theme.colors.text }]}>
+                  Last 3 Transactions
+                </Text>
+                <TouchableOpacity>
+                  <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>See All</Text>
+                </TouchableOpacity>
+              </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionButtonsContainer}>
-          <View style={styles.actionRow}>
-            <ActionButton
-              icon={require("../assets/Images/ActivatedICon.png")}
-              title="Activate Card"
-              onPress={() => setShowActivateModal(true)}
-              isActive={isCardActive}
-            />
-            <ActionButton
-              icon={require("../assets/Images/widthdraw.png")}
-              title="Add Money"
-              onPress={() => navigation.navigate("CardPassword")}
-            />
-          </View>
-          <View style={styles.actionRow}>
-            <ActionButton
-              icon={require("../assets/Images/FrezeICon.png")}
-              title="Freeze Card"
-              onPress={() => setShowActivateModal1(true)}
-              isActive={showActivateModal1}
-            />
-            <ActionButton
-              icon={require("../assets/Images/widthdraw.png")}
-              title="Withdraw Money"
-              onPress={() => console.log('Withdraw pressed')}
-            />
-
-          </View>
-        </View>
-
-        {/* Transactions Section */}
-        <View style={[styles.transactionsSection, { backgroundColor: theme.colors.surface, paddingHorizontal: 10, paddingVertical: 15, borderRadius: 15 }]}>
-          <View style={styles.transactionsHeader}>
-            <Text style={[styles.transactionsTitle, { color: theme.colors.text }]}>
-              Last 3 Transactions
-            </Text>
-            <TouchableOpacity>
-              <Text style={[styles.seeAllText, { color: theme.colors.primary }]}>See All</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.transactionsList}>
-            {transactions.map((transaction) => (
-              <TransactionItem key={transaction.id} transaction={transaction} theme={theme} />
-            ))}
-          </View>
-        </View>
+              <View style={styles.transactionsList}>
+                {transactions.map((transaction) => (
+                  <TransactionItem key={transaction.id} transaction={transaction} theme={theme} />
+                ))}
+              </View>
+            </View>
+          </>
+        )}
       </ScrollView>
 
       {/* Activate Card Modal */}
@@ -352,6 +400,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingTop:30
   },
   cardContainer: {
     // padding: 20,
@@ -672,6 +721,52 @@ const styles = StyleSheet.create({
   notYetText: {
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: 'System',
+  },
+  // No Card Issued Styles
+  noCardContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: height * 0.6,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  noCardContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  noCardIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  noCardTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+    fontFamily: 'System',
+  },
+  noCardDescription: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 32,
+    paddingHorizontal: 20,
+    lineHeight: 24,
+    fontFamily: 'System',
+  },
+  applyCardButton: {
+    width: '100%',
+    maxWidth: 300,
+  },
+  applyCardButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
     fontFamily: 'System',
   },
 });

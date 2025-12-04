@@ -28,6 +28,7 @@ const translations = {
     //logout
 
     logoutTitle: "Logout",
+    
     logSubtitle:
       "Are you sure you want to logout? You will need to sign in again to access your account.",
 
@@ -547,6 +548,7 @@ const translations = {
     sentTo: "Sent to",
     receivedFrom: "Received from",
     walletDeposit: "Wallet Deposit",
+    walletDeposit1:"Circle Deposit",
     transactionWith: "Transaction with",
     unknownReceiver: "Unknown Receiver",
     to: "To",
@@ -1302,6 +1304,7 @@ const translations = {
     sentTo: "पठाइएको",
     receivedFrom: "प्राप्त गरिएको",
     walletDeposit: "वालेट जम्मा",
+    walletDeposit1: "सर्कल जम्मा",
     transactionWith: "सँग लेनदेन",
     unknownReceiver: "अज्ञात प्रापक",
     to: "लाई",

@@ -1866,7 +1866,9 @@ export const transactionHistoryService = {
   getUserTransactionHistory: async (filterUserId, token) => {
     try {
       const url = filterUserId
-        ? `${ApiConfig.getUserTransactionHistory}?filterUserId=${encodeURIComponent(filterUserId)}`
+        ? `${ApiConfig.getUserTransactionHistory}?filterUserId=${encodeURIComponent(
+            filterUserId,
+          )}`
         : ApiConfig.getUserTransactionHistory;
       const response = await apiClient.get(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -1897,6 +1899,46 @@ export const transactionHistoryService = {
         return {
           success: false,
           error: error.message || 'An unexpected error occurred',
+        };
+      }
+    }
+  },
+
+  // GET /transactionHistory/list?isCircle=true
+  getCircleTransactionHistory: async (token) => {
+    try {
+      const url = `${ApiConfig.getUserTransactionHistory}?isCircle=true`;
+      const response = await apiClient.get(url, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+
+      const data = response.data?.data || {};
+      return {
+        success: true,
+        data,
+        docs: data.docs || [],
+        stats: data.stats || {},
+        message: response.data?.message,
+      };
+    } catch (error) {
+      if (error.response) {
+        const errorMessage =
+          error.response.data?.message ||
+          "Failed to fetch circle transaction history";
+        return {
+          success: false,
+          error: errorMessage,
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: "Network error - Please check your internet connection",
+        };
+      } else {
+        return {
+          success: false,
+          error: error.message || "An unexpected error occurred",
         };
       }
     }

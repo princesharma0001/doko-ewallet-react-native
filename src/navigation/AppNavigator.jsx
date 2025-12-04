@@ -45,12 +45,17 @@ import SubscriptionDetails from "../components/SubscriptionDetails";
 import CreditCard from "../components/CreditCard";
 import CurrentHistory from "../Screens/History/CurrentHistory";
 import PhysicalCard from "../components/PhysicalCard";
+import ApplyCard from "../components/ApplyCard";
+import ApplyCardView from "../components/ApplyCardView";
+import PayoutDetailsForm from "../components/PayoutDetailsForm";
 import NewChat from "../components/NewChat";
 import QrCodeSendRecive from "../components/QrCodeSendRecive";
 import NewGroup from "../Screens/NewGroup";
 import GroupSeperateChat from "../Screens/GroupSeperateChat";
 import InvidusalGroup from "../Screens/InvidusalGroup";
 import BankTransfer from "../Screens/Deposit/BankTransfer";
+import WalletBankDetails from "../Screens/Deposit/WalletBankDetails";
+import BennificalBank from "../Screens/Deposit/BennificalBank";
 import SendInternational from "../Screens/SendInternational";
 import KYCSection from "../Screens/KYCSection";
 import SelectWay from "../Screens/SelectWay";
@@ -219,6 +224,9 @@ const AppNavigator = () => {
         <Stack.Screen name="Settings" component={Settings} />
         <Stack.Screen name="CurrentHistory" component={CurrentHistory} />
         <Stack.Screen name="PhysicalCard" component={PhysicalCard} />
+        <Stack.Screen name="ApplyCard" component={ApplyCard} />
+        <Stack.Screen name="ApplyCardView" component={ApplyCardView} />
+        <Stack.Screen name="PayoutDetailsForm" component={PayoutDetailsForm} />
         <Stack.Screen name="NewChat" component={NewChat} />
         <Stack.Screen name="NewGroup" component={NewGroup} />
         <Stack.Screen name="GroupSeperateChat" component={GroupSeperateChat} />
@@ -226,6 +234,8 @@ const AppNavigator = () => {
         <Stack.Screen name="BankTransfer" component={BankTransfer} />
         <Stack.Screen name="AddingAmount" component={AddingAmount} />
         <Stack.Screen name="AddRecieveQr" component={AddRecieveQr} />
+        <Stack.Screen name="WalletBankDetails" component={WalletBankDetails} />
+        <Stack.Screen name="BennificalBank" component={BennificalBank} />
         <Stack.Screen
           name="ReportUserModalTest"
           component={ReportUserModalTest}

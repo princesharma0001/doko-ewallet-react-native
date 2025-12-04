@@ -26,6 +26,10 @@ import { useAppDispatch, useAppSelector } from "../store";
 import CurrentAccount from "./CurrentAccount";
 import QRCode from "react-native-qrcode-svg";
 import { getWalletList } from "../store/slices/walletSlice";
+import PhysicalCard from "./PhysicalCard";
+import WalletBankDetails from "../Screens/Deposit/WalletBankDetails";
+import { transactionHistoryService } from "../services/apiService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width, height } = Dimensions.get("window");
 
@@ -46,15 +50,16 @@ const Wallet = ({ navigation }) => {
   const { currentUser, isProfileLoading, profileError } = useAppSelector(
     (state) => state.user
   );
-  const {
-    walletList,
-    isWalletListLoading,
-    walletListError,
-  } = useAppSelector((state) => state.wallet);
+  const { walletList, isWalletListLoading, walletListError } = useAppSelector(
+    (state) => state.wallet
+  );
   const walletTypes = ["All", "DOKO", "Fiat", "Web 3"];
   const [activeTab, setActiveTab] = useState("home");
-  const filters = ["All", "Income", "Expenses"];
-  const [activeFilter, setActiveFilter] = useState("All");
+  const [recentTransactions, setRecentTransactions] = useState([]);
+  console.log("dfsgfsd",recentTransactions);
+  
+  const [isRecentLoading, setIsRecentLoading] = useState(false);
+  const [recentError, setRecentError] = useState(null);
 
   useEffect(() => {
     if (!walletList || walletList.length === 0) {
@@ -85,9 +90,7 @@ const Wallet = ({ navigation }) => {
 
   const usdcWallet = useMemo(
     () =>
-      walletList?.find(
-        (wallet) => wallet?.currency?.toUpperCase() === "USDC"
-      ),
+      walletList?.find((wallet) => wallet?.currency?.toUpperCase() === "USDC"),
     [walletList]
   );
 
@@ -104,6 +107,33 @@ const Wallet = ({ navigation }) => {
       setWalletAddress(derivedAddress);
     }
   }, [usdcWallet]);
+
+  useEffect(() => {
+    const loadRecentTransactions = async () => {
+      try {
+        setIsRecentLoading(true);
+        setRecentError(null);
+        const token = await AsyncStorage.getItem("dokoToken");
+        const response =
+          await transactionHistoryService.getCircleTransactionHistory(token);
+
+        if (response.success) {
+          // Store all recent circle transactions
+          setRecentTransactions(response?.docs || []);
+        } else {
+          console.error("Failed to load recent circle transactions:", response.error);
+          setRecentError(response.error || "Failed to load transactions");
+        }
+      } catch (error) {
+        console.error("Error loading recent circle transactions:", error);
+        setRecentError("Failed to load transactions");
+      } finally {
+        setIsRecentLoading(false);
+      }
+    };
+
+    loadRecentTransactions();
+  }, []);
 
   const toggleDrawer = () => {
     setIsDrawerOpen(!isDrawerOpen);
@@ -124,36 +154,36 @@ const Wallet = ({ navigation }) => {
     }
   };
 
-  const activities = [
-    {
-      id: 1,
-      type: "Sent UQ....R12F",
-      time: "15 July, 2023",
-      amount: "-1.1 BTC Sent",
-      icon: require("../assets/Images/quick1.png"),
-    },
-    {
-      id: 2,
-      type: "Received Wallet",
-      time: "15 July, 2023",
-      amount: "+0.5 BTC Received",
-      icon: require("../assets/Images/quick1.png"),
-    },
-    {
-      id: 3,
-      type: "Payment",
-      time: "15 July, 2023",
-      amount: "-0.2 BTC Spent",
-      icon: require("../assets/Images/quick1.png"),
-    },
-    {
-      id: 4,
-      type: "Deposit",
-      time: "15 July, 2023",
-      amount: "+2.0 BTC Added",
-      icon: require("../assets/Images/quick1.png"),
-    },
-  ];
+  const formatTransactionAmount = (tx) => {
+    const amount = Number(tx.amount || 0);
+    const currency = tx.currency || "USDC";
+
+    if (!amount) {
+      return `0.00 ${currency}`;
+    }
+
+    const isIncome =
+      tx.type === "deposit" ||
+      tx.type === "receive" ||
+      tx.direction === "IN" ||
+      amount > 0;
+
+    const sign = isIncome ? "+" : "-";
+    return `${sign}${Math.abs(amount).toFixed(2)} ${currency}`;
+  };
+
+  const formatTransactionTitle = (tx) => {
+    if (tx.description) return tx.description;
+    if (tx.type) return tx.type.charAt(0).toUpperCase() + tx.type.slice(1);
+    return "Transaction";
+  };
+
+  const formatTransactionDate = (tx) => {
+    if (!tx.createdAt) return "";
+    const date = new Date(tx.createdAt);
+    if (isNaN(date.getTime())) return "";
+    return date.toLocaleDateString();
+  };
 
   const renderHeader = () => (
     <View style={[styles.header, {}]}>
@@ -369,7 +399,9 @@ const Wallet = ({ navigation }) => {
   );
   const copyWalletAddress = async (addressToCopy) => {
     try {
-      await Clipboard.setString(addressToCopy || walletAddress || "USDC Wallet");
+      await Clipboard.setString(
+        addressToCopy || walletAddress || "USDC Wallet"
+      );
       Alert.alert("Copied", "Wallet address copied to clipboard");
     } catch (error) {
       Alert.alert("Error", "Failed to copy wallet address");
@@ -384,7 +416,7 @@ const Wallet = ({ navigation }) => {
             styles.web3SkeletonLine,
             {
               width: 120,
-              height:20,
+              height: 20,
               opacity: pulse,
               backgroundColor: theme.colors.border || "rgba(255,255,255,0.2)",
             },
@@ -395,7 +427,7 @@ const Wallet = ({ navigation }) => {
             styles.web3SkeletonLine,
             {
               width: 90,
-              height:20,
+              height: 20,
               opacity: pulse,
               backgroundColor: theme.colors.border || "rgba(255,255,255,0.2)",
             },
@@ -514,8 +546,6 @@ const Wallet = ({ navigation }) => {
       return renderWeb3Skeleton();
     }
 
-
-
     if (!usdcWallet) {
       return (
         <View style={styles.web3StatusContainer}>
@@ -525,7 +555,7 @@ const Wallet = ({ navigation }) => {
               { color: theme.colors.textSecondary },
             ]}
           >
-            {t("noUsdcWalletFound") || "No USDC wallet found."}
+            {"No USDC wallet found."}
           </Text>
         </View>
       );
@@ -533,7 +563,11 @@ const Wallet = ({ navigation }) => {
 
     return (
       <>
-        {renderQuickQRCode(walletAddress, usdcWallet.balance, usdcWallet.currency)}
+        {renderQuickQRCode(
+          walletAddress,
+          usdcWallet.balance,
+          usdcWallet.currency
+        )}
         {renderTransactionFilters()}
       </>
     );
@@ -703,105 +737,158 @@ const Wallet = ({ navigation }) => {
         {
           backgroundColor: theme.colors.surface,
           paddingTop: 18,
-          marginHorizontal:20
+          marginHorizontal: 20,
         },
       ]}
     >
-      <Text style={[styles.cardTitle, { color: theme.colors.text, fontFamily: theme.typography.fontFamily, fontWeight: '700' }]}>
-           Recent transaction
-         </Text>
+      <Text
+        style={[
+          styles.cardTitle,
+          {
+            color: theme.colors.text,
+            fontFamily: theme.typography.fontFamily,
+            fontWeight: "700",
+          },
+        ]}
+      >
+        Recent transaction
+      </Text>
 
-      <View style={styles.filterButtons}>
-        {filters.map((filter) => (
-          <TouchableOpacity
-            key={filter}
-            style={[
-              styles.filterButton,
-              {
-                backgroundColor:
-                  activeFilter === filter
-                    ? theme.colors.primary
-                    : theme.colors.border,
-                paddingHorizontal:
-                  filter === "All" ? 35 : filter === "Income" ? 30 : 20,
-              },
-            ]}
-            onPress={() => setActiveFilter(filter)}
-          >
-            <Text
+      {isRecentLoading ? (
+        <View style={{ marginTop: 10,marginBottom:10 }}>
+          {[1, 2, 3, 4].map((key) => (
+            <Animated.View
+              key={key}
               style={[
-                styles.filterButtonText,
+                styles.activityItem,
                 {
-                  color: activeFilter === filter ? "#fff" : theme.colors.text,
-                  fontFamily: theme.typography.fontFamily,
+                  opacity: pulse,
                 },
               ]}
             >
-              {filter}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {activities.map((item) => (
-        <TouchableHighlight
-          key={item.id}
-          style={styles.activityItem}
-          onPress={() => console.log("f")}
-          underlayColor={theme.colors.border} // softer highlight for dark theme
+              <View
+                style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+              >
+                <View style={styles.activityIcon}>
+                  <View
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      backgroundColor:
+                        theme.colors.border || "rgba(255,255,255,0.2)",
+                    }}
+                  />
+                </View>
+                <View style={styles.activityContent}>
+                  <View
+                    style={{
+                      width: "60%",
+                      height: 12,
+                      borderRadius: 6,
+                      marginBottom: 6,
+                      backgroundColor:
+                        theme.colors.border || "rgba(255,255,255,0.2)",
+                    }}
+                  />
+                  <View
+                    style={{
+                      width: "40%",
+                      height: 10,
+                      borderRadius: 5,
+                      backgroundColor:
+                        theme.colors.border || "rgba(255,255,255,0.2)",
+                    }}
+                  />
+                </View>
+                <View
+                  style={{
+                    width: 60,
+                    height: 12,
+                    borderRadius: 6,
+                    backgroundColor:
+                      theme.colors.border || "rgba(255,255,255,0.2)",
+                  }}
+                />
+              </View>
+            </Animated.View>
+          ))}
+        </View>
+      ) : recentTransactions.length === 0 ? (
+        <Text
+          style={{
+            color: theme.colors.textSecondary,
+            fontFamily: theme.typography.fontFamily,
+            marginTop: 10,
+            textAlign:'center',height:50
+          }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-            <View style={styles.activityIcon}>
-              <Image
-                source={item.icon}
-                resizeMode="contain"
-                style={{ width: 40, height: 40 }}
-              />
-            </View>
-            <View style={styles.activityContent}>
-              <Text
-                style={[
-                  styles.activityType,
-                  {
-                    color: theme.colors.text,
-                    fontFamily: theme.typography.fontFamily,
-                    fontWeight: "600",
-                  },
-                ]}
-              >
-                {item.type}
-              </Text>
-              <Text
-                style={[
-                  styles.activityTime,
-                  {
-                    color: theme.colors.textSecondary,
-                    fontFamily: theme.typography.fontFamily,
-                  },
-                ]}
-              >
-                {item.time}
-              </Text>
-            </View>
-            <Text
-              style={[
-                styles.activityAmount,
-                {
-                  color: item.amount.startsWith("+")
-                    ? theme.colors.success
-                    : theme.colors.error, // income green / expense red
-                  fontFamily: theme.typography.fontFamily,
-                },
-              ]}
+          No recent transactions.
+        </Text>
+      ) : (
+        recentTransactions?.map((tx) => (
+          <TouchableHighlight
+            key={tx._id || tx.id}
+            style={styles.activityItem}
+            onPress={() => {}}
+            underlayColor={theme.colors.border}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
             >
-              {item.amount}
-            </Text>
-          </View>
-        </TouchableHighlight>
-      ))}
+              <View style={styles.activityIcon}>
+                <Image
+                  source={require("../assets/Images/quick1.png")}
+                  resizeMode="contain"
+                  style={{ width: 40, height: 40 }}
+                />
+              </View>
+              <View style={styles.activityContent}>
+                <Text
+                  style={[
+                    styles.activityType,
+                    {
+                      color: theme.colors.text,
+                      fontFamily: theme.typography.fontFamily,
+                      fontWeight: "600",
+                    },
+                  ]}
+                >
+                  {formatTransactionTitle(tx)}
+                </Text>
+                <Text
+                  style={[
+                    styles.activityTime,
+                    {
+                      color: theme.colors.textSecondary,
+                      fontFamily: theme.typography.fontFamily,
+                    },
+                  ]}
+                >
+                  {formatTransactionDate(tx)}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.activityAmount,
+                  {
+                    color: formatTransactionAmount(tx).startsWith("+")
+                      ? theme.colors.success
+                      : theme.colors.error,
+                    fontFamily: theme.typography.fontFamily,
+                  },
+                ]}
+              >
+                {formatTransactionAmount(tx)}
+              </Text>
+            </View>
+          </TouchableHighlight>
+        ))
+      )}
 
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={[styles.seeAllButton, { backgroundColor: theme.colors.border }]}
+        onPress={() => navigation.navigate("TransactionManagement")}
       >
         <Text
           style={[
@@ -815,7 +902,7 @@ const Wallet = ({ navigation }) => {
           See all
         </Text>
         <AntDesign name="right" size={20} color={theme.colors.text} />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 
@@ -835,10 +922,12 @@ const Wallet = ({ navigation }) => {
           <>
             <CurrentAccount navigation={navigation} />
           </>
-        ) : selectedWalletType === "DOKO" || selectedWalletType === "Fiat" ? (
-          renderComingSoon()
+        ) : selectedWalletType === "DOKO" ? (
+          <PhysicalCard navigation={navigation}/>
         ) : selectedWalletType === "Web 3" ? (
           renderWeb3Section()
+        ) : selectedWalletType === "Fiat" ? (
+          <WalletBankDetails navigation={navigation}/>
         ) : (
           renderQuickActions()
         )}

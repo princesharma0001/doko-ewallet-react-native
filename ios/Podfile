@@ -1,18 +1,29 @@
-# Resolve react_native_pods.rb with node to allow for hoisting
 source 'https://cdn.cocoapods.org/'
 source 'https://github.com/SumSubstance/Specs.git'
 
-require Pod::Executable.execute_command('node', ['-p',
-  'require.resolve(
-    "react-native/scripts/react_native_pods.rb",
-    {paths: [process.argv[1]]},
-  )', __dir__]).strip
+def node_require(script)
+  # Resolve script with node to allow for hoisting
+  require Pod::Executable.execute_command('node', ['-p',
+    "require.resolve(
+      '#{script}',
+      {paths: [process.argv[1]]},
+    )", __dir__]).strip
+end
+
+node_require('react-native/scripts/react_native_pods.rb')
+node_require('react-native-permissions/scripts/setup.rb')
+permissions_path = '../node_modules/react-native-permissions/ios'
+pod 'Permission-Camera', :path => "#{permissions_path}/Camera"
 
 platform :ios, '16.0'
 
 # Bypass Xcode version check
 ENV['RCT_NEW_ARCH_ENABLED'] = '0'
 ENV['SKIP_XCODE_VERSION_CHECK'] = '1'
+
+setup_permissions([
+  'Camera',
+])
 
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil

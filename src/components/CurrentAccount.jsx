@@ -58,8 +58,16 @@ const CurrentAccount = ({ navigation }) => {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.6, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.6,
+          duration: 700,
+          useNativeDriver: true,
+        }),
       ])
     ).start();
   }, []);
@@ -199,17 +207,16 @@ const CurrentAccount = ({ navigation }) => {
           result.data?.docs?.length || 0
         );
       } else {
-        console.log("Asdhfds",result.error);
-        
+        console.log("Asdhfds", result.error);
+
         setTransactionsError(result.error || t("failedToFetchTransactions"));
-        if(result.error ==="Your token has expired. Please login again"){
-          await AsyncStorage.removeItem('dokoToken');
-          await AsyncStorage.removeItem('dokoDeviceToken');
+        if (result.error === "Your token has expired. Please login again") {
+          await AsyncStorage.removeItem("dokoToken");
+          await AsyncStorage.removeItem("dokoDeviceToken");
           navigation.reset({
             index: 0,
-            routes: [{ name: 'Login' }],
+            routes: [{ name: "Login" }],
           });
-    
         }
         setTransactions([]);
       }
@@ -266,14 +273,14 @@ const CurrentAccount = ({ navigation }) => {
   };
 
   const handleSendPressDepositQR = () => {
-    navigation.navigate("QrCodeSendRecive");
+    // navigation.navigate("QrCodeSendRecive");
     console.log("Send button pressed!");
-    // if (currentUser.kycStatus === "APPROVED") {
-    //   // setShowLogoutModal(true);
-    //   navigation.navigate("QrCodeSendRecive");
-    // } else {
-    //   setShowLogoutModal(true);
-    // }
+    if (currentUser.kycStatus === "APPROVED") {
+      // setShowLogoutModal(true);
+      navigation.navigate("QrCodeSendRecive");
+    } else {
+      setShowLogoutModal(true);
+    }
   };
 
   const handleSendOption = (option) => {
@@ -317,6 +324,10 @@ const CurrentAccount = ({ navigation }) => {
       transaction?.type !== "DEPOSIT"
     ) {
       return `${t("sentTo")} ${receiverName}`;
+    } else if (
+      transaction?.description.includes("Circle INBOUND transaction")
+    ) {
+      return t("walletDeposit1");
     } else if (
       transaction?.category === "INCOME" &&
       transaction?.type !== "DEPOSIT"
